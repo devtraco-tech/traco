@@ -1,0 +1,23 @@
+
+-- Drop the existing update policy and create a more permissive one
+DROP POLICY IF EXISTS "Users can update course validations" ON course_validations;
+
+-- Create new policy that allows course owners to reset validations
+CREATE POLICY "Users can update course validations"
+  ON course_validations FOR UPDATE
+  USING (
+    has_role(auth.uid(), 'admin'::app_role) 
+    OR (EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid() AND p.department_id = course_validations.department_id
+    ))
+    OR is_course_owner(course_id, auth.uid())
+  )
+  WITH CHECK (
+    has_role(auth.uid(), 'admin'::app_role) 
+    OR (EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid() AND p.department_id = course_validations.department_id
+    ))
+    OR is_course_owner(course_id, auth.uid())
+  );

@@ -1,0 +1,69 @@
+/* ==========================================
+   ABOG Integration - Base Styles
+   Variables, Resets, Container, Loading
+   ========================================== */
+
+/* Variables */
+:root {
+  --abog-primary: #2563eb;
+  --abog-primary-dark: #1d4ed8;
+  --abog-primary-light: #60a5fa;
+  --abog-success: #10b981;
+  --abog-bg: #ffffff;
+  --abog-bg-alt: #f8fafc;
+  --abog-text: #1e293b;
+  --abog-text-light: #64748b;
+  --abog-border: #e2e8f0;
+  --abog-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --abog-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --abog-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --abog-shadow-primary: 0 10px 25px -5px rgba(37, 99, 235, 0.15);
+  --abog-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reset */
+* {
+  box-sizing: border-box;
+}
+
+/* Container */
+.abog-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Loading States */
+.abog-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: var(--abog-text-light);
+}
+
+.abog-spinner {
+  border: 3px solid var(--abog-border);
+  border-top-color: var(--abog-primary);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Empty/Error States */
+.abog-empty,
+.abog-error {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--abog-text-light);
+}
+
+.abog-error {
+  color: #dc2626;
+}

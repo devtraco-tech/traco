@@ -1,0 +1,8 @@
+
+CREATE POLICY "Authenticated can view all profiles"
+  ON public.profiles FOR SELECT TO authenticated
+  USING (true);
+
+CREATE POLICY "Service role can insert profiles"
+  ON public.profiles FOR INSERT TO authenticated
+  WITH CHECK (id = auth.uid());

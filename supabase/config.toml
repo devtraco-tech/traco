@@ -1,0 +1,37 @@
+project_id = "your-project-id"
+
+[functions.wordpress-courses]
+verify_jwt = false
+
+[functions.public-classifieds]
+verify_jwt = false
+
+[functions.public-teachers]
+verify_jwt = false
+
+[functions.kommo-lead]
+verify_jwt = false
+
+[functions.create-public-classified]
+verify_jwt = false
+
+[functions.send-course-approval-email]
+verify_jwt = false
+
+[functions.send-new-course-notification]
+verify_jwt = false
+
+[functions.sitemap]
+verify_jwt = false
+
+[functions.create-patient-lead]
+verify_jwt = false
+
+[functions.fb-capi-event]
+verify_jwt = false
+
+[functions.kommo-patient-lead]
+verify_jwt = false
+
+[functions.send-lead-confirmation]
+verify_jwt = false

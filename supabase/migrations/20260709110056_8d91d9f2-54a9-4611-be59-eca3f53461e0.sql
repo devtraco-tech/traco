@@ -1,0 +1,1 @@
+ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS is_exam_return boolean NOT NULL DEFAULT false;

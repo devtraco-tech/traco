@@ -1,0 +1,164 @@
+/* ==========================================
+   ABOG Integration - Teachers Carousel
+   Swiper-based Teacher Cards
+   ========================================== */
+
+/* Swiper Container */
+.abog-teachers-swiper {
+  padding: 24px 0 48px 0;
+}
+
+.abog-teachers-swiper .swiper-slide {
+  height: auto;
+}
+
+/* Teacher Card */
+.abog-teacher-card {
+  background: var(--abog-bg);
+  border-radius: 16px;
+  padding: 32px 24px;
+  text-align: center;
+  box-shadow: var(--abog-shadow);
+  transition: var(--abog-transition);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.abog-teacher-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--abog-shadow-lg);
+}
+
+.abog-teacher-photo {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--abog-primary-light);
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.abog-teacher-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--abog-text);
+  margin: 0 0 8px 0;
+}
+
+.abog-teacher-cro {
+  font-size: 14px;
+  color: var(--abog-primary);
+  font-weight: 600;
+  margin: 0 0 16px 0;
+}
+
+.abog-teacher-bio {
+  font-size: 14px;
+  color: var(--abog-text-light);
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.abog-teacher-specialties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.abog-teacher-specialty {
+  background: linear-gradient(135deg, var(--abog-primary-light) 0%, var(--abog-primary) 100%);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.abog-teacher-contact {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: auto;
+}
+
+.abog-teacher-contact a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--abog-primary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: var(--abog-transition);
+}
+
+.abog-teacher-contact a:hover {
+  color: var(--abog-primary-dark);
+  transform: scale(1.05);
+}
+
+/* Swiper Navigation */
+.abog-teachers-swiper .swiper-button-next,
+.abog-teachers-swiper .swiper-button-prev {
+  color: var(--abog-primary);
+  width: 44px;
+  height: 44px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: var(--abog-shadow);
+  transition: var(--abog-transition);
+}
+
+.abog-teachers-swiper .swiper-button-next:after,
+.abog-teachers-swiper .swiper-button-prev:after {
+  font-size: 20px;
+}
+
+.abog-teachers-swiper .swiper-button-next:hover,
+.abog-teachers-swiper .swiper-button-prev:hover {
+  background: var(--abog-primary);
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Swiper Pagination */
+.abog-teachers-swiper .swiper-pagination-bullet {
+  width: 12px;
+  height: 12px;
+  background: var(--abog-border);
+  opacity: 1;
+  transition: var(--abog-transition);
+}
+
+.abog-teachers-swiper .swiper-pagination-bullet-active {
+  background: var(--abog-primary);
+  width: 32px;
+  border-radius: 6px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .abog-teacher-card {
+    padding: 24px 16px;
+  }
+  
+  .abog-teacher-photo {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .abog-teachers-swiper .swiper-button-next,
+  .abog-teachers-swiper .swiper-button-prev {
+    display: none;
+  }
+}

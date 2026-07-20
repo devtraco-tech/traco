@@ -1,0 +1,568 @@
+/* ==========================================
+   ABOG Integration - Classifieds
+   Fixed 2x2 Grid with Pagination
+   ========================================== */
+
+/* Classifieds Grid */
+.abog-classifieds-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+  margin-top: 24px;
+}
+
+/* Classified Card */
+.abog-classified-card {
+  background: var(--abog-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--abog-shadow);
+  transition: var(--abog-transition);
+  display: flex;
+  flex-direction: column;
+}
+
+.abog-classified-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--abog-shadow-lg);
+}
+
+.abog-classified-image {
+  width: 100%;
+  height: 180px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--abog-bg-alt);
+}
+
+/* Placeholder Style */
+.abog-classified-placeholder {
+  background: linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.abog-classified-placeholder span {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+.abog-classified-content {
+  padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.abog-classified-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.abog-classified-category {
+  background: var(--abog-primary-light);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.abog-classified-price {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--abog-primary);
+}
+
+.abog-classified-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--abog-text);
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.abog-classified-description {
+  font-size: 13px;
+  color: var(--abog-text-light);
+  line-height: 1.5;
+  margin: 0 0 12px 0;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.abog-classified-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--abog-border);
+  font-size: 12px;
+  color: var(--abog-text-light);
+}
+
+.abog-classified-location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Pagination */
+.abog-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.abog-pagination-btn {
+  background: var(--abog-bg);
+  border: 1px solid var(--abog-border);
+  color: var(--abog-text);
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--abog-transition);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.abog-pagination-btn:hover:not(:disabled) {
+  background: var(--abog-primary);
+  color: white;
+  border-color: var(--abog-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--abog-shadow);
+}
+
+.abog-pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.abog-pagination-info {
+  font-size: 14px;
+  color: var(--abog-text-light);
+  font-weight: 600;
+}
+
+/* Image Upload Section */
+.abog-image-uploads {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.abog-image-upload-item {
+  position: relative;
+}
+
+.abog-image-upload-label {
+  display: block;
+  border: 2px dashed var(--abog-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--abog-transition);
+  overflow: hidden;
+  aspect-ratio: 1;
+}
+
+.abog-image-upload-label:hover {
+  border-color: var(--abog-primary);
+  background: var(--abog-primary-light);
+}
+
+.abog-image-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--abog-text-light);
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.abog-image-upload-placeholder svg {
+  opacity: 0.5;
+}
+
+.abog-image-upload-placeholder span {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.abog-image-preview {
+  width: 100%;
+  height: 100%;
+}
+
+.abog-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.abog-image-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(220, 38, 38, 0.9);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+  transition: var(--abog-transition);
+  z-index: 2;
+}
+
+.abog-image-remove:hover {
+  background: rgb(185, 28, 28);
+  transform: scale(1.1);
+}
+
+.abog-image-error {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #dc2626;
+  text-align: center;
+}
+
+/* Form message info state */
+.abog-form-message-info {
+  background: var(--abog-primary-light);
+  color: var(--abog-primary);
+  border-color: var(--abog-primary);
+}
+
+/* Modal Styles */
+.abog-classified-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.abog-classified-modal {
+  background: var(--abog-bg, #fff);
+  border-radius: 16px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.abog-classified-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: var(--abog-transition);
+}
+
+.abog-classified-modal-close:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: scale(1.1);
+}
+
+.abog-classified-modal-gallery {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  background: var(--abog-bg-alt, #f5f5f5);
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+}
+
+.abog-classified-modal-gallery.abog-classified-placeholder {
+  background: linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.abog-classified-modal-gallery.abog-classified-placeholder span {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 28px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 5px;
+}
+
+.abog-classified-modal-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.abog-classified-modal-image.active {
+  opacity: 1;
+}
+
+.abog-classified-modal-gallery-nav {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.abog-classified-modal-gallery-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  border: none;
+  cursor: pointer;
+  transition: var(--abog-transition);
+}
+
+.abog-classified-modal-gallery-dot.active,
+.abog-classified-modal-gallery-dot:hover {
+  background: white;
+}
+
+.abog-classified-modal-content {
+  padding: 24px;
+}
+
+.abog-classified-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.abog-classified-modal-price {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--abog-primary, #2563eb);
+}
+
+.abog-classified-modal-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--abog-text, #1f2937);
+  margin: 0 0 16px 0;
+  line-height: 1.3;
+}
+
+.abog-classified-modal-description {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--abog-border, #e5e7eb);
+}
+
+.abog-classified-modal-description p {
+  font-size: 15px;
+  color: var(--abog-text-light, #6b7280);
+  line-height: 1.7;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.abog-classified-modal-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.abog-classified-modal-info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--abog-text-light, #6b7280);
+}
+
+.abog-classified-modal-info-item svg {
+  color: var(--abog-primary, #2563eb);
+  flex-shrink: 0;
+}
+
+.abog-classified-modal-contact {
+  background: var(--abog-bg-alt, #f9fafb);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.abog-classified-modal-contact h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--abog-text, #1f2937);
+  margin: 0 0 16px 0;
+}
+
+.abog-classified-modal-contact-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--abog-text, #1f2937);
+}
+
+.abog-classified-modal-contact-item:last-child {
+  margin-bottom: 0;
+}
+
+.abog-classified-modal-contact-item svg {
+  color: var(--abog-primary, #2563eb);
+  flex-shrink: 0;
+}
+
+.abog-classified-modal-contact-item a {
+  color: var(--abog-primary, #2563eb);
+  text-decoration: none;
+  transition: var(--abog-transition);
+}
+
+.abog-classified-modal-contact-item a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+  .abog-classifieds-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 1100px) {
+  .abog-classifieds-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .abog-classifieds-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .abog-classified-image {
+    height: 160px;
+  }
+  
+  .abog-pagination {
+    flex-wrap: wrap;
+  }
+  
+  .abog-pagination-btn {
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .abog-image-uploads {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .abog-classified-modal-overlay {
+    padding: 10px;
+  }
+  
+  .abog-classified-modal {
+    max-height: 95vh;
+  }
+  
+  .abog-classified-modal-gallery {
+    height: 220px;
+  }
+  
+  .abog-classified-modal-content {
+    padding: 16px;
+  }
+  
+  .abog-classified-modal-title {
+    font-size: 20px;
+  }
+  
+  .abog-classified-modal-price {
+    font-size: 20px;
+  }
+  
+  .abog-classified-modal-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 500px) {
+  .abog-classifieds-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .abog-classified-image {
+    height: 200px;
+  }
+}

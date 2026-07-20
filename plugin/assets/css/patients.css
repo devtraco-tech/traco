@@ -1,0 +1,226 @@
+/* Patient Contact Form Styles */
+.abog-patient-form-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.abog-patient-form-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.abog-patient-form-header h2 {
+  color: #1a365d;
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
+.abog-patient-form-header p {
+  color: #718096;
+  font-size: 16px;
+}
+
+.abog-patient-form {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 30px;
+}
+
+.abog-patient-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.abog-patient-form-row.full-width {
+  grid-template-columns: 1fr;
+}
+
+.abog-patient-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.abog-patient-form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 6px;
+}
+
+.abog-patient-form-group label .required {
+  color: #e53e3e;
+  margin-left: 2px;
+}
+
+.abog-patient-form-group input,
+.abog-patient-form-group select,
+.abog-patient-form-group textarea {
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #2d3748;
+  transition: all 0.2s ease;
+  background-color: #fff;
+}
+
+.abog-patient-form-group input:focus,
+.abog-patient-form-group select:focus,
+.abog-patient-form-group textarea:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
+}
+
+.abog-patient-form-group input::placeholder,
+.abog-patient-form-group textarea::placeholder {
+  color: #a0aec0;
+}
+
+.abog-patient-form-group textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.abog-patient-form-group select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 40px;
+}
+
+.abog-patient-form-submit {
+  width: 100%;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #3182ce 0%, #2b6cb0 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+}
+
+.abog-patient-form-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2b6cb0 0%, #2c5282 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3);
+}
+
+.abog-patient-form-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.abog-patient-form-submit.loading {
+  position: relative;
+  color: transparent;
+}
+
+.abog-patient-form-submit.loading::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  top: 50%;
+  left: 50%;
+  margin-left: -10px;
+  margin-top: -10px;
+  border: 2px solid #ffffff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Success Message */
+.abog-patient-form-success {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.abog-patient-form-success-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.abog-patient-form-success-icon svg {
+  width: 40px;
+  height: 40px;
+  color: white;
+}
+
+.abog-patient-form-success h3 {
+  color: #2d3748;
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.abog-patient-form-success p {
+  color: #718096;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Error Message */
+.abog-patient-form-error {
+  background-color: #fff5f5;
+  border: 1px solid #feb2b2;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  color: #c53030;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.abog-patient-form-error svg {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .abog-patient-form-container {
+    padding: 15px;
+  }
+
+  .abog-patient-form {
+    padding: 20px;
+  }
+
+  .abog-patient-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .abog-patient-form-header h2 {
+    font-size: 24px;
+  }
+}
+
+/* States list */
+.abog-patient-states-list {
+  max-height: 200px;
+  overflow-y: auto;
+}

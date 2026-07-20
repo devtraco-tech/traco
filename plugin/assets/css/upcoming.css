@@ -1,0 +1,137 @@
+/* ==========================================
+   ABOG Integration - Upcoming Courses
+   Compact & Professional List Design
+   ========================================== */
+
+.abog-upcoming-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: var(--abog-bg);
+  border-radius: 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid var(--abog-border);
+  max-height: 480px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--abog-primary) transparent;
+}
+
+.abog-upcoming-list::-webkit-scrollbar {
+  width: 8px;
+}
+.abog-upcoming-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.abog-upcoming-list::-webkit-scrollbar-thumb {
+  background: var(--abog-primary);
+  border-radius: 4px;
+  opacity: 0.6;
+}
+
+.abog-upcoming-hidden {
+  display: contents;
+}
+
+.abog-upcoming-see-more {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid var(--abog-border);
+  border-radius: 8px;
+  color: var(--abog-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.abog-upcoming-see-more:hover {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: var(--abog-primary);
+}
+
+.abog-upcoming-item-date.abog-waiting-list {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.abog-upcoming-item-date.abog-course-full {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.abog-upcoming-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--abog-border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.abog-upcoming-item:last-child {
+  border-bottom: none;
+}
+
+.abog-upcoming-item:hover {
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.05) 0%, transparent 100%);
+  border-left-color: var(--abog-primary);
+}
+
+.abog-upcoming-item-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--abog-text);
+  flex: 1;
+  line-height: 1.4;
+}
+
+.abog-upcoming-item-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--abog-primary);
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 4px 10px;
+  background: rgba(37, 99, 235, 0.1);
+  border-radius: 16px;
+}
+
+/* Immediate Start Override for upcoming list */
+.abog-upcoming-item-date.abog-immediate-start {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  animation: pulse-immediate 2s ease-in-out infinite;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .abog-upcoming-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .abog-upcoming-item-date {
+    margin-left: 0;
+  }
+}
