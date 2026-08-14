@@ -24,6 +24,7 @@
     "kommo:seed-config:dev": "tsx scripts/seed-kommo-development-config.ts --confirm-development-kommo-config",
     "alerts:test-email": "tsx scripts/test-critical-email.ts",
     "build": "tsc -p tsconfig.json",
+    "start": "npm run start:api",
     "start:api": "node dist/api.js",
     "start:worker": "node dist/worker.js",
     "start:retention": "node dist/retention.js",
