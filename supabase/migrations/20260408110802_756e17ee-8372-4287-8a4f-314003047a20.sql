@@ -1,4 +1,55 @@
 
+-- The original production table was created outside the migration history.
+-- Recreate its contract here so a fresh development database is reproducible.
+CREATE TABLE IF NOT EXISTS public.appointments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id UUID NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+  clinic_id UUID NOT NULL REFERENCES public.clinics(id) ON DELETE CASCADE,
+  specialty_id UUID REFERENCES public.patient_specialties(id) ON DELETE SET NULL,
+  date TEXT NOT NULL,
+  start_time TEXT,
+  end_time TEXT,
+  status TEXT DEFAULT 'scheduled',
+  notes TEXT,
+  patient_name TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_appointments_patient_id
+  ON public.appointments(patient_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_clinic_id
+  ON public.appointments(clinic_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_date
+  ON public.appointments(date);
+
+-- Policies below depend on these helpers. They must exist before CREATE POLICY.
+CREATE OR REPLACE FUNCTION public.is_triage_manager(_user_id uuid)
+  RETURNS boolean
+  LANGUAGE sql
+  STABLE
+  SECURITY DEFINER
+  SET search_path TO 'public'
+AS $function$
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = _user_id AND role::text IN ('admin', 'triage_coordenador', 'triage_atendente')
+  )
+$function$;
+
+CREATE OR REPLACE FUNCTION public.is_triage_dentist(_user_id uuid)
+  RETURNS boolean
+  LANGUAGE sql
+  STABLE
+  SECURITY DEFINER
+  SET search_path TO 'public'
+AS $function$
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = _user_id AND role::text = 'triage_dentista'
+  )
+$function$;
+
 -- 1. Enable RLS on unprotected tables
 ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.clinic_classes ENABLE ROW LEVEL SECURITY;

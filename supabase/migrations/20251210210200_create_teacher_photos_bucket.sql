@@ -6,8 +6,8 @@ insert into storage.buckets (id, name, public)
 values ('teacher-photos', 'teacher-photos', true)
 on conflict (id) do nothing;
 
--- Enable RLS on bucket
-alter table storage.objects enable row level security;
+-- storage.objects already has RLS enabled and is owned by the managed
+-- Supabase Storage service. Project migrations must not ALTER this table.
 
 -- Allow authenticated users to upload their own photos
 create policy "Allow authenticated to upload teacher photos"

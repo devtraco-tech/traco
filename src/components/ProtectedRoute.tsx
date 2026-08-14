@@ -1,7 +1,12 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
-export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  loginPath?: string;
+}
+
+export const ProtectedRoute = ({ children, loginPath = "/auth" }: ProtectedRouteProps) => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
 
@@ -16,7 +21,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (!user) {
     // Persist the intended destination so Auth.tsx can redirect after login
     sessionStorage.setItem("redirectAfterLogin", location.pathname);
-    return <Navigate to="/auth" replace />;
+    return <Navigate to={loginPath} replace state={{ from: location }} />;
   }
 
   return <>{children}</>;

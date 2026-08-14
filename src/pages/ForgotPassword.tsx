@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GraduationCap, ArrowLeft, Mail } from "lucide-react";
+import { Bot, ArrowLeft, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -40,14 +40,14 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4">
-            <GraduationCap className="h-8 w-8 text-primary-foreground" />
+            <Bot className="h-8 w-8 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">ABO Goiás</h1>
-          <p className="text-muted-foreground">Recuperação de Senha</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Central SDR</h1>
+          <p className="text-slate-400">Recuperação de senha</p>
         </div>
 
         <Card className="shadow-lg">
@@ -100,7 +100,7 @@ const ForgotPassword = () => {
             )}
 
             <div className="mt-4 pt-4 border-t">
-              <Link to="/auth">
+              <Link to="/sdr/login">
                 <Button variant="ghost" className="w-full gap-2">
                   <ArrowLeft className="h-4 w-4" />
                   Voltar para login
@@ -110,9 +110,7 @@ const ForgotPassword = () => {
           </CardContent>
         </Card>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          Associação Brasileira de Odontologia de Goiás
-        </p>
+        <p className="text-center text-sm text-slate-500 mt-6">Acesso seguro à configuração do SDR</p>
       </div>
     </div>
   );

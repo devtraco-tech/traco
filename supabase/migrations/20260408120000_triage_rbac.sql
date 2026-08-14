@@ -22,7 +22,7 @@ AS $$
     SELECT 1
     FROM public.user_roles
     WHERE user_id = _user_id
-      AND role IN ('admin', 'triage_coordenador', 'triage_atendente')
+      AND role::text IN ('admin', 'triage_coordenador', 'triage_atendente')
   )
 $$;
 
@@ -37,7 +37,7 @@ AS $$
     SELECT 1
     FROM public.user_roles
     WHERE user_id = _user_id
-      AND role = 'triage_dentista'
+      AND role::text = 'triage_dentista'
   )
 $$;
 
@@ -88,9 +88,25 @@ CREATE POLICY "Triage Managers modify procedures"
 ON public.patient_procedures FOR ALL TO authenticated
 USING (
     public.has_role(auth.uid(), 'admin') OR 
-    (public.has_role(auth.uid(), 'triage_coordenador') AND specialty_id = (SELECT triage_specialty_id FROM public.profiles WHERE id = auth.uid()))
+    (
+      EXISTS (
+        SELECT 1 FROM public.user_roles
+        WHERE user_id = auth.uid() AND role::text = 'triage_coordenador'
+      )
+      AND specialty_id = (
+        SELECT triage_specialty_id FROM public.profiles WHERE id = auth.uid()
+      )
+    )
 )
 WITH CHECK (
     public.has_role(auth.uid(), 'admin') OR 
-    (public.has_role(auth.uid(), 'triage_coordenador') AND specialty_id = (SELECT triage_specialty_id FROM public.profiles WHERE id = auth.uid()))
+    (
+      EXISTS (
+        SELECT 1 FROM public.user_roles
+        WHERE user_id = auth.uid() AND role::text = 'triage_coordenador'
+      )
+      AND specialty_id = (
+        SELECT triage_specialty_id FROM public.profiles WHERE id = auth.uid()
+      )
+    )
 );

@@ -1,5 +1,5 @@
 -- Create classified approval logs table
-CREATE TABLE public.classified_logs (
+CREATE TABLE IF NOT EXISTS public.classified_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   classified_id UUID NOT NULL REFERENCES public.classifieds(id) ON DELETE CASCADE,
   action TEXT NOT NULL CHECK (action IN ('created', 'approved', 'rejected', 'updated')),
@@ -8,6 +8,23 @@ CREATE TABLE public.classified_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   timezone TEXT DEFAULT 'America/Sao_Paulo'
 );
+
+-- The table may already exist from the immediately preceding generated
+-- migration. Add the stricter action validation without recreating data.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conrelid = 'public.classified_logs'::regclass
+      AND conname = 'classified_logs_action_check'
+  ) THEN
+    ALTER TABLE public.classified_logs
+      ADD CONSTRAINT classified_logs_action_check
+      CHECK (action IN ('created', 'approved', 'rejected', 'updated'));
+  END IF;
+END
+$$;
 
 -- Enable RLS
 ALTER TABLE public.classified_logs ENABLE ROW LEVEL SECURITY;
@@ -38,8 +55,10 @@ TO authenticated
 WITH CHECK (true);
 
 -- Create index for better query performance
-CREATE INDEX idx_classified_logs_classified_id ON public.classified_logs(classified_id);
-CREATE INDEX idx_classified_logs_created_at ON public.classified_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_classified_logs_classified_id
+  ON public.classified_logs(classified_id);
+CREATE INDEX IF NOT EXISTS idx_classified_logs_created_at
+  ON public.classified_logs(created_at DESC);
 
 -- Function to automatically log classified creation
 CREATE OR REPLACE FUNCTION log_classified_creation()
@@ -52,6 +71,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger for classified creation
+DROP TRIGGER IF EXISTS trigger_log_classified_creation ON public.classifieds;
 CREATE TRIGGER trigger_log_classified_creation
 AFTER INSERT ON public.classifieds
 FOR EACH ROW

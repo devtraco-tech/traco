@@ -176,12 +176,14 @@ Deno.serve(async (req) => {
           program,
           workload,
           investment,
+          investment_details,
           vacancies,
           language,
           modality,
           target_audience,
           suggested_start_date,
           effective_start_date,
+          registration_deadline,
           end_date,
           duration,
           periodicity,
@@ -190,6 +192,7 @@ Deno.serve(async (req) => {
           photo_3_url,
           photo_4_url,
           teacher_id,
+          other_professors,
           status,
           installment_suggestion,
           effective_installment,
@@ -275,16 +278,18 @@ Deno.serve(async (req) => {
 
         if (allCourses) {
           const areas = [...new Set(allCourses.map(c => c.area).filter(Boolean))].sort();
+          const modalities = [...new Set(allCourses.map(c => c.modality).filter(Boolean))].sort();
           const targetAudiences = [...new Set(allCourses.map(c => c.target_audience).filter(Boolean))];
 
           // Fixed modalities - always return these 3 options
           filterOptions = {
             areas,
-            modalities: [
-              { value: 'Especialização', label: 'Especialização' },
-              { value: 'Imersão', label: 'Imersão' },
-              { value: 'Aperfeiçoamento', label: 'Aperfeiçoamento' }
-            ],
+            modalities: modalities.map(value => ({
+              value,
+              label: value === 'presencial' ? 'Presencial' :
+                     value === 'online' ? 'Online' :
+                     value === 'hibrido' ? 'Híbrido' : value
+            })),
             targetAudiences: targetAudiences.map(t => ({
               value: t,
               label: t === 'cirurgioes_dentistas' ? 'Cirurgiões-Dentistas' :

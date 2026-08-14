@@ -1,5 +1,9 @@
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS restrict_to_own_area boolean NOT NULL DEFAULT false;
 
+ALTER TABLE public.patients
+  ADD COLUMN IF NOT EXISTS assigned_specialty_id uuid
+  REFERENCES public.patient_specialties(id) ON DELETE SET NULL;
+
 CREATE OR REPLACE FUNCTION public.user_is_area_restricted(_user_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -18,6 +22,7 @@ AS $$
   SELECT triage_specialty_id FROM public.profiles WHERE id = _user_id;
 $$;
 
+DROP POLICY IF EXISTS patients_area_scope ON public.patients;
 CREATE POLICY patients_area_scope
 ON public.patients
 AS RESTRICTIVE

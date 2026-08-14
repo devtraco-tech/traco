@@ -19,7 +19,7 @@ SELECT
     pl.mobile_phone,
     UPPER(TRIM(pl.state)),
     UPPER(TRIM(pl.city)),
-    UPPER(TRIM(pl.treatment_needed)),
+    UPPER(TRIM(pl.message)),
     'step1_atendimento',
     'entrada',
     0,

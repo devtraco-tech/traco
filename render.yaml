@@ -1,0 +1,302 @@
+services:
+  - type: keyvalue
+    name: traco-sdr-queue
+    plan: starter
+    region: ohio
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+    persistenceMode: journal-snapshot
+
+  # O WAHA fica acessível somente pela rede privada do Render. O disco mantém
+  # a autenticação do WhatsApp após reinícios e novos deploys.
+  - type: pserv
+    name: traco-sdr-waha
+    runtime: image
+    plan: standard
+    region: ohio
+    image:
+      url: docker.io/devlikeapro/waha:latest
+    disk:
+      name: waha-sessions
+      mountPath: /app/.sessions
+      sizeGB: 1
+    envVars:
+      - key: WAHA_API_KEY
+        sync: false
+      - key: WAHA_WEBHOOK_HMAC_KEY
+        generateValue: true
+      - key: WHATSAPP_HOOK_URL
+        sync: false
+      - key: WHATSAPP_HOOK_EVENTS
+        value: message
+      - key: WHATSAPP_HOOK_HMAC_KEY
+        fromService:
+          type: pserv
+          name: traco-sdr-waha
+          envVarKey: WAHA_WEBHOOK_HMAC_KEY
+      - key: WHATSAPP_HOOK_RETRIES_POLICY
+        value: exponential
+      - key: WHATSAPP_HOOK_RETRIES_DELAY_SECONDS
+        value: "2"
+      - key: WHATSAPP_HOOK_RETRIES_ATTEMPTS
+        value: "5"
+
+  - type: web
+    name: traco-sdr-api
+    runtime: node
+    plan: starter
+    region: ohio
+    rootDir: sdr
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:api
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: FRONTEND_ORIGIN
+        sync: false
+      # Homologação pública: informe explicitamente a URL do Supabase de
+      # desenvolvimento. Não há conexão automática com o banco da ABO.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CATALOG_PROVIDER
+        value: http-course-catalog
+      - key: CATALOG_PROVIDER_NAME
+        sync: false
+      - key: CATALOG_BASE_URL
+        sync: false
+      - key: CATALOG_API_KEY
+        sync: false
+      - key: CATALOG_COURSES_PATH
+        value: /functions/v1/wordpress-courses
+      - key: CATALOG_CACHE_TTL_SECONDS
+        value: "60"
+      - key: CATALOG_TIMEOUT_MS
+        value: "10000"
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: traco-sdr-queue
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-5.6-terra
+      - key: WAHA_BASE_URL
+        fromService:
+          type: pserv
+          name: traco-sdr-waha
+          property: hostport
+      - key: WAHA_API_KEY
+        fromService:
+          type: pserv
+          name: traco-sdr-waha
+          envVarKey: WAHA_API_KEY
+      - key: WAHA_SESSION
+        value: default
+      - key: WAHA_WEBHOOK_HMAC_KEY
+        fromService:
+          type: pserv
+          name: traco-sdr-waha
+          envVarKey: WAHA_WEBHOOK_HMAC_KEY
+      - key: RESEND_API_KEY
+        sync: false
+      - key: ALERT_EMAIL_FROM
+        sync: false
+      - key: ALERT_EMAIL_TO
+        sync: false
+      - key: SDR_RESPONSE_DELAY_MS
+        value: "8000"
+      - key: SDR_CONTEXT_MESSAGE_LIMIT
+        value: "20"
+      - key: SDR_MAX_RETRIES
+        value: "3"
+      - key: KOMMO_ENABLED
+        value: "true"
+      - key: KOMMO_SUBDOMAIN
+        sync: false
+      - key: KOMMO_ACCESS_TOKEN
+        sync: false
+      - key: KOMMO_PIPELINE_ID
+        sync: false
+      - key: KOMMO_NEW_LEAD_STATUS_ID
+        sync: false
+      - key: KOMMO_QUALIFIED_STATUS_ID
+        sync: false
+      - key: KOMMO_INTERESTED_STATUS_ID
+        sync: false
+      - key: KOMMO_NEGOTIATION_STATUS_ID
+        sync: false
+      - key: KOMMO_DATA_COLLECTED_STATUS_ID
+        sync: false
+      - key: KOMMO_AWAITING_HUMAN_STATUS_ID
+        sync: false
+      - key: KOMMO_RESPONSIBLE_USER_ID
+        sync: false
+      - key: KOMMO_HANDOFF_TASK_TYPE_ID
+        sync: false
+      - key: KOMMO_HANDOFF_DEADLINE_MINUTES
+        value: "5"
+      - key: KOMMO_FIELD_FULL_NAME_ID
+        sync: false
+      - key: KOMMO_FIELD_WHATSAPP_PHONE_ID
+        sync: false
+      - key: KOMMO_FIELD_CPF_ID
+        sync: false
+      - key: KOMMO_FIELD_BIRTH_DATE_ID
+        sync: false
+      - key: KOMMO_FIELD_MARITAL_STATUS_ID
+        sync: false
+      - key: KOMMO_FIELD_NATIONALITY_ID
+        sync: false
+      - key: KOMMO_FIELD_BIRTHPLACE_ID
+        sync: false
+      - key: KOMMO_FIELD_CRO_ID
+        sync: false
+      - key: KOMMO_FIELD_EMAIL_ID
+        sync: false
+      - key: KOMMO_FIELD_ADDRESS_ID
+        sync: false
+      - key: KOMMO_FIELD_DISTRICT_ID
+        sync: false
+      - key: KOMMO_FIELD_POSTAL_CODE_ID
+        sync: false
+
+  - type: worker
+    name: traco-sdr-worker
+    runtime: node
+    plan: starter
+    region: ohio
+    rootDir: sdr
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:worker
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CATALOG_PROVIDER
+        value: http-course-catalog
+      - key: CATALOG_PROVIDER_NAME
+        sync: false
+      - key: CATALOG_BASE_URL
+        sync: false
+      - key: CATALOG_API_KEY
+        sync: false
+      - key: CATALOG_COURSES_PATH
+        value: /functions/v1/wordpress-courses
+      - key: CATALOG_CACHE_TTL_SECONDS
+        value: "60"
+      - key: CATALOG_TIMEOUT_MS
+        value: "10000"
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: traco-sdr-queue
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-5.6-terra
+      - key: WAHA_BASE_URL
+        fromService:
+          type: pserv
+          name: traco-sdr-waha
+          property: hostport
+      - key: WAHA_API_KEY
+        fromService:
+          type: pserv
+          name: traco-sdr-waha
+          envVarKey: WAHA_API_KEY
+      - key: WAHA_SESSION
+        value: default
+      - key: WAHA_WEBHOOK_HMAC_KEY
+        fromService:
+          type: pserv
+          name: traco-sdr-waha
+          envVarKey: WAHA_WEBHOOK_HMAC_KEY
+      - key: RESEND_API_KEY
+        sync: false
+      - key: ALERT_EMAIL_FROM
+        sync: false
+      - key: ALERT_EMAIL_TO
+        sync: false
+      - key: SDR_RESPONSE_DELAY_MS
+        value: "8000"
+      - key: SDR_CONTEXT_MESSAGE_LIMIT
+        value: "20"
+      - key: SDR_MAX_RETRIES
+        value: "3"
+      - key: KOMMO_ENABLED
+        value: "true"
+      - key: KOMMO_SUBDOMAIN
+        sync: false
+      - key: KOMMO_ACCESS_TOKEN
+        sync: false
+      - key: KOMMO_PIPELINE_ID
+        sync: false
+      - key: KOMMO_NEW_LEAD_STATUS_ID
+        sync: false
+      - key: KOMMO_QUALIFIED_STATUS_ID
+        sync: false
+      - key: KOMMO_INTERESTED_STATUS_ID
+        sync: false
+      - key: KOMMO_NEGOTIATION_STATUS_ID
+        sync: false
+      - key: KOMMO_DATA_COLLECTED_STATUS_ID
+        sync: false
+      - key: KOMMO_AWAITING_HUMAN_STATUS_ID
+        sync: false
+      - key: KOMMO_RESPONSIBLE_USER_ID
+        sync: false
+      - key: KOMMO_HANDOFF_TASK_TYPE_ID
+        sync: false
+      - key: KOMMO_HANDOFF_DEADLINE_MINUTES
+        value: "5"
+      - key: KOMMO_FIELD_FULL_NAME_ID
+        sync: false
+      - key: KOMMO_FIELD_WHATSAPP_PHONE_ID
+        sync: false
+      - key: KOMMO_FIELD_CPF_ID
+        sync: false
+      - key: KOMMO_FIELD_BIRTH_DATE_ID
+        sync: false
+      - key: KOMMO_FIELD_MARITAL_STATUS_ID
+        sync: false
+      - key: KOMMO_FIELD_NATIONALITY_ID
+        sync: false
+      - key: KOMMO_FIELD_BIRTHPLACE_ID
+        sync: false
+      - key: KOMMO_FIELD_CRO_ID
+        sync: false
+      - key: KOMMO_FIELD_EMAIL_ID
+        sync: false
+      - key: KOMMO_FIELD_ADDRESS_ID
+        sync: false
+      - key: KOMMO_FIELD_DISTRICT_ID
+        sync: false
+      - key: KOMMO_FIELD_POSTAL_CODE_ID
+        sync: false
+
+  # Executa diariamente à meia-noite de Brasília (03:00 UTC).
+  - type: cron
+    name: traco-sdr-retention
+    runtime: node
+    region: ohio
+    rootDir: sdr
+    schedule: "0 3 * * *"
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:retention
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false

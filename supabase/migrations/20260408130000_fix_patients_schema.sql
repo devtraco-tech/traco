@@ -1,45 +1,18 @@
 -- Robust migration to fix patient schema and enums
 -- This handles cases where enums might be in a partial or inconsistent state
 
-DO $$ 
+-- Extend existing enums without replacing their OIDs. Recreating them would
+-- break dependent RLS policies and could rewrite valid patient states.
+ALTER TYPE workflow_stage ADD VALUE IF NOT EXISTS 'em_negociacao';
+ALTER TYPE reception_status ADD VALUE IF NOT EXISTS 'nao_selecionado';
+
+DO $$
 BEGIN
-    -- 1. Fix workflow_stage enum
-    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'workflow_stage') THEN
-        ALTER TYPE workflow_stage RENAME TO workflow_stage_bkp;
-        CREATE TYPE workflow_stage AS ENUM ('step1_atendimento', 'step2_triagem_clinica', 'step3_selecao_cap', 'em_atendimento', 'arquivado', 'em_negociacao');
-        
-        ALTER TABLE public.patients ALTER COLUMN current_stage DROP DEFAULT;
-        ALTER TABLE public.patients ALTER COLUMN current_stage TYPE workflow_stage 
-            USING (CASE WHEN current_stage::text IN ('step1_atendimento', 'step2_triagem_clinica', 'step3_selecao_cap', 'em_negociacao') 
-                   THEN current_stage::text::workflow_stage ELSE 'step1_atendimento'::workflow_stage END);
-        ALTER TABLE public.patients ALTER COLUMN current_stage SET DEFAULT 'step1_atendimento';
-        
-        DROP TYPE workflow_stage_bkp;
-    ELSE
-        CREATE TYPE workflow_stage AS ENUM ('step1_atendimento', 'step2_triagem_clinica', 'step3_selecao_cap', 'em_atendimento', 'arquivado', 'em_negociacao');
-    END IF;
-
-    -- 2. Fix reception_status enum
-    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'reception_status') THEN
-        ALTER TYPE reception_status RENAME TO reception_status_bkp;
-        CREATE TYPE reception_status AS ENUM ('entrada', 'contato_realizado', 'faltou', 'nao_selecionado');
-        
-        ALTER TABLE public.patients ALTER COLUMN reception_status DROP DEFAULT;
-        ALTER TABLE public.patients ALTER COLUMN reception_status TYPE reception_status 
-            USING (CASE WHEN reception_status::text IN ('entrada', 'contato_realizado', 'faltou', 'nao_selecionado') 
-                   THEN reception_status::text::reception_status ELSE 'entrada'::reception_status END);
-        ALTER TABLE public.patients ALTER COLUMN reception_status SET DEFAULT 'entrada';
-        
-        DROP TYPE reception_status_bkp;
-    ELSE
-        CREATE TYPE reception_status AS ENUM ('entrada', 'contato_realizado', 'faltou', 'nao_selecionado');
-    END IF;
-
-    -- 3. Ensure dentist_status exists
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'dentist_status') THEN
         CREATE TYPE dentist_status AS ENUM ('agendado', 'consultou', 'faltou');
     END IF;
-END $$;
+END
+$$;
 
 -- 4. Add/Ensure all columns
 ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS full_name TEXT;

@@ -708,6 +708,7 @@ export type Database = {
           id: string
           installment_suggestion: string | null
           investment: number
+          investment_details: string | null
           is_archived: boolean | null
           language: Database["public"]["Enums"]["language"] | null
           materials_file_url: string | null
@@ -725,6 +726,7 @@ export type Database = {
           prerequisites: string | null
           program: string | null
           project_file_url: string | null
+          registration_deadline: string | null
           promotional_team_id: string | null
           required_equipment: string | null
           schedule_file_url: string | null
@@ -766,6 +768,7 @@ export type Database = {
           id?: string
           installment_suggestion?: string | null
           investment: number
+          investment_details?: string | null
           is_archived?: boolean | null
           language?: Database["public"]["Enums"]["language"] | null
           materials_file_url?: string | null
@@ -783,6 +786,7 @@ export type Database = {
           prerequisites?: string | null
           program?: string | null
           project_file_url?: string | null
+          registration_deadline?: string | null
           promotional_team_id?: string | null
           required_equipment?: string | null
           schedule_file_url?: string | null
@@ -824,6 +828,7 @@ export type Database = {
           id?: string
           installment_suggestion?: string | null
           investment?: number
+          investment_details?: string | null
           is_archived?: boolean | null
           language?: Database["public"]["Enums"]["language"] | null
           materials_file_url?: string | null
@@ -841,6 +846,7 @@ export type Database = {
           prerequisites?: string | null
           program?: string | null
           project_file_url?: string | null
+          registration_deadline?: string | null
           promotional_team_id?: string | null
           required_equipment?: string | null
           schedule_file_url?: string | null

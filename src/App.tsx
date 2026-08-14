@@ -2,18 +2,18 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AppLayout } from "./components/AppLayout";
+import { SdrLayout } from "./components/sdr/SdrLayout";
 import { PatientLayout } from "./components/PatientLayout";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import { useInitFontSize } from "./components/FontSizeControl";
 
-const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -51,6 +51,9 @@ const PublicCourseDetails = lazy(() => import("./pages/PublicCourseDetails"));
 const ThankYou = lazy(() => import("./pages/ThankYou"));
 const Logs = lazy(() => import("./pages/Logs"));
 const ReceptionSchedule = lazy(() => import("./pages/ReceptionSchedule"));
+const SdrConfiguration = lazy(() => import("./pages/ai/SdrConfiguration"));
+const SdrLogin = lazy(() => import("./pages/sdr/SdrLogin"));
+const SdrHome = lazy(() => import("./pages/sdr/SdrHome"));
 
 const PageFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -82,9 +85,31 @@ const App = () => {
           <AuthProvider>
           <Suspense fallback={<PageFallback />}>
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<SdrLogin />} />
+            <Route path="/sdr/login" element={<SdrLogin />} />
+            <Route
+              path="/sdr"
+              element={
+                <ProtectedRoute loginPath="/sdr/login">
+                  <SdrLayout>
+                    <SdrHome />
+                  </SdrLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/sdr/configuracao"
+              element={
+                <ProtectedRoute loginPath="/sdr/login">
+                  <SdrLayout>
+                    <SdrConfiguration />
+                  </SdrLayout>
+                </ProtectedRoute>
+              }
+            />
             <Route path="/auth" element={<Auth />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/sdr/esqueci-senha" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route
               path="/dashboard"
@@ -376,6 +401,10 @@ const App = () => {
                   </AppLayout>
                 </ProtectedRoute>
               }
+            />
+            <Route
+              path="/inteligencia-artificial/sdr"
+              element={<Navigate to="/sdr/configuracao" replace />}
             />
             <Route
               path="/debug/user-role"

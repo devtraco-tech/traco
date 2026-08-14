@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GraduationCap, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { Bot, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -95,7 +95,7 @@ const ResetPassword = () => {
             <CardContent>
               <Button 
                 className="w-full" 
-                onClick={() => navigate("/forgot-password")}
+                onClick={() => navigate("/sdr/esqueci-senha")}
               >
                 Solicitar novo link
               </Button>
@@ -107,14 +107,14 @@ const ResetPassword = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4">
-            <GraduationCap className="h-8 w-8 text-primary-foreground" />
+            <Bot className="h-8 w-8 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">ABO Goiás</h1>
-          <p className="text-muted-foreground">Redefinir Senha</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Central SDR</h1>
+          <p className="text-slate-400">Redefinir senha</p>
         </div>
 
         <Card className="shadow-lg">
@@ -140,7 +140,7 @@ const ResetPassword = () => {
                 </p>
                 <Button 
                   className="w-full"
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/sdr/login")}
                 >
                   Ir para login
                 </Button>
@@ -219,9 +219,7 @@ const ResetPassword = () => {
           </CardContent>
         </Card>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          Associação Brasileira de Odontologia de Goiás
-        </p>
+        <p className="text-center text-sm text-slate-500 mt-6">Acesso seguro à configuração do SDR</p>
       </div>
     </div>
   );

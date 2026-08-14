@@ -81,7 +81,7 @@ export const SEOHead = ({
 
     // Cleanup function to reset title on unmount
     return () => {
-      document.title = "ABO Goiás";
+      document.title = "Central SDR | Atendimento Inteligente";
     };
   }, [title, description, image, url, type, siteName, locale, noIndex]);
 

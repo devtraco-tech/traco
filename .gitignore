@@ -28,6 +28,9 @@ dist-ssr
 .env.*
 !.env.example
 
+# Supabase CLI local state
+supabase/.temp/
+
 # AI/IDE tool folders
 .mimocode/
 .lovable/
