@@ -61,6 +61,24 @@ executar alterações antigas junto com o SDR.
 A migration criada é
 `supabase/migrations/20260730010000_create_sdr_infrastructure.sql`.
 
+### Aplicação automática pelo GitHub
+
+O workflow `.github/workflows/supabase-migrations.yml` executa, em cada push na
+branch `main`, um `dry-run` e depois aplica somente as migrations pendentes no
+Supabase de desenvolvimento. Ele recusa qualquer project ref diferente de
+`yoqocelwzhhpzvlsbncq`.
+
+Cadastre estes secrets em **GitHub > Settings > Secrets and variables > Actions**:
+
+- `SUPABASE_ACCESS_TOKEN`: token pessoal criado em Supabase > Account > Access Tokens;
+- `SUPABASE_DB_PASSWORD`: senha do banco do projeto de desenvolvimento;
+- `SUPABASE_PROJECT_ID`: `yoqocelwzhhpzvlsbncq`.
+
+No Railway, habilite **Wait for CI** em `api`, `worker` e `retention`. Assim, um
+erro de migration impede o deploy desse commit. Nunca use `--include-seed` nesse
+workflow e não faça alterações de schema diretamente pelo SQL Editor depois de
+adotar esse fluxo, pois isso pode desalinhar o histórico de migrations.
+
 ## 2. Configuração local
 
 Dentro de `sdr/`:
