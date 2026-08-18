@@ -2,13 +2,20 @@ import { Queue, Worker, type JobsOptions, type Processor } from "bullmq";
 import { Redis } from "ioredis";
 import type { FlowPatch } from "../domain/commercial-flow.js";
 import type { EnrollmentData, HandoffReason } from "../domain/types.js";
+import type { SupportedLanguage } from "../domain/language.js";
 
 export const SDR_QUEUE_NAME = "sdr-conversations";
 export const KOMMO_RETRY_QUEUE_NAME = "sdr-kommo-retry";
 
-export type ConversationJob = {
-  conversationId: string;
-};
+export type ConversationJob =
+  | { kind?: "process"; conversationId: string }
+  | {
+      kind: "enrollment_follow_up";
+      conversationId: string;
+      attempt: number;
+      language: SupportedLanguage;
+      baselineInboundAt: string;
+    };
 
 export type KommoRetryJob =
   | {
@@ -16,6 +23,7 @@ export type KommoRetryJob =
       conversationId: string;
       patch: FlowPatch;
       enrollmentData?: EnrollmentData;
+      notifyEnrollment: boolean;
       restoreHandoffStage: boolean;
     }
   | {
@@ -73,6 +81,41 @@ export class ConversationQueue {
     };
 
     await this.queue.add("process-conversation", { conversationId }, options);
+  }
+
+  async scheduleEnrollmentFollowUp(
+    conversationId: string,
+    delay: number,
+    attempt: number,
+    language: SupportedLanguage,
+    baselineInboundAt: string,
+  ): Promise<void> {
+    await this.queue.add(
+      "enrollment-follow-up",
+      {
+        kind: "enrollment_follow_up",
+        conversationId,
+        attempt,
+        language,
+        baselineInboundAt,
+      },
+      {
+        jobId: `enrollment-follow-up-${conversationId}-${attempt}-${Date.now()}`,
+        delay,
+        attempts: 3,
+        backoff: { type: "exponential", delay: 2_000 },
+      },
+    );
+  }
+
+  async cancelEnrollmentFollowUps(conversationId: string): Promise<number> {
+    const jobs = await this.queue.getJobs(["delayed", "waiting", "prioritized"]);
+    const matching = jobs.filter(
+      (job) => job.data.kind === "enrollment_follow_up"
+        && job.data.conversationId === conversationId,
+    );
+    await Promise.all(matching.map((job) => job.remove()));
+    return matching.length;
   }
 
   async close(): Promise<void> {

@@ -4,6 +4,7 @@ import { EmailNotifier } from "./infra/notifier.js";
 import {
   createConversationWorker,
   createKommoRetryWorker,
+  ConversationQueue,
   KommoRetryQueue,
 } from "./infra/queue.js";
 import { SdrRepository } from "./infra/supabase-repository.js";
@@ -79,6 +80,7 @@ const kommo = kommoStages
     )
   : null;
 const kommoRetryQueue = kommo ? new KommoRetryQueue(config.REDIS_URL) : null;
+const conversationQueue = new ConversationQueue(config.REDIS_URL);
 const processor = new ConversationProcessor({
   repository,
   agent: new OpenAiAgent(config.OPENAI_API_KEY, config.OPENAI_MODEL),
@@ -96,9 +98,23 @@ const processor = new ConversationProcessor({
       : null,
   kommo,
   kommoRetryQueue,
+  conversationQueue,
+  enrollmentFollowUpIntervalMs:
+    config.SDR_ENROLLMENT_FOLLOW_UP_INTERVAL_HOURS * 3_600_000,
+  enrollmentFollowUpMaxAttempts: config.SDR_ENROLLMENT_FOLLOW_UP_MAX_ATTEMPTS,
+  timeZone: config.SDR_TIME_ZONE,
 });
 
 const runner = createConversationWorker(config.REDIS_URL, async (job) => {
+  if (job.data.kind === "enrollment_follow_up") {
+    await processor.sendEnrollmentFollowUp(
+      job.data.conversationId,
+      job.data.attempt,
+      job.data.language,
+      job.data.baselineInboundAt,
+    );
+    return;
+  }
   await processor.process(job.data.conversationId);
 });
 
@@ -117,6 +133,7 @@ const kommoRetryRunner = kommo
             job.data.patch,
             binding.snapshot,
             job.data.enrollmentData,
+            job.data.notifyEnrollment,
           );
           if (job.data.restoreHandoffStage) {
             const refreshed = await repository.loadConversation(
@@ -233,6 +250,7 @@ async function shutdown(signal: string): Promise<void> {
     runner.close(),
     kommoRetryRunner?.close(),
     kommoRetryQueue?.close(),
+    conversationQueue.close(),
   ]);
   process.exit(0);
 }

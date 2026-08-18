@@ -375,6 +375,10 @@ export class KommoClient {
   }
 
   async prepareHumanHandoff(leadId: number, input: KommoHandoffInput): Promise<void> {
+    await this.notifyResponsible(leadId, input);
+  }
+
+  async notifyResponsible(leadId: number, input: KommoHandoffInput): Promise<void> {
     if (!Number.isSafeInteger(leadId) || leadId <= 0) {
       throw new Error("ID do lead Kommo inválido.");
     }

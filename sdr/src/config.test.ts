@@ -20,6 +20,9 @@ describe("loadConfig", () => {
 
     expect(config.OPENAI_MODEL).toBe("gpt-5.6-terra");
     expect(config.SDR_RESPONSE_DELAY_MS).toBe(8_000);
+    expect(config.SDR_ENROLLMENT_FOLLOW_UP_INTERVAL_HOURS).toBe(4);
+    expect(config.SDR_ENROLLMENT_FOLLOW_UP_MAX_ATTEMPTS).toBe(3);
+    expect(config.SDR_TIME_ZONE).toBe("America/Sao_Paulo");
     expect(config.PORT).toBe(10_000);
     expect(config.SDR_TEST_ALLOWED_PHONE_NUMBERS).toEqual([]);
   });

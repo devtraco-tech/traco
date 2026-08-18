@@ -91,9 +91,10 @@ describe("POST /webhooks/waha", () => {
     });
     const recordEvent = vi.fn().mockResolvedValue(undefined);
     const enqueue = vi.fn().mockResolvedValue(undefined);
+    const cancelEnrollmentFollowUps = vi.fn().mockResolvedValue(1);
     const app = buildApp(config, {
       repository: { ingestInbound, recordEvent } as unknown as SdrRepository,
-      queue: { enqueue } as unknown as ConversationQueue,
+      queue: { enqueue, cancelEnrollmentFollowUps } as unknown as ConversationQueue,
       notifier: new EmailNotifier(),
       adminAuthorizer: authorizedAdmin,
       waha: wahaStub,
@@ -118,7 +119,80 @@ describe("POST /webhooks/waha", () => {
     expect(response.statusCode).toBe(202);
     expect(ingestInbound).toHaveBeenCalledOnce();
     expect(enqueue).toHaveBeenCalledWith("conversation-1", 5_000, 3);
+    expect(cancelEnrollmentFollowUps).toHaveBeenCalledWith("conversation-1");
     expect(recordEvent).toHaveBeenCalledOnce();
+  });
+
+  it("reinicia uma conversa existente e enfileira a mensagem no contexto novo", async () => {
+    const restartBody = JSON.stringify({
+      event: "message",
+      payload: {
+        id: "wamid-restart-test",
+        from: "5511999990000@c.us",
+        fromMe: false,
+        body: "Olá, estou interessado no curso de Implantodontia",
+      },
+    });
+    const ingestInbound = vi.fn().mockResolvedValue({
+      duplicate: false,
+      isNewLead: false,
+      leadId: "lead-1",
+      conversationId: "conversation-old",
+      messageId: "message-restart",
+    });
+    const restartConversationForMessage = vi.fn().mockResolvedValue({
+      restarted: true,
+      conversationId: "conversation-new",
+      previousConversationId: "conversation-old",
+    });
+    const recordEvent = vi.fn().mockResolvedValue(undefined);
+    const enqueue = vi.fn().mockResolvedValue(undefined);
+    const cancelEnrollmentFollowUps = vi.fn().mockResolvedValue(1);
+    const app = buildApp(config, {
+      repository: {
+        ingestInbound,
+        restartConversationForMessage,
+        recordEvent,
+      } as unknown as SdrRepository,
+      queue: { enqueue, cancelEnrollmentFollowUps } as unknown as ConversationQueue,
+      notifier: new EmailNotifier(),
+      adminAuthorizer: authorizedAdmin,
+      waha: wahaStub,
+      catalog: catalogStub,
+    });
+    apps.push(app);
+    const signature = createHmac("sha512", "hmac-test")
+      .update(restartBody)
+      .digest("hex");
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/webhooks/waha",
+      headers: {
+        "content-type": "application/json",
+        "x-webhook-hmac": signature,
+        "x-webhook-hmac-algorithm": "sha512",
+      },
+      payload: restartBody,
+    });
+
+    expect(response.statusCode).toBe(202);
+    expect(response.json()).toMatchObject({
+      conversationId: "conversation-new",
+      conversationRestarted: true,
+    });
+    expect(restartConversationForMessage).toHaveBeenCalledWith(
+      "conversation-old",
+      "message-restart",
+      "new_greeting_with_course_interest",
+    );
+    expect(enqueue).toHaveBeenCalledWith("conversation-new", 5_000, 3);
+    expect(recordEvent).toHaveBeenCalledWith(
+      "message_queued",
+      "conversation-new",
+      "lead-1",
+      expect.objectContaining({ conversation_restarted: true }),
+    );
   });
 
   it("não persiste nem enfileira remetente fora da lista de desenvolvimento", async () => {

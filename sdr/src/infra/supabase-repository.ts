@@ -92,6 +92,38 @@ export class SdrRepository {
     };
   }
 
+  async restartConversationForMessage(
+    conversationId: string,
+    messageId: string,
+    reason: "explicit_restart_request" | "new_greeting_with_course_interest",
+  ): Promise<{
+    restarted: boolean;
+    conversationId: string;
+    previousConversationId: string | null;
+  }> {
+    const { data, error } = await this.client.rpc(
+      "sdr_restart_conversation_for_message",
+      {
+        p_conversation_id: conversationId,
+        p_message_id: messageId,
+        p_reason: reason,
+      },
+    );
+
+    if (error) {
+      throw new Error(`Falha ao reiniciar conversa: ${error.message}`);
+    }
+
+    const result = data as Record<string, unknown>;
+    return {
+      restarted: Boolean(result.restarted),
+      conversationId: String(result.conversation_id),
+      previousConversationId: result.previous_conversation_id
+        ? String(result.previous_conversation_id)
+        : null,
+    };
+  }
+
   async loadConversation(
     conversationId: string,
     messageLimit: number,
@@ -797,6 +829,8 @@ export class SdrRepository {
       | "processing_started"
       | "response_sent"
       | "notification_sent"
+      | "enrollment_follow_up_scheduled"
+      | "enrollment_follow_up_sent"
       | "error",
     conversationId: string,
     leadId: string,

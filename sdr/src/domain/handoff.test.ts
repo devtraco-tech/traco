@@ -9,6 +9,10 @@ describe("evaluateHandoff", () => {
     ["Quais são as formas de pagamento?", "commercial_high_intent", true],
     ["Posso pagar no PIX?", "commercial_high_intent", true],
     ["Quero solicitar reembolso", "sensitive_topic", true],
+    ["I want to speak to a human agent", "explicit_request", true],
+    ["Quiero hablar con una persona", "explicit_request", true],
+    ["What payment methods do you accept?", "commercial_high_intent", true],
+    ["¿Puedo pagar en cuotas?", "commercial_high_intent", true],
   ])("encaminha %s", (text, reason, interruptFlow) => {
     expect(evaluateHandoff(text)).toMatchObject({
       shouldHandoff: true,

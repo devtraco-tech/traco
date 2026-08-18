@@ -33,6 +33,7 @@ export class KommoSyncService {
     patch: FlowPatch | undefined,
     course: CatalogItemSnapshot,
     enrollmentData?: EnrollmentData,
+    notifyEnrollment = false,
   ): Promise<void> {
     const configuration = await this.getConfiguration();
     const client = this.client.withStages(configuration.stages);
@@ -44,6 +45,23 @@ export class KommoSyncService {
     }
     if (leadId && enrollmentData) {
       await client.updateEnrollmentFields(leadId, enrollmentData, configuration.enrollmentFields);
+    }
+    if (leadId && notifyEnrollment) {
+      await client.notifyResponsible(leadId, {
+        responsibleUserId: configuration.handoff.responsibleUserId,
+        taskTypeId: configuration.handoff.taskTypeId,
+        deadlineMinutes: configuration.handoff.deadlineMinutes,
+        taskText: "Lead interessado em iniciar matrícula",
+        requestId: `enrollment-data-request-${context.conversationId}`,
+        noteText: [
+          "Lead demonstrou interesse em iniciar a matrícula",
+          `Nome: ${context.displayName?.trim() || "Não informado"}`,
+          `Telefone: ${context.phoneE164}`,
+          `Curso: ${course.title}`,
+          "O SDR continuará o atendimento automático e confirmará se deve iniciar a coleta dos dados.",
+          `Conversa: ${context.conversationId}`,
+        ].join("\n"),
+      });
     }
   }
 

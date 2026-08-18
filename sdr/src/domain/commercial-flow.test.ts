@@ -64,10 +64,49 @@ function context(
 }
 
 describe("decideCommercialFlow", () => {
-  it("se identifica sem acoplar a conversa a uma marca", () => {
+  it("conduz a apresentação e a qualificação em inglês", () => {
+    const presentation = decideCommercialFlow(
+      context("presentation"),
+      "Hello, I am interested in the course",
+      course,
+      "en",
+    );
+    expect(presentation.messages[0]).toContain("are you already a graduate in Dentistry");
+
+    const qualification = decideCommercialFlow(
+      context("qualification"),
+      "Yes, I am a graduated dentist",
+      course,
+      "en",
+    );
+    expect(qualification.messages.at(-1)).toContain("do you already work");
+    expect(qualification.messages.join(" ")).not.toContain("Treinamento prático");
+    expect(qualification.patch?.leadQualification).toBe("graduated");
+  });
+
+  it("conduz a apresentação e a matrícula em espanhol", () => {
+    const presentation = decideCommercialFlow(
+      context("presentation"),
+      "Hola, me interesa el curso",
+      course,
+      "es",
+    );
+    expect(presentation.messages[0]).toContain("graduado/a en Odontología");
+
+    const enrollment = decideCommercialFlow(
+      context("profile", { leadQualification: "graduated" }),
+      "Quiero inscribirme",
+      course,
+      "es",
+    );
+    expect(enrollment.messages[0]).toContain("Nombre completo:");
+    expect(enrollment.messages[0]).toContain("Código postal (CEP):");
+  });
+
+  it("apresenta Karol e ABO Goiás conforme o Figma", () => {
     const decision = decideCommercialFlow(context("presentation"), "Olá");
     expect(decision.handled).toBe(true);
-    expect(decision.messages[0]).toContain("assistente virtual da equipe responsável");
+    expect(decision.messages[0]).toContain("Sou a Karol, do time da ABO Goiás");
     expect(decision.patch?.flowStage).toBe("qualification");
   });
 
@@ -90,9 +129,9 @@ describe("decideCommercialFlow", () => {
       course,
     );
     expect(decision.messages).toHaveLength(3);
-    expect(decision.messages[0]).toContain("Treinamento prático intensivo");
-    expect(decision.messages[1]).toContain("24x de R$ 1.850,00");
-    expect(decision.messages[1]).not.toContain("44.400");
+    expect(decision.messages[0]).toContain("referência no mercado há mais de 20 anos");
+    expect(decision.messages[1]).toContain("10x de R$ 1.700");
+    expect(decision.messages[1]).toContain("10 meses | 140h");
     expect(decision.messages[2]).toContain("Implantodontia");
     expect(decision.patch).toMatchObject({
       flowStage: "profile",
@@ -106,8 +145,8 @@ describe("decideCommercialFlow", () => {
       "Nunca fiz implante, será meu primeiro passo",
       course,
     );
-    expect(decision.messages[0]).toContain("começa pelos fundamentos");
-    expect(decision.messages[0]).toContain("equipe pode confirmar");
+    expect(decision.messages[0]).toContain("começar na Implantodontia com segurança");
+    expect(decision.messages[0]).toContain("protocolos simplificados");
     expect(decision.patch).toMatchObject({
       flowStage: "match",
       audienceProfile: "beginner",
@@ -135,8 +174,8 @@ describe("decideCommercialFlow", () => {
     );
     expect(decision.handled).toBe(true);
     expect(decision.messages).toHaveLength(1);
-    expect(decision.messages[0]).toContain("1. Nome completo:");
-    expect(decision.messages[0]).toContain("12. CEP:");
+    expect(decision.messages[0]).toContain("Nome completo:");
+    expect(decision.messages[0]).toContain("CEP:");
     expect(decision.patch).toMatchObject({
       flowStage: "enrollment",
       interestConfirmed: true,
@@ -153,16 +192,17 @@ describe("decideCommercialFlow", () => {
     expect(decision.handled).toBe(false);
   });
 
-  it("só inicia matrícula depois da confirmação de interesse", () => {
+  it("notifica o interesse e segue diretamente para os dados da matrícula", () => {
     const decision = decideCommercialFlow(
       context("match", { audienceProfile: "beginner" }),
       "Sim, faz sentido para mim",
     );
     expect(decision.notifyEnrollment).toBe(true);
-    expect(decision.messages[0]).toContain("responda todos os dados");
+    expect(decision.messages[0]).toContain("Nome completo:");
     expect(decision.patch).toMatchObject({
       flowStage: "enrollment",
       interestConfirmed: true,
+      enrollmentNotificationSent: true,
       enrollmentStep: 0,
     });
   });
@@ -205,7 +245,9 @@ describe("decideCommercialFlow", () => {
       postal_code: "74000000",
     });
     expect(decision.patch).toMatchObject({ flowStage: "completed", enrollmentStep: 12 });
-    expect(decision.messages[0]).toContain("contrato e pagamento");
+    expect(decision.messages[0]).toBe(
+      "Muito obrigada pelos dados, Dr.! Agora vamos gerar o seu contrato e o link de pagamento. Assim que estiverem prontos, encaminharei tudo para você dar continuidade à sua matrícula.",
+    );
     expect(decision.handoffAfterFlow).toEqual({
       reason: "commercial_high_intent",
       details: "Dados de matrícula concluídos; contrato e pagamento exigem atendimento humano.",
@@ -232,6 +274,34 @@ describe("decideCommercialFlow", () => {
     );
     expect(decision.enrollmentData?.full_name).toBe("Maria da Silva");
     expect(decision.enrollmentData?.postal_code).toBe("74000000");
+    expect(decision.patch?.flowStage).toBe("completed");
+  });
+
+  it("aceita os dados identificados em qualquer ordem e sem numeração", () => {
+    const decision = decideCommercialFlow(
+      context("enrollment", { enrollmentStep: 0, interestConfirmed: true }),
+      [
+        "E-mail: maria@example.com",
+        "CEP = 74000-000",
+        "Nome completo - Maria da Silva",
+        "CRO: CRO-GO 12345",
+        "Bairro: Centro",
+        "CPF: 123.456.789-01",
+        "Nacionalidade: Brasileira",
+        "WhatsApp com DDD: (62) 98888-7777",
+        "Estado civil: Solteira",
+        "Endereço completo: Rua 1, número 20, apto 3",
+        "Naturalidade: Goiânia - GO",
+        "Data de nascimento: 01/02/1990",
+      ].join("\n"),
+    );
+
+    expect(decision.enrollmentData).toMatchObject({
+      full_name: "Maria da Silva",
+      email: "maria@example.com",
+      cpf: "12345678901",
+      postal_code: "74000000",
+    });
     expect(decision.patch?.flowStage).toBe("completed");
   });
 });

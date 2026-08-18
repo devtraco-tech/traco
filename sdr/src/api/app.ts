@@ -8,6 +8,7 @@ import {
   getWahaInboundSenderId,
   parseWahaInboundMessage,
 } from "../domain/waha-event.js";
+import { conversationRestartReason } from "../domain/conversation-restart.js";
 import type { AdminAuthorizerLike } from "../infra/admin-authorizer.js";
 import { CatalogApiError } from "../infra/catalog-client.js";
 import { createCatalogItemSnapshot, type CatalogProvider } from "../domain/catalog.js";
@@ -481,21 +482,61 @@ export function buildApp(
       return reply.code(200).send({ accepted: true, duplicate: true });
     }
 
+    // Qualquer nova resposta do lead interrompe a cadência anterior. Se os
+    // dados ainda estiverem incompletos, o worker agenda uma nova cadência a
+    // partir dessa resposta depois de processá-la.
+    try {
+      await dependencies.queue.cancelEnrollmentFollowUps(result.conversationId);
+    } catch (error) {
+      request.log.error(
+        { err: error, conversationId: result.conversationId },
+        "Falha ao cancelar follow-ups; a mensagem continuará sendo processada",
+      );
+    }
+
+    let conversationId = result.conversationId;
+    let conversationRestarted = false;
+    const restartReason = conversationRestartReason(message.text);
+    if (restartReason && result.messageId) {
+      const restart = await dependencies.repository.restartConversationForMessage(
+        result.conversationId,
+        result.messageId,
+        restartReason,
+      );
+      conversationId = restart.conversationId;
+      conversationRestarted = restart.restarted;
+      if (restart.restarted) {
+        request.log.info(
+          {
+            conversationId,
+            previousConversationId: restart.previousConversationId,
+            restartReason,
+          },
+          "Conversa reiniciada a pedido do lead",
+        );
+      }
+    }
+
     await dependencies.queue.enqueue(
-      result.conversationId,
+      conversationId,
       config.SDR_RESPONSE_DELAY_MS,
       config.SDR_MAX_RETRIES,
     );
     await dependencies.repository.recordEvent(
       "message_queued",
-      result.conversationId,
+      conversationId,
       result.leadId,
-      { message_id: result.messageId, delay_ms: config.SDR_RESPONSE_DELAY_MS },
+      {
+        message_id: result.messageId,
+        delay_ms: config.SDR_RESPONSE_DELAY_MS,
+        conversation_restarted: conversationRestarted,
+      },
     );
 
     return reply.code(202).send({
       accepted: true,
-      conversationId: result.conversationId,
+      conversationId,
+      conversationRestarted,
       delayMs: config.SDR_RESPONSE_DELAY_MS,
     });
   });

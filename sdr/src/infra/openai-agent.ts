@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import type { ConversationContext } from "../domain/types.js";
 import type { CatalogItemSnapshot } from "../domain/catalog.js";
 import type { KnowledgeDocument } from "./supabase-repository.js";
+import { languageName, type SupportedLanguage } from "../domain/language.js";
 
 export type AgentAnswer = {
   text: string;
@@ -11,8 +12,8 @@ export type AgentAnswer = {
 };
 
 const SYSTEM_INSTRUCTIONS = `
-Você é o assistente SDR da Traço. Responda em português do Brasil, com clareza,
-cordialidade e mensagens curtas adequadas ao WhatsApp.
+Você é o assistente SDR da Traço. Responda sempre no idioma solicitado no contexto,
+com clareza, cordialidade e mensagens curtas adequadas ao WhatsApp.
 
 Regras:
 - Use somente as informações dos cursos fornecidas no contexto.
@@ -51,6 +52,7 @@ export class OpenAiAgent {
     context: ConversationContext,
     courses: CatalogItemSnapshot[],
     knowledge: KnowledgeDocument[],
+    language: SupportedLanguage = "pt",
   ): Promise<AgentAnswer> {
     const conversation = context.messages
       .filter((message) => message.status !== "failed")
@@ -70,6 +72,7 @@ export class OpenAiAgent {
         {
           role: "developer" as const,
           content: [
+            `Idioma obrigatório da resposta: ${languageName(language)} (${language}). Responda integralmente nesse idioma, mesmo que o catálogo e a base de conhecimento estejam em português. Traduza apenas a forma da resposta e preserve os fatos originais.`,
             `Etapa atual do fluxo: ${context.flowStage}`,
             `Qualificação: ${context.leadQualification}`,
             `Perfil: ${context.audienceProfile}`,

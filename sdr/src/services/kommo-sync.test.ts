@@ -103,6 +103,36 @@ describe("KommoSyncService", () => {
     expect(client.updateLeadStage).toHaveBeenNthCalledWith(2, 300, stages.negotiationStatusId);
   });
 
+  it("notifica o responsável antes da coleta dos dados sem fazer handoff", async () => {
+    const linked = {
+      ...context,
+      kommoLeadId: 300,
+      kommoContactId: 400,
+      kommoStatusId: stages.qualifiedStatusId,
+      kommoSyncStatus: "synced" as const,
+    };
+    const client = {
+      withStages: vi.fn().mockReturnThis(),
+      ensureLead: vi.fn(),
+      updateLeadStage: vi.fn(),
+      notifyResponsible: vi.fn(),
+      prepareHumanHandoff: vi.fn(),
+    };
+    const repository = { saveKommoSync: vi.fn() };
+    const service = new KommoSyncService(client as never, repository as never, runtime);
+
+    await service.syncFlow(linked, { flowStage: "enrollment" }, course, undefined, true);
+
+    expect(client.notifyResponsible).toHaveBeenCalledWith(300, expect.objectContaining({
+      responsibleUserId: 501,
+      taskTypeId: 1,
+      taskText: "Lead interessado em iniciar matrícula",
+      requestId: "enrollment-data-request-conversation-1",
+      noteText: expect.stringContaining("Lead demonstrou interesse em iniciar"),
+    }));
+    expect(client.prepareHumanHandoff).not.toHaveBeenCalled();
+  });
+
   it("move handoff para atendimento humano", async () => {
     const linked = { ...context, kommoLeadId: 300 };
     const client = {
