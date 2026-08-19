@@ -407,7 +407,7 @@ export class ConversationProcessor {
     const { repository, notifier, waha } = this.dependencies;
     await repository.requestHandoff(context.conversationId, reason, details);
     if (course) {
-      await this.syncKommoHandoffSafely(context, course, reason);
+      await this.syncKommoHandoffSafely(context, course, reason, details);
     }
 
     if (acknowledgeLead) {
@@ -498,10 +498,11 @@ export class ConversationProcessor {
     context: Awaited<ReturnType<SdrRepository["loadConversation"]>>,
     course: CatalogItemSnapshot,
     reason: HandoffReason,
+    details?: string,
   ): Promise<void> {
     if (!this.dependencies.kommo) return;
     try {
-      await this.dependencies.kommo.syncHandoff(context, course, reason);
+      await this.dependencies.kommo.syncHandoff(context, course, reason, details);
     } catch (error) {
       await this.auditKommoFailure(context, error);
       if (this.dependencies.kommoRetryQueue) {
@@ -510,6 +511,7 @@ export class ConversationProcessor {
             operation: "handoff",
             conversationId: context.conversationId,
             reason,
+            ...(details ? { details } : {}),
           });
         } catch (queueError) {
           console.error(JSON.stringify({

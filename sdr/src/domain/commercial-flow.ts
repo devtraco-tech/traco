@@ -424,6 +424,38 @@ function fieldFromLabel(label: string): EnrollmentField | null {
   return null;
 }
 
+function parseInlineNumberedValues(text: string): Map<number, string> {
+  const markerPattern = /(?<!\S)(\d{1,2})(?:[.)-]\s*|\s+)/gu;
+  const markers: Array<{ itemNumber: number; start: number; valueStart: number }> = [];
+  let match: RegExpExecArray | null;
+  while ((match = markerPattern.exec(text)) !== null) {
+    markers.push({
+      itemNumber: Number(match[1]),
+      start: match.index,
+      valueStart: markerPattern.lastIndex,
+    });
+  }
+
+  const sequence: typeof markers = [];
+  let searchFrom = 0;
+  for (let expected = 1; expected <= ENROLLMENT_FIELDS.length; expected += 1) {
+    const markerIndex = markers.findIndex(
+      (marker, index) => index >= searchFrom && marker.itemNumber === expected,
+    );
+    if (markerIndex < 0) return new Map();
+    sequence.push(markers[markerIndex]!);
+    searchFrom = markerIndex + 1;
+  }
+
+  const values = new Map<number, string>();
+  sequence.forEach((marker, index) => {
+    const next = sequence[index + 1];
+    const value = text.slice(marker.valueStart, next?.start ?? text.length).trim();
+    if (value) values.set(marker.itemNumber, value);
+  });
+  return values;
+}
+
 function parseEnrollmentForm(text: string): EnrollmentData {
   const lines = text
     .split(/\r?\n|\s*;\s*/u)
@@ -453,7 +485,14 @@ function parseEnrollmentForm(text: string): EnrollmentData {
     }
   }
 
-  if (Object.keys(result).length === 0 && numberedValues.size === ENROLLMENT_FIELDS.length) {
+  if (numberedValues.size < ENROLLMENT_FIELDS.length) {
+    const inlineValues = parseInlineNumberedValues(text);
+    if (inlineValues.size === ENROLLMENT_FIELDS.length) {
+      inlineValues.forEach((value, itemNumber) => numberedValues.set(itemNumber, value));
+    }
+  }
+
+  if (numberedValues.size > 0) {
     const thirdValue = numberedValues.get(3) ?? "";
     // Compatibilidade com o formato antigo, no qual CPF era o item 3 e data o 4.
     const thirdLooksLikeDate = /^\d{2}\/\d{2}\/\d{4}$/u.test(thirdValue);
@@ -461,7 +500,8 @@ function parseEnrollmentForm(text: string): EnrollmentData {
       ? ENROLLMENT_POSITIONAL_FIELDS
       : ENROLLMENT_FIELDS;
     positionalFields.forEach((field, index) => {
-      result[field] = numberedValues.get(index + 1) ?? "";
+      const value = numberedValues.get(index + 1);
+      if (value && !result[field]) result[field] = value;
     });
   } else if (Object.keys(result).length === 0 && positionalValues.length === ENROLLMENT_FIELDS.length) {
     const thirdLooksLikeDate = /^\d{2}\/\d{2}\/\d{4}$/u.test(positionalValues[2] ?? "");
@@ -577,17 +617,9 @@ export function decideCommercialFlow(
 
   if (context.flowStage === "enrollment") {
     const validation = validateEnrollmentForm(currentText, language);
-    if (validation.errors.length > 0) {
-      return {
-        handled: true,
-        messages: [[
-          COPY[language].incomplete,
-          ...validation.errors.map((error) => `- ${error}`),
-          "",
-          COPY[language].resend,
-        ].join("\n")],
-      };
-    }
+    const handoffDetails = validation.errors.length > 0
+      ? `Dados de matrícula recebidos com pendências para conferência humana: ${validation.errors.join(" | ")}`
+      : "Dados de matrícula concluídos; contrato e pagamento exigem atendimento humano.";
     return {
       handled: true,
       messages: [COPY[language].finalMessage],
@@ -598,7 +630,7 @@ export function decideCommercialFlow(
       enrollmentData: validation.data,
       handoffAfterFlow: {
         reason: "commercial_high_intent",
-        details: "Dados de matrícula concluídos; contrato e pagamento exigem atendimento humano.",
+        details: handoffDetails,
       },
     };
   }

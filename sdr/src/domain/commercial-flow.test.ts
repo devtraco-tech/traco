@@ -284,16 +284,55 @@ describe("decideCommercialFlow", () => {
     });
   });
 
-  it("informa de uma vez os campos ausentes ou inválidos", () => {
+  it("conclui o fluxo e informa ao humano quando existem dados inválidos", () => {
     const invalid = decideCommercialFlow(
       context("enrollment", { enrollmentStep: 0, interestConfirmed: true }),
       "1. Nome completo: Maria da Silva\n2. WhatsApp com DDD: 559884413421\n3. CPF: 123",
     );
-    expect(invalid.enrollmentData).toBeUndefined();
-    expect(invalid.messages[0]).toContain("11 números");
-    expect(invalid.messages[0]).toContain("Data de nascimento");
-    expect(invalid.messages[0]).toContain("reenvie a lista completa");
-    expect(invalid.patch).toBeUndefined();
+    expect(invalid.enrollmentData).toMatchObject({
+      full_name: "Maria da Silva",
+      whatsapp_phone: "559884413421",
+    });
+    expect(invalid.messages[0]).toContain("Muito obrigada pelos dados");
+    expect(invalid.messages[0]).not.toContain("11 números");
+    expect(invalid.patch).toMatchObject({ flowStage: "completed", enrollmentStep: 12 });
+    expect(invalid.handoffAfterFlow?.details).toContain("CPF: O CPF precisa ter 11 números.");
+    expect(invalid.handoffAfterFlow?.details).toContain("Data de nascimento: não informado.");
+  });
+
+  it("aceita CRO com hífen, separa endereço e bairro juntos e encaminha as pendências", () => {
+    const decision = decideCommercialFlow(
+      context("enrollment", { enrollmentStep: 0, interestConfirmed: true }),
+      [
+        "1 Stephany de Oliveira Borges",
+        "2 62991634836",
+        "3 03/01/1994",
+        "4 04297864177",
+        "5 Solteira",
+        "6 Brasileira",
+        "7 Iporaense",
+        "8 CRO - 748998",
+        "9 stephany@traconegocios",
+        "10 Rua 8 Jardim Santo Antonio 10 11 Jardim Santo Antonio",
+        "12 748532110",
+      ].join("\n"),
+    );
+
+    expect(decision.enrollmentData).toMatchObject({
+      full_name: "Stephany de Oliveira Borges",
+      whatsapp_phone: "62991634836",
+      birth_date: "03/01/1994",
+      cpf: "04297864177",
+      cro: "748998",
+      address: "Rua 8 Jardim Santo Antonio 10",
+      district: "Jardim Santo Antonio",
+    });
+    expect(decision.messages[0]).toContain("Muito obrigada pelos dados");
+    expect(decision.messages[0]).not.toContain("Não consegui validar");
+    expect(decision.patch?.flowStage).toBe("completed");
+    expect(decision.handoffAfterFlow?.details).toContain("E-mail: Esse e-mail não parece válido.");
+    expect(decision.handoffAfterFlow?.details).toContain("CEP: O CEP precisa ter 8 números.");
+    expect(decision.handoffAfterFlow?.details).not.toContain("Nome completo: não informado.");
   });
 
   it("aceita todas as respostas numeradas em uma única mensagem", () => {

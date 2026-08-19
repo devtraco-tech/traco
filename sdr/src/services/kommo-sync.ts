@@ -69,6 +69,7 @@ export class KommoSyncService {
     context: ConversationContext,
     course: CatalogItemSnapshot,
     reason: HandoffReason,
+    details?: string,
   ): Promise<void> {
     const configuration = await this.getConfiguration();
     const client = this.client.withStages(configuration.stages);
@@ -95,6 +96,7 @@ export class KommoSyncService {
         `Telefone: ${context.phoneE164}`,
         `Curso: ${course.title}`,
         `Motivo: ${HANDOFF_REASON_LABELS[reason]}`,
+        ...(details ? [`Detalhes: ${details}`] : []),
         `Última mensagem: ${lastInboundMessage.slice(0, 1_000)}`,
         `Conversa: ${context.conversationId}`,
       ].join("\n"),

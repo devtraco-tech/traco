@@ -143,7 +143,12 @@ const kommoRetryRunner = kommo
             await kommo.restoreHandoffStage(refreshed, binding.snapshot);
           }
         } else {
-          await kommo.syncHandoff(context, binding.snapshot, job.data.reason);
+          await kommo.syncHandoff(
+            context,
+            binding.snapshot,
+            job.data.reason,
+            job.data.details,
+          );
         }
       } catch (error) {
         await repository.markKommoSyncFailed(

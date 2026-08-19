@@ -144,7 +144,12 @@ describe("KommoSyncService", () => {
     const repository = { saveKommoSync: vi.fn() };
     const service = new KommoSyncService(client as never, repository as never, runtime);
 
-    await service.syncHandoff(linked, course, "explicit_request");
+    await service.syncHandoff(
+      linked,
+      course,
+      "explicit_request",
+      "E-mail inválido; conferir com o lead",
+    );
 
     expect(client.updateLeadStage).toHaveBeenCalledWith(300, stages.handoffStatusId);
     expect(client.prepareHumanHandoff).toHaveBeenCalledWith(300, expect.objectContaining({
@@ -152,7 +157,7 @@ describe("KommoSyncService", () => {
       taskTypeId: 1,
       deadlineMinutes: 5,
       taskText: "Assumir atendimento do SDR",
-      noteText: expect.stringContaining("Lead Teste"),
+      noteText: expect.stringContaining("Detalhes: E-mail inválido; conferir com o lead"),
     }));
   });
 

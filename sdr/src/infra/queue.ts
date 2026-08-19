@@ -30,6 +30,7 @@ export type KommoRetryJob =
       operation: "handoff";
       conversationId: string;
       reason: HandoffReason;
+      details?: string;
     };
 
 function createConnection(redisUrl: string): Redis {
