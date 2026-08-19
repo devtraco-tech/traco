@@ -7,7 +7,7 @@ import {
 
 describe("treinamento oficial US-03", () => {
   it("mantém os materiais essenciais ativos e versionados", () => {
-    expect(TRAINING_VERSION).toBe("us-03-v4-figma");
+    expect(TRAINING_VERSION).toBe("us-03-v5-audience-matrix");
     for (const type of ["commercial_script", "faq", "audience_matrix"]) {
       expect(
         OFFICIAL_TRAINING_DOCUMENTS.find((document) => document.documentType === type),
@@ -33,5 +33,22 @@ describe("treinamento oficial US-03", () => {
     }>;
     expect(followUps).toHaveLength(7);
     expect(followUps.every((item) => !item.enabled && item.delayHours === null)).toBe(true);
+  });
+
+  it("incorpora os dois públicos, suas objeções e as salvaguardas comerciais", () => {
+    const matrix = OFFICIAL_TRAINING_DOCUMENTS.find(
+      (document) => document.documentType === "audience_matrix",
+    );
+    expect(matrix?.content).toContain("Odontólogos recém-formados");
+    expect(matrix?.content).toContain("Odontólogos já atuantes");
+    expect(matrix?.content).toContain("É melhor fazer logo uma especialização?");
+    expect(matrix?.content).toContain("qual é o custo-benefício?");
+    expect(matrix?.content).toContain("não garanta lucro, renda");
+    expect(matrix?.content).toContain("nunca use idade ou gênero");
+    expect(matrix?.metadata).toMatchObject({
+      version: "us-03-v5-audience-matrix",
+      source: "audience_matrix_pdf_2026-08-19",
+      profiles: 2,
+    });
   });
 });

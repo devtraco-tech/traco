@@ -36,27 +36,27 @@ const COPY = {
     presentation: "Oii! Tudo bem com você? 👋\nSou a Karol, do time da ABO Goiás. ✨\n\nSerei sua consultora acadêmica e a seguir vou te apresentar o curso e tirar todas as dúvidas que surgirem.\n\nMas antes me conta, você já é graduado em odontologia?",
     notGraduated: "Entendi, Dr.! Para participar de nossas turmas, é necessário ter graduação em Odontologia. Assim que concluir a faculdade, será um prazer recebê-lo em um de nossos cursos.",
     finalMessage: "Muito obrigada pelos dados, Dr.! Agora vamos gerar o seu contrato e o link de pagamento. Assim que estiverem prontos, encaminharei tudo para você dar continuidade à sua matrícula.",
-    enrollmentIntro: "Dr., parabéns pela sua decisão! Estamos muito felizes em tê-lo conosco.\n\nAgora preciso apenas de alguns dados para dar sequência ao próximo passo e iniciar a sua matrícula. Envie todos em uma única mensagem; a ordem não importa:",
+    enrollmentIntro: "Dr., parabéns pela sua decisão! Estamos muito felizes em tê-lo conosco.\n\nAgora preciso apenas de alguns dados para dar sequência ao próximo passo e iniciar a sua matrícula. Responda em uma única mensagem usando somente o número e o valor, sem precisar repetir o nome do campo:",
     incomplete: "Não consegui validar todos os dados:",
-    resend: "Por favor, corrija e reenvie a lista completa em uma única mensagem. A ordem e a numeração não importam, mas mantenha o nome de cada campo.",
+    resend: "Por favor, corrija e reenvie a lista completa em uma única mensagem. Você pode usar somente o número e o valor, seguindo a numeração apresentada; se preferir escrever o nome dos campos, poderá enviá-los em qualquer ordem.",
     noInterest: "Tudo bem! Se surgir alguma dúvida sobre o curso, estou à disposição para ajudar.",
   },
   en: {
     presentation: "Hello! How are you? I’m the virtual assistant for the team responsible for the course. I’ll introduce the course and answer your questions. First, are you already a graduate in Dentistry?",
     notGraduated: "I understand. A degree in Dentistry is required to join this class. Once you graduate, we’ll be happy to welcome you to one of our courses.",
     finalMessage: "Thank you very much for the information, Doctor! We will now prepare your contract and payment link. As soon as they are ready, I will send everything to you so you can continue your enrollment.",
-    enrollmentIntro: "Congratulations on your decision! To begin your enrollment, please provide all the information below in a single message. You may use any order; just keep each field name:",
+    enrollmentIntro: "Congratulations on your decision! To begin your enrollment, reply in a single message using only each number and its value. You do not need to repeat the field names:",
     incomplete: "I could not validate all the information:",
-    resend: "Please correct the information and resend the complete list in a single message. The order and numbering do not matter, but keep each field name.",
+    resend: "Please correct the information and resend the complete list in a single message. You may use only the number and value in the order shown; if you include the field names, you may send them in any order.",
     noInterest: "No problem! If you have any questions about the course, I’m here to help.",
   },
   es: {
-    presentation: "¡Hola! ¿Cómo estás? Soy la asistente virtual del equipo responsable del curso. Te presentaré el curso y responderé tus dudas. Primero, ¿ya eres graduado/a en Odontología?",
-    notGraduated: "Entiendo. Para participar en este grupo es necesario tener un título en Odontología. Cuando termines la carrera, estaremos encantados de recibirte en uno de nuestros cursos.",
+    presentation: "¡Hola! ¿Todo bien? 👋\nSoy Karol, del equipo de ABO Goiás. ✨\n\nSeré tu consultora académica y, a continuación, te presentaré el curso y aclararé todas las dudas que surjan.\n\nPero antes cuéntame: ¿ya te graduaste en Odontología?",
+    notGraduated: "Entiendo, Dr. Para participar en nuestros grupos, es necesario haberse graduado en Odontología. Cuando termines la carrera, será un placer recibirte en uno de nuestros cursos.",
     finalMessage: "¡Muchas gracias por los datos, Dr.! Ahora prepararemos tu contrato y el enlace de pago. En cuanto estén listos, te enviaré todo para que puedas continuar con tu inscripción.",
-    enrollmentIntro: "¡Felicitaciones por tu decisión! Para iniciar tu inscripción, envía todos los datos siguientes en un único mensaje. Puedes usar cualquier orden; solo conserva el nombre de cada campo:",
+    enrollmentIntro: "¡Felicitaciones por tu decisión! Para iniciar tu inscripción, responde en un único mensaje usando solamente cada número y su valor. No necesitas repetir los nombres de los campos:",
     incomplete: "No pude validar todos los datos:",
-    resend: "Por favor, corrige la información y vuelve a enviar la lista completa en un único mensaje. El orden y la numeración no importan, pero conserva el nombre de cada campo.",
+    resend: "Por favor, corrige la información y vuelve a enviar la lista completa en un único mensaje. Puedes usar solo el número y el valor en el orden indicado; si incluyes los nombres de los campos, puedes enviarlos en cualquier orden.",
     noInterest: "¡Está bien! Si tienes alguna duda sobre el curso, estoy aquí para ayudarte.",
   },
 } satisfies Record<SupportedLanguage, Record<string, string>>;
@@ -121,11 +121,30 @@ const FIELD_ALIASES: Record<EnrollmentField, string[]> = {
   postal_code: ["cep", "codigo postal", "postal code", "zip code"],
 };
 
+// Ordem exibida ao lead. CPF e data continuam sendo armazenados nos mesmos campos;
+// apenas a posição de preenchimento segue o modelo solicitado pelo atendimento.
+const ENROLLMENT_POSITIONAL_FIELDS: readonly EnrollmentField[] = [
+  "full_name",
+  "whatsapp_phone",
+  "birth_date",
+  "cpf",
+  "marital_status",
+  "nationality",
+  "birthplace",
+  "cro",
+  "email",
+  "address",
+  "district",
+  "postal_code",
+];
+
 function enrollmentForm(language: SupportedLanguage): string {
   return [
     COPY[language].enrollmentIntro,
     "",
-    ...ENROLLMENT_FIELDS.map((field) => `${FIELD_LABELS[language][field]}:`),
+    ...ENROLLMENT_POSITIONAL_FIELDS.map(
+      (field, index) => `${index + 1}. ${FIELD_LABELS[language][field]}:`,
+    ),
   ].join("\n");
 }
 
@@ -203,17 +222,10 @@ function coursePresentation(
     ];
   }
   if (language === "es") {
-    const details = [
-      course.workload !== null ? `${course.workload} horas` : null,
-      investment ? `inversión informada: ${investment}` : null,
-      course.registration_deadline ? `inscripciones hasta ${formatDate(course.registration_deadline)}` : null,
-      course.effective_start_date ? `inicio previsto: ${formatDate(course.effective_start_date)}` : null,
-      course.available_vacancies !== null ? `${course.available_vacancies} plaza(s) disponibles actualmente` : null,
-    ].filter(Boolean);
     return [
-      `El curso seleccionado es ${course.title}. Utilizaré únicamente la información confirmada de su catálogo oficial.`,
-      details.length ? `Información actual del catálogo: ${details.join(", ")}.` : "Las demás condiciones deben confirmarse con el equipo responsable.",
-      `Para orientarte mejor: ¿ya trabajas en ${course.area ?? "esta área"} o sería tu primera formación en ella?`,
+      "Este *Curso de Perfeccionamiento en Implantología* en el que demostraste interés es *referente en el mercado desde hace más de 20 años*. Su objetivo es que *en 10 meses seas capaz de planificar y colocar implantes con seguridad*, desde casos unitarios hasta prótesis sobre implantes. Cuenta con los siguientes diferenciales:\n\n💎 Implantes, kit quirúrgico y motor de implantes incluidos (excepto contraángulo)\n💎 Protocolos simplificados, guía quirúrgica y flujo digital\n💎 Práctica de laboratorio y clínica supervisada\n💎 Amplia disponibilidad de pacientes para la práctica\n💎 Coordinación: Dr. Getúlio Souza de Marães, doctor en Implantología\n💎 Equipo de profesores especialistas, másteres y doctores",
+      "Estas son las principales informaciones sobre el curso 👇\n\n📅 Inicio: 18/09\n⏳ Duración: 10 meses | 140 h\n📚 Encuentros: generalmente un viernes y un sábado por mes\n💰 Inversión: 10 cuotas de R$ 1.700\n\nLos materiales están incluidos (implantes, kit quirúrgico y motor de implantes); solo es necesario adquirir el contraángulo para implantes.",
+      "Bien... ahora quiero entender tu momento para poder orientarte: ¿ya realizas casos de Implantología o este será tu primer paso en el área?",
     ];
   }
   return [
@@ -236,8 +248,8 @@ function profileMatch(
   }
   if (language === "es") {
     return profile === "beginner"
-      ? `Entiendo. El programa de ${title} comienza con los fundamentos y avanza por los contenidos del curso. Como la adecuación depende de tu experiencia y los requisitos previos, el equipo puede confirmar si el grupo es adecuado para ti. ¿Tiene sentido para ti?`
-      : `Excelente. ${title} puede ayudarte a profundizar la planificación y las técnicas del área, según el programa oficial. ¿Tiene sentido para tu momento profesional?`;
+      ? "¡Perfecto! Este curso fue desarrollado precisamente para quienes desean comenzar en Implantología con seguridad, acompañamiento cercano de los profesores y mucha práctica clínica, además de actualizarse en protocolos simplificados, guía quirúrgica y flujo digital.\n\n¿Tiene sentido para ti?"
+      : "¡Excelente! En tu caso, el curso funcionará como una actualización para dominar protocolos simplificados, guía quirúrgica y flujo digital, además de planificación y práctica con pacientes reales.\n\n¿Tiene sentido para ti?";
   }
   if (profile === "beginner") {
     return "Perfeito! Esse curso foi desenvolvido justamente para quem deseja começar na Implantodontia com segurança, acompanhamento próximo dos professores e bastante prática clínica, e já sair atualizado com os protocolos simplificados, guia cirúrgica e fluxo digital.\n\nFaz sentido pra você?";
@@ -261,20 +273,60 @@ function qualificationFrom(text: string): LeadQualification {
 function profileFrom(text: string): AudienceProfile {
   const value = normalize(text);
   if (
-    /\b(nunca|primeiro passo|primeira formacao|primeira especializacao|comecando|comecar na area|iniciante|ainda nao faco|never|first training|first course|beginner|starting|do not work in|primera formacion|primer curso|principiante|empezando|aun no trabajo)\b/u.test(
+    /\b(nunca|primeiro passo|primeira formacao|primeira especializacao|comecando|comecar na area|iniciante|ainda nao faco|recem[- ]formado|recem[- ]formada|formei agora|pouca experiencia|nao faco implante|nao realizo implante|never|first training|first course|beginner|starting|do not work in|recently graduated|little experience|primera formacion|primer curso|primer paso|principiante|empezando|aun no trabajo|no hago implantes|no realizo implantes|recien[- ]graduado|recien[- ]graduada)\b/u.test(
       value,
     )
   ) {
     return "beginner";
   }
   if (
-    /\b(ja faco|ja realizo|atuo|experiencia|trabalho com|implantodontista|aprofundar|aperfeicoar|already work|i work|experience|experienced|improve|deepen|ya trabajo|trabajo con|experiencia|perfeccionar|profundizar)\b/u.test(
+    /\b(ja faco|ja realizo|atuo|experiencia|trabalho com|implantodontista|aprofundar|aperfeicoar|ja atendo|encaminho pacientes|already work|i work|experience|experienced|improve|deepen|refer patients|ya trabajo|trabajo con|ya hago|ya realizo|ejerzo|atiendo|experiencia|perfeccionar|profundizar)\b/u.test(
       value,
     )
   ) {
     return "experienced";
   }
   return "unknown";
+}
+
+function audienceObjectionResponse(
+  text: string,
+  language: SupportedLanguage,
+): string | null {
+  if (language === "en") return null;
+  const value = normalize(text);
+
+  if (/\b(especializacao|titulo de especialista|especializacion|titulo de especialista)\b/u.test(value)) {
+    return language === "es"
+      ? "El perfeccionamiento y la especialización tienen propuestas diferentes. Este curso ofrece desarrollo práctico y puede construir una base para tu actuación y para una futura especialización. La mejor elección depende de tu objetivo profesional; una opción no siempre es mejor que la otra."
+      : "O aperfeiçoamento e a especialização têm propostas diferentes. Este curso oferece desenvolvimento prático e pode construir uma base para sua atuação e para uma futura especialização. A melhor escolha depende do seu objetivo profissional; uma opção não é sempre melhor que a outra.";
+  }
+
+  if (
+    /\b(custo-beneficio|momento financeiro|sem recursos|nao tenho recursos|nao tenho dinheiro|esta caro|muito caro|valor alto|costo-beneficio|momento economico|momento financiero|sin recursos|no tengo dinero|es caro|muy caro|precio alto)\b/u.test(value)
+  ) {
+    return language === "es"
+      ? "Entiendo tu preocupación. Solo puedo presentar las condiciones comerciales documentadas del curso, sin prometer un plazo de retorno ni un aumento de ingresos. Si deseas evaluar descuentos, negociación o condiciones diferentes, derivaré tu atención a una persona del equipo."
+      : "Entendo sua preocupação. Posso apresentar somente as condições comerciais documentadas do curso, sem prometer prazo de retorno ou aumento de renda. Se você quiser avaliar descontos, negociação ou condições diferentes, encaminho seu atendimento para uma pessoa do time.";
+  }
+
+  if (
+    /\b(mesmo conhecimento|mesmo conteudo|ja conheco|conteudo repetido|nao vale a pena pagar|mismo conocimiento|mismo contenido|ya conozco|contenido repetido|no vale la pena pagar)\b/u.test(value)
+  ) {
+    return language === "es"
+      ? "Entre los diferenciales documentados están los protocolos simplificados, la guía quirúrgica, el flujo digital, la planificación y la práctica supervisada con pacientes reales. ¿Cuál de estos puntos sería más relevante para tu rutina?"
+      : "Entre os diferenciais documentados estão protocolos simplificados, guia cirúrgica, fluxo digital, planejamento e prática supervisionada em paciente real. Qual desses pontos seria mais relevante para a sua rotina?";
+  }
+
+  if (
+    /\b(avancado demais|distante do meu nivel|nao tenho experiencia|tenho medo|inseguro|insegura|demasiado avanzado|lejos de mi nivel|no tengo experiencia|tengo miedo)\b/u.test(value)
+  ) {
+    return language === "es"
+      ? "La propuesta contempla a quienes están comenzando, con acompañamiento cercano, progresión del aprendizaje y práctica supervisada. La adecuación individual debe considerar tu formación y tu momento profesional, sin garantizar resultados clínicos."
+      : "A proposta contempla quem está começando, com acompanhamento próximo, progressão do aprendizado e prática supervisionada. A adequação individual deve considerar sua formação e seu momento profissional, sem garantia de resultado clínico.";
+  }
+
+  return null;
 }
 
 function requestsEnrollment(text: string): boolean {
@@ -379,9 +431,12 @@ function parseEnrollmentForm(text: string): EnrollmentData {
     .filter(Boolean);
   const result: EnrollmentData = {};
   const positionalValues: string[] = [];
+  const numberedValues = new Map<number, string>();
 
   for (const line of lines) {
-    const numbered = line.replace(/^(?:[-*]\s+|\d{1,2}\s*[.)-]\s*)/u, "").trim();
+    const numberedMatch = line.match(/^(\d{1,2})(?:\s*[.)-]\s*|\s+)(.+)$/u);
+    const numbered = numberedMatch?.[2]?.trim()
+      ?? line.replace(/^[-*]\s+/u, "").trim();
     const labeledValue = numbered.match(/^(.+?)(?:\s*[:=]\s*|\s+-\s+)(.+)$/u);
     if (labeledValue?.[1] && labeledValue[2]) {
       const field = fieldFromLabel(labeledValue[1]);
@@ -390,11 +445,30 @@ function parseEnrollmentForm(text: string): EnrollmentData {
         continue;
       }
     }
-    positionalValues.push(numbered);
+    const itemNumber = Number(numberedMatch?.[1]);
+    if (Number.isInteger(itemNumber) && itemNumber >= 1 && itemNumber <= ENROLLMENT_FIELDS.length) {
+      numberedValues.set(itemNumber, numbered);
+    } else {
+      positionalValues.push(numbered);
+    }
   }
 
-  if (Object.keys(result).length === 0 && positionalValues.length === ENROLLMENT_FIELDS.length) {
-    ENROLLMENT_FIELDS.forEach((field, index) => {
+  if (Object.keys(result).length === 0 && numberedValues.size === ENROLLMENT_FIELDS.length) {
+    const thirdValue = numberedValues.get(3) ?? "";
+    // Compatibilidade com o formato antigo, no qual CPF era o item 3 e data o 4.
+    const thirdLooksLikeDate = /^\d{2}\/\d{2}\/\d{4}$/u.test(thirdValue);
+    const positionalFields = thirdLooksLikeDate
+      ? ENROLLMENT_POSITIONAL_FIELDS
+      : ENROLLMENT_FIELDS;
+    positionalFields.forEach((field, index) => {
+      result[field] = numberedValues.get(index + 1) ?? "";
+    });
+  } else if (Object.keys(result).length === 0 && positionalValues.length === ENROLLMENT_FIELDS.length) {
+    const thirdLooksLikeDate = /^\d{2}\/\d{2}\/\d{4}$/u.test(positionalValues[2] ?? "");
+    const positionalFields = thirdLooksLikeDate
+      ? ENROLLMENT_POSITIONAL_FIELDS
+      : ENROLLMENT_FIELDS;
+    positionalFields.forEach((field, index) => {
       result[field] = positionalValues[index] ?? "";
     });
   }
@@ -469,14 +543,22 @@ export function decideCommercialFlow(
     }
     const profile = profileFrom(currentText);
     if (profile === "unknown") return { handled: false, messages: [] };
+    const objectionResponse = audienceObjectionResponse(currentText, language);
     return {
       handled: true,
-      messages: [profileMatch(profile, course, language)],
+      messages: [
+        ...(objectionResponse ? [objectionResponse] : []),
+        profileMatch(profile, course, language),
+      ],
       patch: { flowStage: "match", audienceProfile: profile },
     };
   }
 
   if (context.flowStage === "match") {
+    const objectionResponse = audienceObjectionResponse(currentText, language);
+    if (objectionResponse) {
+      return { handled: true, messages: [objectionResponse] };
+    }
     const interest = confirmsInterest(currentText);
     if (interest === null) return { handled: false, messages: [] };
     if (!interest) {

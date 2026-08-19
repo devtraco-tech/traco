@@ -84,23 +84,72 @@ describe("decideCommercialFlow", () => {
     expect(qualification.patch?.leadQualification).toBe("graduated");
   });
 
-  it("conduz a apresentação e a matrícula em espanhol", () => {
+  it("conduz em espanhol o mesmo fluxo comercial do português", () => {
     const presentation = decideCommercialFlow(
       context("presentation"),
       "Hola, me interesa el curso",
       course,
       "es",
     );
-    expect(presentation.messages[0]).toContain("graduado/a en Odontología");
+    expect(presentation.messages[0]).toContain("Soy Karol, del equipo de ABO Goiás");
+    expect(presentation.messages[0]).toContain("¿ya te graduaste en Odontología?");
+
+    const qualification = decideCommercialFlow(
+      context("qualification"),
+      "Sí, soy dentista graduado",
+      course,
+      "es",
+    );
+    expect(qualification.messages).toHaveLength(3);
+    expect(qualification.messages[0]).toContain("referente en el mercado desde hace más de 20 años");
+    expect(qualification.messages[1]).toContain("10 meses | 140 h");
+    expect(qualification.messages[2]).toContain("primer paso en el área");
+
+    const profile = decideCommercialFlow(
+      context("profile", { leadQualification: "graduated" }),
+      "Será mi primer paso en el área",
+      course,
+      "es",
+    );
+    expect(profile.patch).toMatchObject({
+      flowStage: "match",
+      audienceProfile: "beginner",
+    });
+    expect(profile.messages[0]).toContain("comenzar en Implantología con seguridad");
 
     const enrollment = decideCommercialFlow(
-      context("profile", { leadQualification: "graduated" }),
-      "Quiero inscribirme",
+      context("match", { leadQualification: "graduated", audienceProfile: "beginner" }),
+      "Sí, tiene sentido",
       course,
       "es",
     );
     expect(enrollment.messages[0]).toContain("Nombre completo:");
     expect(enrollment.messages[0]).toContain("Código postal (CEP):");
+  });
+
+  it("trata em espanhol as objeções da matriz de público", () => {
+    const specialization = decideCommercialFlow(
+      context("profile", { leadQualification: "graduated" }),
+      "Soy recién graduado. ¿No sería mejor hacer una especialización?",
+      course,
+      "es",
+    );
+    expect(specialization.patch).toMatchObject({
+      flowStage: "match",
+      audienceProfile: "beginner",
+    });
+    expect(specialization.messages[0]).toContain("tienen propuestas diferentes");
+    expect(specialization.messages[1]).toContain("práctica clínica");
+
+    const costBenefit = decideCommercialFlow(
+      context("match", { audienceProfile: "experienced" }),
+      "Tengo dudas sobre el costo-beneficio y el momento financiero",
+      course,
+      "es",
+    );
+    expect(costBenefit.handled).toBe(true);
+    expect(costBenefit.messages[0]).toContain("sin prometer un plazo de retorno");
+    expect(costBenefit.messages[0]).toContain("persona del equipo");
   });
 
   it("apresenta Karol e ABO Goiás conforme o Figma", () => {
@@ -164,6 +213,34 @@ describe("decideCommercialFlow", () => {
       flowStage: "match",
       audienceProfile: "beginner",
     });
+  });
+
+  it("reconhece um recém-formado e responde à objeção sobre especialização", () => {
+    const decision = decideCommercialFlow(
+      context("profile", { leadQualification: "graduated" }),
+      "Sou recém-formado. Não seria melhor fazer logo uma especialização?",
+      course,
+    );
+    expect(decision.patch).toMatchObject({
+      flowStage: "match",
+      audienceProfile: "beginner",
+    });
+    expect(decision.messages).toHaveLength(2);
+    expect(decision.messages[0]).toContain("têm propostas diferentes");
+    expect(decision.messages[0]).toContain("depende do seu objetivo profissional");
+    expect(decision.messages[1]).toContain("começar na Implantodontia com segurança");
+  });
+
+  it("trata custo-benefício sem prometer retorno financeiro", () => {
+    const decision = decideCommercialFlow(
+      context("match", { audienceProfile: "experienced" }),
+      "Estou em dúvida sobre o custo-benefício e o momento financeiro",
+      course,
+    );
+    expect(decision.handled).toBe(true);
+    expect(decision.patch).toBeUndefined();
+    expect(decision.messages[0]).toContain("sem prometer prazo de retorno");
+    expect(decision.messages[0]).toContain("pessoa do time");
   });
 
   it("inicia o fluxo determinístico quando um graduado pede a matrícula", () => {
@@ -274,6 +351,37 @@ describe("decideCommercialFlow", () => {
     );
     expect(decision.enrollmentData?.full_name).toBe("Maria da Silva");
     expect(decision.enrollmentData?.postal_code).toBe("74000000");
+    expect(decision.patch?.flowStage).toBe("completed");
+  });
+
+  it("aceita somente número e valor, sem ponto e sem nome do campo", () => {
+    const decision = decideCommercialFlow(
+      context("enrollment", { enrollmentStep: 0, interestConfirmed: true }),
+      [
+        "9 stephany@traconegocios.com.br",
+        "6 Brasileira",
+        "1 Stephany de Oliveira Borges",
+        "12 74853110",
+        "4 04297864177",
+        "7 Iporá - GO",
+        "3 03/01/1994",
+        "5 Solteira",
+        "8 CRO-GO 748998",
+        "2 62991634836",
+        "10 Rua 8, Jardim Santo Antônio, 10",
+        "11 Jardim Santo Antônio",
+      ].join("\n"),
+    );
+
+    expect(decision.enrollmentData).toMatchObject({
+      full_name: "Stephany de Oliveira Borges",
+      whatsapp_phone: "62991634836",
+      birth_date: "03/01/1994",
+      cpf: "04297864177",
+      nationality: "Brasileira",
+      email: "stephany@traconegocios.com.br",
+      postal_code: "74853110",
+    });
     expect(decision.patch?.flowStage).toBe("completed");
   });
 

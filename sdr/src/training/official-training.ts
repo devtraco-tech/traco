@@ -1,4 +1,4 @@
-export const TRAINING_VERSION = "us-03-v4-figma";
+export const TRAINING_VERSION = "us-03-v5-audience-matrix";
 
 export type OfficialTrainingDocument = {
   documentType: "faq" | "audience_matrix" | "commercial_script" | "follow_up";
@@ -80,16 +80,85 @@ Sim. Funciona como atualização em protocolos simplificados, guia cirúrgica, f
 12. Como funcionam contrato e pagamento?
 Essas etapas são tratadas pelo atendimento humano após a coleta dos dados da matrícula.`;
 
-export const OFFICIAL_AUDIENCE_MATRIX = `# Matriz de público — Aperfeiçoamento em Implantodontia
+export const OFFICIAL_AUDIENCE_MATRIX = `# Matriz de Públicos — Curso de Aperfeiçoamento em Implantodontia para Iniciantes
 
-## Perfil em formação na área
-Profissional graduado em Odontologia que deseja começar na Implantodontia. Destaque segurança, acompanhamento próximo dos professores, prática clínica, protocolos simplificados, guia cirúrgica e fluxo digital.
+Use esta matriz para personalizar a abordagem depois que o lead relatar sua experiência. Dores, crenças, objeções e desejos são hipóteses de comunicação: nunca presuma que se aplicam ao lead sem que ele manifeste o tema.
 
-## Perfil com experiência na área
-Profissional que já faz casos de Implantodontia e busca atualização. Destaque protocolos simplificados, guia cirúrgica, fluxo digital, planejamento e prática em paciente real.
+## Público 01 — Odontólogos recém-formados ou iniciantes em Implantodontia
 
-## Classificação
-Pergunte se o profissional já faz casos de Implantodontia ou se esse será seu primeiro passo na área. Nunca classifique por idade ou gênero.`;
+### Contexto
+Profissionais graduados em Odontologia, em início de carreira ou que ainda não realizam casos de Implantodontia e precisam desenvolver segurança prática.
+
+### Dores possíveis
+- insegurança para realizar cirurgias;
+- pouca experiência prática;
+- dificuldade em diagnóstico e planejamento;
+- necessidade de supervisão para executar o tratamento com segurança.
+
+### Crenças e objeções possíveis
+- acreditar que um aperfeiçoamento é apenas para quem já realiza o procedimento;
+- pensar que o curso pode ser avançado ou distante da realidade de um recém-formado;
+- considerar que seria melhor iniciar diretamente uma especialização por causa do título;
+- não possuir recursos suficientes ou entender que este não é o melhor momento financeiro.
+
+### Desejos possíveis
+- fazer a transição entre a teoria da faculdade e a prática clínica supervisionada;
+- dominar Implantodontia com segurança;
+- ganhar experiência e confiança profissional;
+- ampliar os procedimentos oferecidos;
+- aprender com professores reconhecidos e desenvolver uma rede profissional.
+
+### Abordagem recomendada
+Explique que o curso foi estruturado para apoiar o início seguro na Implantodontia, com acompanhamento próximo, prática clínica e progressão de aprendizado. Apresente o aperfeiçoamento como uma base prática que também pode preparar melhor o profissional para uma futura especialização, sem desqualificar nenhuma formação. Se houver negociação financeira, encaminhe para o atendimento humano.
+
+## Público 02 — Odontólogos já atuantes
+
+### Contexto
+Profissionais que já atendem em Odontologia ou já tiveram contato com Implantodontia e buscam atualização e aplicação segura na rotina clínica.
+
+### Dores possíveis
+- encaminhar casos por não realizar cirurgias de implantes;
+- receio de perder pacientes que buscam esse procedimento;
+- medo de ficar desatualizado;
+- insegurança para integrar Implantodontia à rotina da clínica.
+
+### Crenças e objeções possíveis
+- acreditar que receberá o mesmo conhecimento que já possui;
+- questionar o custo-benefício;
+- entender que o momento financeiro não é adequado.
+
+### Desejos possíveis
+- atualizar protocolos e técnicas;
+- aprofundar planejamento, guia cirúrgica e fluxo digital;
+- incorporar Implantodontia de maneira segura à rotina;
+- ampliar o portfólio de procedimentos da clínica;
+- reduzir a necessidade de encaminhar casos compatíveis com sua capacitação.
+
+### Abordagem recomendada
+Destaque atualização prática, protocolos simplificados, guia cirúrgica, fluxo digital, planejamento e prática supervisionada em paciente real. Relacione o conteúdo à necessidade informada pelo lead, sem prometer retenção de pacientes, aumento de renda ou resultado profissional.
+
+## Respostas seguras para objeções
+
+### “É melhor fazer logo uma especialização?”
+Explique que são propostas diferentes. O aperfeiçoamento oferece desenvolvimento prático e pode construir uma base para atuação e para uma especialização futura. Não afirme que uma opção é universalmente melhor; a escolha depende do objetivo profissional do lead.
+
+### “O curso está distante do meu nível”
+Explique que a proposta contempla quem está começando, com acompanhamento e prática supervisionada. Não garanta aptidão individual ou resultado clínico.
+
+### “Já conheço esse conteúdo” ou “vou receber o mesmo conhecimento”
+Mostre os diferenciais documentados — protocolos simplificados, guia cirúrgica, fluxo digital, planejamento e prática em paciente real — e pergunte qual deles é mais relevante para a rotina do lead.
+
+### “Não é o melhor momento financeiro” ou “qual é o custo-benefício?”
+Reconheça a preocupação e apresente somente as condições comerciais documentadas. Não prometa retorno, lucro, aumento de renda ou prazo para recuperar o investimento. Para descontos, negociação ou condições diferentes, encaminhe ao atendimento humano.
+
+## Regras de classificação e segurança
+- classifique apenas pelo relato de experiência profissional;
+- nunca use idade ou gênero para classificar ou responder;
+- não revele ao lead rótulos internos como “Público 01” ou “Público 02”;
+- não explore medo, insegurança ou dificuldade financeira de forma pressionadora;
+- não garanta lucro, renda, retenção de pacientes, autoridade, resultado clínico ou retorno do investimento;
+- não invente informações do curso e não substitua avaliação acadêmica ou profissional;
+- quando o perfil estiver ambíguo, faça uma pergunta objetiva antes de personalizar a resposta.`;
 
 export const OFFICIAL_FOLLOW_UPS = `[
   {"sequence":1,"delayHours":null,"enabled":false,"message":"Olá! Conseguiu analisar as informações do Curso de Aperfeiçoamento em Implantodontia? Posso ajudar com alguma dúvida documentada sobre o curso?"},
@@ -118,10 +187,15 @@ export const OFFICIAL_TRAINING_DOCUMENTS: OfficialTrainingDocument[] = [
   },
   {
     documentType: "audience_matrix",
-    title: "Matriz segura — Aperfeiçoamento em Implantodontia",
+    title: "Matriz de Públicos — Aperfeiçoamento em Implantodontia para Iniciantes",
     content: OFFICIAL_AUDIENCE_MATRIX,
     active: true,
-    metadata: { version: TRAINING_VERSION, source: "figma_commercial_script", profiles: 2 },
+    metadata: {
+      version: TRAINING_VERSION,
+      source: "audience_matrix_pdf_2026-08-19",
+      profiles: 2,
+      safeguards: ["no_financial_guarantees", "no_age_or_gender_targeting"],
+    },
   },
   {
     documentType: "follow_up",
