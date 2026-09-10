@@ -14,7 +14,6 @@ export interface PatientLead {
   message: string;
   status: string;
   notes: string | null;
-  kommo_lead_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -302,65 +301,6 @@ export const usePatientLeads = () => {
     importLeads,
     getLeadsByStatus,
     stats,
-    sendToKommo: useMutation({
-      mutationFn: async (leads: PatientLead[]) => {
-        const batchSize = 5;
-        let sent = 0;
-
-        for (let i = 0; i < leads.length; i += batchSize) {
-          const batch = leads.slice(i, i + batchSize);
-          const payload = batch.map(l => ({
-            type: "new" as const,
-            name: l.full_name,
-            phone: l.mobile_phone,
-            landline_phone: l.landline_phone || undefined,
-            city: l.city || undefined,
-            state: l.state || undefined,
-            message: l.message || undefined,
-            gender: l.gender || undefined,
-            birth_date: l.birth_date || undefined,
-            lead_id: l.id,
-          }));
-
-          const { data, error } = await supabase.functions.invoke("kommo-patient-lead", {
-            body: payload,
-          });
-
-          if (error) throw error;
-          
-          if (data && data.results) {
-            const batchSent = data.results.filter((r: any) => r.success).length;
-            sent += batchSent;
-            
-            if (data.hasFailures) {
-              const failures = data.results.filter((r: any) => !r.success);
-              console.error("Some leads failed to sync with Kommo:", failures);
-            }
-          } else if (!data) {
-            // Fallback for unexpected empty data
-            sent += batch.length;
-          }
-        }
-
-        return sent;
-      },
-      onSuccess: (count) => {
-        queryClient.invalidateQueries({ queryKey: ["patient-leads"] });
-        queryClient.invalidateQueries({ queryKey: ["patient-leads-counts"] });
-        toast({
-          title: "Enviado ao Kommo",
-          description: `${count} leads enviados ao CRM com sucesso.`,
-        });
-      },
-      onError: (error: Error) => {
-        queryClient.invalidateQueries({ queryKey: ["patient-leads"] });
-        toast({
-          title: "Erro ao enviar ao Kommo",
-          description: error.message,
-          variant: "destructive",
-        });
-      },
-    }),
     promoteToTriage: useMutation({
       mutationFn: async (lead: PatientLead) => {
         
@@ -378,7 +318,6 @@ export const usePatientLeads = () => {
           medical_history: lead.notes, // Mapping notes to medical_history
           current_stage: 'step1_atendimento',
           reception_status: 'entrada',
-          kommo_lead_id: lead.kommo_lead_id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           chk_necessities: false,
@@ -438,7 +377,6 @@ export const usePatientLeads = () => {
           medical_history: lead.notes,
           current_stage: 'step1_atendimento',
           reception_status: 'entrada',
-          kommo_lead_id: lead.kommo_lead_id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           chk_necessities: false,

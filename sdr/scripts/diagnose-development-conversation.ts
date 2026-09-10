@@ -29,7 +29,7 @@ const conversations = leadIds.length === 0
   ? { data: [], error: null }
   : await client
       .from("sdr_conversations")
-      .select("id, lead_id, status, bot_enabled, flow_stage, configured_course_id, kommo_lead_id, kommo_contact_id, kommo_status_id, kommo_sync_status, kommo_last_synced_at, kommo_sync_error, created_at, updated_at, last_inbound_at, last_outbound_at")
+      .select("id, lead_id, status, bot_enabled, flow_stage, configured_course_id, clint_deal_id, clint_contact_id, clint_stage_id, clint_sync_status, clint_last_synced_at, clint_sync_error, created_at, updated_at, last_inbound_at, last_outbound_at")
       .in("lead_id", leadIds)
       .order("created_at", { ascending: false })
       .limit(5);

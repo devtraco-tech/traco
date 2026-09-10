@@ -12,8 +12,7 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
-// Function to send lead to Kommo CRM
-async function sendLeadToKommo(lead: {
+type CourseLeadCrmInput = {
   name: string;
   email: string;
   phone?: string;
@@ -22,110 +21,69 @@ async function sendLeadToKommo(lead: {
   courseTitle: string;
   courseId: string;
   localLeadId?: string;
-}, supabaseClient?: any) {
-  const subdomain = Deno.env.get('KOMMO_SUBDOMAIN');
-  const accessToken = Deno.env.get('KOMMO_ACCESS_TOKEN');
-  
-  if (!subdomain || !accessToken) {
-    console.log('Kommo credentials not configured, skipping CRM integration');
-    return null;
+};
+
+async function sendLeadToClint(
+  lead: CourseLeadCrmInput,
+  supabaseClient?: ReturnType<typeof createClient>,
+) {
+  const apiToken = Deno.env.get('CLINT_API_TOKEN');
+  const originId = Deno.env.get('CLINT_ORIGIN_ID');
+  const stageId = Deno.env.get('CLINT_NEW_LEAD_STAGE_ID');
+  const courseFieldId = Deno.env.get('CLINT_COURSE_TITLE_FIELD_ID');
+  if (!apiToken || !originId || !stageId) {
+    throw new Error('CLINT_API_TOKEN, CLINT_ORIGIN_ID e CLINT_NEW_LEAD_STAGE_ID são obrigatórios');
   }
-  
-  const kommoUrl = `https://${subdomain}.kommo.com/api/v4/leads/complex`;
-  
-  const payload = [{
-    name: `Lead via API - Curso: ${lead.courseTitle}`,
-    price: 0,
-    pipeline_id: 10883891,
-    status_id: 83466699,
-    custom_fields_values: [
-      {
-        field_id: 997134,
-        values: [{ value: lead.courseTitle }]
-      }
-    ],
-    _embedded: {
-      tags: [{ name: "SITE ABO" }],
-      contacts: [{
-        name: lead.name,
-        custom_fields_values: [
-          {
-            field_id: 263916,
-            values: [{ value: lead.email, enum_code: "WORK" }]
-          },
-          ...(lead.phone ? [{
-            field_id: 263914,
-            values: [{ value: lead.phone, enum_code: "MOB" }]
-          }] : [])
-        ]
-      }]
-    }
-  }];
-  
-  // Log sem PII - apenas metadados estruturais
-  console.log('Sending lead to Kommo:', { pipelineId: payload[0].pipeline_id, courseTitle: lead.courseTitle });
-  
-  try {
-    const response = await fetch(kommoUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
-      },
-      body: JSON.stringify(payload)
-    });
-    
-    const result = await response.json();
-    if (!response.ok) {
-      console.error('Kommo API error:', result);
-      throw new Error(`Kommo API error: ${response.status}`);
-    }
-    
-    console.log('Lead created in Kommo successfully:', result);
-    let kommoLeadId: string | undefined;
-    try {
-      // Kommo may return various structures; look for first numeric id
-      const scanForId = (obj: any): any => {
-        if (!obj) return undefined;
-        if (typeof obj === 'number' || (typeof obj === 'string' && /^[0-9]+$/.test(obj))) return obj;
-        if (Array.isArray(obj)) {
-          for (const item of obj) {
-            const id = scanForId(item);
-            if (id) return id;
-          }
-        }
-        if (typeof obj === 'object') {
-          for (const k of Object.keys(obj)) {
-            const id = scanForId(obj[k]);
-            if (id) return id;
-          }
-        }
-        return undefined;
-      };
 
-      const found = scanForId(result);
-      if (found) kommoLeadId = String(found);
-    } catch (err) {
-      console.warn('Error scanning Kommo response for lead id:', err);
-    }
+  const headers = {
+    accept: 'application/json',
+    'content-type': 'application/json',
+    'api-token': apiToken,
+  };
+  const identity = lead.phone?.replace(/\D/g, '') || lead.email.toLowerCase().trim();
+  const queryKey = lead.phone ? 'phone' : 'email';
+  const listUrl = new URL('https://api.clint.digital/v1/deals');
+  listUrl.searchParams.set('origin_id', originId);
+  listUrl.searchParams.set(queryKey, identity);
+  listUrl.searchParams.set('status', 'OPEN');
+  listUrl.searchParams.set('limit', '1000');
 
-    // Update the local database row with kommo_lead_id, if a supabase client and lead id exist
-    if (kommoLeadId && supabaseClient && lead && typeof (lead as any).localLeadId !== 'undefined') {
-      try {
-        await supabaseClient
-          .from('course_leads')
-          .update({ kommo_lead_id: kommoLeadId })
-          .eq('id', (lead as any).localLeadId);
-      } catch (err) {
-        console.error('Failed to update course_leads with kommo_lead_id:', err);
-      }
-    }
+  const listResponse = await fetch(listUrl, { headers });
+  const listBody = await listResponse.json().catch(() => ({}));
+  if (!listResponse.ok) throw new Error(`Clint list deals error: ${listResponse.status}`);
+  const deals = Array.isArray(listBody)
+    ? listBody
+    : Array.isArray(listBody?.data) ? listBody.data
+      : Array.isArray(listBody?.deals) ? listBody.deals : [];
+  const existingId = deals[0]?.id;
+  const fields = courseFieldId ? { [courseFieldId]: lead.courseTitle } : undefined;
+  const payload = {
+    origin_id: originId,
+    stage_id: stageId,
+    name: `${lead.name} - ${lead.courseTitle}`,
+    phone: lead.phone?.replace(/\D/g, ''),
+    email: lead.email.toLowerCase().trim(),
+    ...(fields ? { fields } : {}),
+  };
+  const response = await fetch(
+    existingId
+      ? `https://api.clint.digital/v1/deals/${existingId}`
+      : 'https://api.clint.digital/v1/deals',
+    { method: 'POST', headers, body: JSON.stringify(payload) },
+  );
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(`Clint deal error: ${response.status}`);
+  const dealId = String(existingId ?? result?.id ?? result?.data?.id ?? result?.deal?.id ?? '');
+  if (!dealId) throw new Error('Clint não retornou o ID do negócio');
 
-    return result;
-  } catch (error) {
-    console.error('Failed to send lead to Kommo:', error);
-    throw error;
+  if (supabaseClient && lead.localLeadId) {
+    const { error } = await supabaseClient
+      .from('course_leads')
+      .update({ clint_deal_id: dealId })
+      .eq('id', lead.localLeadId);
+    if (error) throw new Error(`Falha ao salvar vínculo Clint: ${error.message}`);
   }
+  return result;
 }
 
 Deno.serve(async (req) => {
@@ -423,8 +381,8 @@ Deno.serve(async (req) => {
       // Fire and forget the confirmation email
       sendConfirmationEmail();
 
-      // Send lead to Kommo CRM in background (non-blocking)
-      const _backgroundPromise = sendLeadToKommo({
+      // Send the course lead to Clint in background (non-blocking)
+      const _backgroundPromise = sendLeadToClint({
         name: name.trim(),
         email: email.toLowerCase().trim(),
         phone: phone?.trim(),
@@ -444,11 +402,11 @@ Deno.serve(async (req) => {
           runtime.EdgeRuntime.waitUntil(_backgroundPromise);
         } else {
           // best-effort background execution without waiting
-          _backgroundPromise.catch(err => console.error('Failed to send lead to Kommo (non-critical):', err));
+          _backgroundPromise.catch(err => console.error('Failed to send lead to CRM (non-critical):', err));
         }
       } catch (err) {
         // if scheduling fails, still ensure we log promise errors
-        _backgroundPromise.catch(error => console.error('Failed to send lead to Kommo (non-critical):', error));
+        _backgroundPromise.catch(error => console.error('Failed to send lead to CRM (non-critical):', error));
       }
 
       return new Response(

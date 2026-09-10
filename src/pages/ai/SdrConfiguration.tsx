@@ -10,33 +10,19 @@ import {
   ChevronRight,
   CircleDashed,
   Clock3,
-  KeyRound,
   Loader2,
   MessageSquareText,
   PauseCircle,
-  Pencil,
   PlugZap,
-  PlusCircle,
   QrCode,
   RefreshCw,
   Save,
   ShieldCheck,
   Sparkles,
   Unplug,
-  Workflow,
   XCircle,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,23 +33,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -71,18 +41,7 @@ import { useSdrWhatsapp, type SdrWhatsappStatusName } from "@/hooks/useSdrWhatsa
 import { useSdrTraining } from "@/hooks/useSdrTraining";
 import { useUserRole } from "@/hooks/useUserRole";
 import { CatalogSelection } from "@/components/sdr/CatalogSelection";
-import { useSdrKommo } from "@/hooks/useSdrKommo";
-
-type PipelineRule = {
-  id: string;
-  event: string;
-  description: string;
-  stage: string;
-};
-
-type KommoRenameTarget =
-  | { type: "pipeline"; id: number; currentName: string }
-  | { type: "stage"; id: number; pipelineId: number; currentName: string };
+import { useSdrClint } from "@/hooks/useSdrClint";
 
 const INITIAL_SCRIPT = `Você é o assistente comercial da organização configurada.
 
@@ -92,75 +51,11 @@ const INITIAL_SCRIPT = `Você é o assistente comercial da organização configu
 4. Colete os dados de matrícula; dúvidas de pagamento ou coleta concluída devem ser encaminhadas para uma pessoa.
 5. Nunca invente preços, datas, vagas ou condições comerciais.`;
 
-const INITIAL_RULES: PipelineRule[] = [
-  {
-    id: "new-lead",
-    event: "Novo contato recebido",
-    description: "Primeira mensagem enviada pelo lead",
-    stage: "",
-  },
-  {
-    id: "qualified",
-    event: "Lead qualificado",
-    description: "Lead confirmou ser dentista formado",
-    stage: "",
-  },
-  {
-    id: "interested",
-    event: "Interesse confirmado",
-    description: "Lead confirmou que o curso faz sentido",
-    stage: "",
-  },
-  {
-    id: "negotiation",
-    event: "Coleta de dados iniciada",
-    description: "Formulário de matrícula enviado",
-    stage: "",
-  },
-  {
-    id: "dataCollected",
-    event: "Coleta de dados concluída",
-    description: "Os 12 campos foram validados e gravados",
-    stage: "",
-  },
-  {
-    id: "awaitingHuman",
-    event: "Lead escalado para humano",
-    description: "Lead pediu atendente ou atingiu regra de handoff",
-    stage: "",
-  },
-];
-
-const STANDARD_STAGE_BY_RULE: Record<string, string> = {
-  "new-lead": "Novo Lead",
-  qualified: "Qualificado",
-  interested: "Interessado",
-  negotiation: "Em Negociação",
-  dataCollected: "Dados Coletados",
-  awaitingHuman: "Aguardando Humano",
-};
-
-const KOMMO_TASK_TYPE_TRANSLATIONS: Record<string, string> = {
-  call: "Ligação",
-  meeting: "Reunião",
-  email: "E-mail",
-  "follow-up": "Acompanhamento",
-  followup: "Acompanhamento",
-  task: "Tarefa",
-  other: "Outra tarefa",
-  message: "Mensagem",
-  whatsapp: "WhatsApp",
-};
-
-function translateKommoTaskType(name: string): string {
-  return KOMMO_TASK_TYPE_TRANSLATIONS[name.trim().toLocaleLowerCase("en-US")] ?? name;
-}
-
 const WIZARD_STEPS = [
   { id: 1, title: "Curso", description: "Curso e identificação" },
   { id: 2, title: "WhatsApp", description: "Conexão WAHA" },
   { id: 3, title: "Comercial", description: "Roteiro do robô" },
-  { id: 4, title: "Kommo", description: "Funil comercial" },
+  { id: 4, title: "Clint", description: "CRM comercial" },
   { id: 5, title: "Finalização", description: "Handoff e revisão" },
 ] as const;
 
@@ -199,32 +94,18 @@ const SdrConfiguration = () => {
   const { toast } = useToast();
   const whatsapp = useSdrWhatsapp(isAdmin && !isLoading);
   const training = useSdrTraining(isAdmin && !isLoading);
-  const kommo = useSdrKommo(isAdmin && !isLoading);
+  const clint = useSdrClint(isAdmin && !isLoading);
   const wasWhatsappConnected = useRef(false);
   const loadedTrainingVersion = useRef<string | null>(null);
 
   const [robotName, setRobotName] = useState("Assistente Comercial Traço");
   const [isActive, setIsActive] = useState(false);
-  const [kommoConnected, setKommoConnected] = useState(false);
-  const [isTestingKommo, setIsTestingKommo] = useState(false);
-  const [kommoAccount, setKommoAccount] = useState("");
-  const [pipeline, setPipeline] = useState("");
-  const [rules, setRules] = useState(INITIAL_RULES);
-  const [responsibleUserId, setResponsibleUserId] = useState("");
-  const [taskTypeId, setTaskTypeId] = useState("");
-  const [handoffDeadline, setHandoffDeadline] = useState("5");
-  const [createPipelineOpen, setCreatePipelineOpen] = useState(false);
-  const [standardPipelineName, setStandardPipelineName] = useState("Atendimento SDR");
-  const [renameTarget, setRenameTarget] = useState<KommoRenameTarget | null>(null);
-  const [renameName, setRenameName] = useState("");
   const [commercialScript, setCommercialScript] = useState(INITIAL_SCRIPT);
   const [isSaving, setIsSaving] = useState(false);
   const [courseBound, setCourseBound] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const whatsappConnected = Boolean(whatsapp.status?.connected);
-  const selectedKommoPipeline = kommo.options?.pipelines.find(
-    (item) => String(item.id) === pipeline,
-  );
+  const clintConnected = Boolean(clint.status?.connected);
 
   useEffect(() => {
     const configuration = training.configuration;
@@ -232,29 +113,6 @@ const SdrConfiguration = () => {
     setCommercialScript(configuration.script);
     loadedTrainingVersion.current = configuration.version;
   }, [training.configuration]);
-
-  useEffect(() => {
-    const configuration = kommo.configuration?.configuration;
-    if (!configuration) return;
-    setKommoAccount(configuration.subdomain);
-    setPipeline(String(configuration.stages.pipelineId));
-    setResponsibleUserId(String(configuration.handoff.responsibleUserId));
-    setTaskTypeId(String(configuration.handoff.taskTypeId));
-    setHandoffDeadline(String(configuration.handoff.deadlineMinutes));
-    const mapped: Record<string, number> = {
-      "new-lead": configuration.stages.newLeadStatusId,
-      qualified: configuration.stages.qualifiedStatusId,
-      interested: configuration.stages.interestedStatusId,
-      negotiation: configuration.stages.negotiationStatusId,
-      dataCollected: configuration.stages.dataCollectedStatusId,
-      awaitingHuman: configuration.stages.handoffStatusId,
-    };
-    setRules((current) => current.map((rule) => ({
-      ...rule,
-      stage: String(mapped[rule.id] ?? ""),
-    })));
-    setKommoConnected(Boolean(kommo.configuration?.tokenConfigured));
-  }, [kommo.configuration]);
 
   useEffect(() => {
     if (whatsappConnected && !wasWhatsappConnected.current) {
@@ -281,10 +139,10 @@ const SdrConfiguration = () => {
         section: "Conexão",
       },
       {
-        id: "kommo",
-        label: "Integração Kommo validada",
-        ready: kommoConnected && Boolean(pipeline) && rules.every((rule) => rule.stage),
-        section: "Kommo",
+        id: "clint",
+        label: "Integração Clint validada",
+        ready: clintConnected,
+        section: "Clint",
       },
       {
         id: "script",
@@ -292,25 +150,8 @@ const SdrConfiguration = () => {
         ready: Boolean(training.configuration?.readiness.ready),
         section: "Comercial",
       },
-      {
-        id: "payment",
-        label: "Handoff de contrato e pagamento configurado",
-        ready: Boolean(responsibleUserId) && Boolean(taskTypeId) && Number(handoffDeadline) > 0,
-        section: "Finalização",
-      },
     ],
-    [
-      commercialScript,
-      courseBound,
-      kommoConnected,
-      responsibleUserId,
-      taskTypeId,
-      handoffDeadline,
-      pipeline,
-      rules,
-      whatsappConnected,
-      training.configuration?.readiness.ready,
-    ],
+    [courseBound, clintConnected, whatsappConnected, training.configuration?.readiness.ready],
   );
 
   const missingPrerequisites = prerequisites.filter((item) => !item.ready);
@@ -319,8 +160,8 @@ const SdrConfiguration = () => {
     1: courseBound && robotName.trim().length > 0,
     2: whatsappConnected,
     3: Boolean(training.configuration?.readiness.ready) && commercialScript.trim().length >= 80,
-    4: kommoConnected && Boolean(pipeline) && rules.every((rule) => rule.stage),
-    5: Boolean(responsibleUserId) && Boolean(taskTypeId) && Number(handoffDeadline) > 0,
+    4: clintConnected,
+    5: canActivate,
   };
 
   if (isLoading) {
@@ -389,143 +230,14 @@ const SdrConfiguration = () => {
     }
   };
 
-  const handleTestKommo = async () => {
-    if (!kommoAccount.trim()) {
-      toast({
-        title: "Conta Kommo obrigatória",
-        description: "Informe o subdomínio da conta antes de testar.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setIsTestingKommo(true);
-      await kommo.refreshOptions();
-      setIsTestingKommo(false);
-      setKommoConnected(true);
-      toast({
-        title: "Conexão Kommo validada",
-        description: "A conta, os funis, as etapas e os responsáveis foram consultados pela API.",
-      });
-    } catch (error) {
-      setIsTestingKommo(false);
-      setKommoConnected(false);
-      toast({
-        title: "Falha na conexão Kommo",
-        description: error instanceof Error ? error.message : "Erro inesperado.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const applyKommoPipeline = (selected: {
-    id: number;
-    statuses: Array<{ id: number; name: string }>;
-  }) => {
-    setPipeline(String(selected.id));
-    setRules((current) => current.map((rule) => {
-      const expectedName = STANDARD_STAGE_BY_RULE[rule.id];
-      const stage = selected.statuses.find((item) => item.name === expectedName);
-      return { ...rule, stage: stage ? String(stage.id) : "" };
-    }));
-  };
-
-  const handleCreateStandardPipeline = async () => {
-    try {
-      const result = await kommo.createStandardPipeline.mutateAsync(standardPipelineName);
-      applyKommoPipeline(result.pipeline);
-      await kommo.refreshOptions();
-      setCreatePipelineOpen(false);
-      toast({
-        title: result.created ? "Funil criado no Kommo" : "Funil já existente",
-        description: result.created
-          ? "As seis colunas foram criadas e mapeadas automaticamente."
-          : "O funil existente foi selecionado; revise as colunas antes de salvar.",
-      });
-    } catch (error) {
-      toast({
-        title: "Não foi possível criar o funil",
-        description: error instanceof Error ? error.message : "Erro inesperado.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const openRenameDialog = (target: KommoRenameTarget) => {
-    setRenameTarget(target);
-    setRenameName(target.currentName);
-  };
-
-  const handleRenameKommoStructure = async () => {
-    if (!renameTarget) return;
-    try {
-      if (renameTarget.type === "pipeline") {
-        await kommo.renamePipeline.mutateAsync({
-          pipelineId: renameTarget.id,
-          name: renameName,
-        });
-      } else {
-        await kommo.renameStage.mutateAsync({
-          pipelineId: renameTarget.pipelineId,
-          stageId: renameTarget.id,
-          name: renameName,
-        });
-      }
-      await kommo.refresh();
-      setRenameTarget(null);
-      toast({
-        title: renameTarget.type === "pipeline" ? "Funil renomeado" : "Coluna renomeada",
-        description: "A alteração já foi aplicada diretamente no Kommo.",
-      });
-    } catch (error) {
-      toast({
-        title: "Não foi possível renomear",
-        description: error instanceof Error ? error.message : "Erro inesperado.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const updateRuleStage = (ruleId: string, stage: string) => {
-    setRules((currentRules) =>
-      currentRules.map((rule) => (rule.id === ruleId ? { ...rule, stage } : rule)),
-    );
-  };
-
   const handleSave = async () => {
-    const byId = Object.fromEntries(rules.map((rule) => [rule.id, Number(rule.stage)]));
-    try {
-      setIsSaving(true);
-      await kommo.save.mutateAsync({
-        enabled: true,
-        pipelineId: Number(pipeline),
-        stages: {
-          newLead: byId["new-lead"],
-          qualified: byId.qualified,
-          interested: byId.interested,
-          negotiation: byId.negotiation,
-          dataCollected: byId.dataCollected,
-          awaitingHuman: byId.awaitingHuman,
-        },
-        responsibleUserId: Number(responsibleUserId),
-        taskTypeId: Number(taskTypeId),
-        deadlineMinutes: Number(handoffDeadline),
-      });
-      setIsSaving(false);
-      setKommoConnected(true);
-      toast({
-        title: "Configuração salva",
-        description: "O backend já usará este mapeamento nas próximas movimentações.",
-      });
-    } catch (error) {
-      setIsSaving(false);
-      toast({
-        title: "Não foi possível salvar o Kommo",
-        description: error instanceof Error ? error.message : "Erro inesperado.",
-        variant: "destructive",
-      });
-    }
+    setIsSaving(true);
+    setIsActive(true);
+    setIsSaving(false);
+    toast({
+      title: "Configuração concluída",
+      description: "O SDR está pronto para usar exclusivamente o CRM Clint.",
+    });
   };
 
   const handleInstallTraining = async () => {
@@ -552,8 +264,8 @@ const SdrConfiguration = () => {
         1: "Vincule um item do catálogo e informe o nome do robô.",
         2: "Conecte o WhatsApp pelo WAHA antes de continuar.",
         3: "Complete o roteiro comercial com pelo menos 80 caracteres.",
-        4: "Teste a conexão do Kommo e configure todas as etapas do funil.",
-        5: "Configure a origem e o modelo do link de pagamento.",
+        4: "Configure as credenciais e os identificadores da Clint no backend.",
+        5: "Conclua os itens pendentes antes de ativar o SDR.",
       };
       toast({ title: "Etapa incompleta", description: messages[currentStep], variant: "destructive" });
       return;
@@ -1080,362 +792,73 @@ const SdrConfiguration = () => {
         </CardContent>
       </Card>
 
-      <Card id="kommo" className={currentStep === 4 ? "scroll-mt-6" : "hidden"}>
+      <Card id="clint" className={currentStep === 4 ? "scroll-mt-6" : "hidden"}>
         <CardHeader>
           <div className="flex items-start gap-3">
             <SectionNumber>4</SectionNumber>
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <CardTitle>Integração Kommo</CardTitle>
+                <CardTitle>Integração Clint</CardTitle>
                 <Badge
                   variant="outline"
-                  className={
-                    kommoConnected
-                      ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300"
-                      : ""
-                  }
+                  className={clintConnected
+                    ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300"
+                    : ""}
                 >
-                  {kommoConnected ? (
-                    <CheckCircle2 className="mr-1 h-3 w-3" />
-                  ) : (
-                    <XCircle className="mr-1 h-3 w-3" />
-                  )}
-                  {kommoConnected ? "Conexão validada" : "Teste pendente"}
+                  {clintConnected
+                    ? <CheckCircle2 className="mr-1 h-3 w-3" />
+                    : <XCircle className="mr-1 h-3 w-3" />}
+                  {clintConnected ? "Conexão validada" : "Configuração pendente"}
                 </Badge>
               </div>
               <CardDescription className="mt-1">
-                Valide a conta e defina quando cada card deve avançar no funil.
+                O SDR usa exclusivamente a Clint para negócios de cursos.
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="kommo-account">Subdomínio da conta</Label>
-              <div className="flex">
-                <Input
-                  id="kommo-account"
-                  value={kommoAccount}
-                  readOnly
-                  className="rounded-r-none"
-                  placeholder="sua-conta"
-                />
-                <span className="flex items-center rounded-r-md border border-l-0 bg-muted px-3 text-sm text-muted-foreground">
-                  .kommo.com
-                </span>
-              </div>
+        <CardContent className="space-y-4">
+          <Alert className={clintConnected
+            ? "border-emerald-500/20 bg-emerald-500/5"
+            : "border-amber-500/20 bg-amber-500/5"}
+          >
+            <PlugZap className="h-4 w-4" />
+            <AlertTitle>
+              {clintConnected ? "Clint conectada" : "Credenciais ainda não validadas"}
+            </AlertTitle>
+            <AlertDescription>
+              {clintConnected
+                ? "A API confirmou o acesso. Origem, etapas, responsável e campos são mantidos com segurança no backend."
+                : "Preencha CLINT_API_TOKEN e os IDs da origem, etapas, responsável e campos no ambiente do backend."}
+            </AlertDescription>
+          </Alert>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded-xl border p-4">
+              <p className="text-sm font-semibold">Origem comercial</p>
+              <p className="mt-1 break-all text-sm text-muted-foreground">
+                {clint.status?.originId ?? "Não configurada"}
+              </p>
             </div>
-            <div className="space-y-2">
-              <Label>Token de acesso</Label>
-              <Input
-                value={kommo.configuration?.tokenConfigured ? "Configurado no backend" : "Não configurado"}
-                readOnly
-              />
-              <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                <KeyRound className="h-3 w-3" />
-                O token nunca é enviado para o navegador ou salvo no banco.
+            <div className="rounded-xl border p-4">
+              <p className="text-sm font-semibold">Responsável pelo handoff</p>
+              <p className="mt-1 break-all text-sm text-muted-foreground">
+                {clint.status?.responsibleUserId ?? "Não configurado"}
               </p>
             </div>
           </div>
-
-          <div className="flex flex-col gap-3 rounded-xl border bg-muted/20 p-4 sm:flex-row sm:items-end sm:justify-between">
-            <div className="max-w-xl">
-              <p className="text-sm font-semibold">Teste antes de salvar</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                O backend testará as credenciais sem devolver o token para o navegador.
-              </p>
-            </div>
-            <Button
-              variant={kommoConnected ? "outline" : "default"}
-              onClick={handleTestKommo}
-              disabled={isTestingKommo}
-            >
-              {isTestingKommo ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : kommoConnected ? (
-                <Check className="mr-2 h-4 w-4" />
-              ) : (
-                <PlugZap className="mr-2 h-4 w-4" />
-              )}
-              {kommoConnected ? "Testar novamente" : "Testar conexão"}
-            </Button>
-          </div>
-
-          <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-sm font-semibold">Gerenciar estrutura do Kommo</p>
-                <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
-                  Estas ações alteram o Kommo de verdade e exigem um token de administrador.
-                  Exclusões não são permitidas por esta tela.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setCreatePipelineOpen(true)}
-                  disabled={!kommoConnected}
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Criar funil padrão
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={!selectedKommoPipeline}
-                  onClick={() => selectedKommoPipeline && openRenameDialog({
-                    type: "pipeline",
-                    id: selectedKommoPipeline.id,
-                    currentName: selectedKommoPipeline.name,
-                  })}
-                >
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Renomear funil
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <AlertDialog open={createPipelineOpen} onOpenChange={setCreatePipelineOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Criar um funil no Kommo?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Será criado um funil com as colunas Novo Lead, Qualificado, Interessado,
-                  Em Negociação, Dados Coletados e Aguardando Humano. Esta é uma alteração real.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="space-y-2 py-2">
-                <Label htmlFor="standard-pipeline-name">Nome do novo funil</Label>
-                <Input
-                  id="standard-pipeline-name"
-                  value={standardPipelineName}
-                  maxLength={100}
-                  onChange={(event) => setStandardPipelineName(event.target.value)}
-                />
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={kommo.createStandardPipeline.isPending}>
-                  Cancelar
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  disabled={
-                    standardPipelineName.trim().length < 2
-                    || kommo.createStandardPipeline.isPending
-                  }
-                  onClick={(event) => {
-                    event.preventDefault();
-                    void handleCreateStandardPipeline();
-                  }}
-                >
-                  {kommo.createStandardPipeline.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Criar no Kommo
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          <Dialog open={Boolean(renameTarget)} onOpenChange={(open) => !open && setRenameTarget(null)}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {renameTarget?.type === "pipeline" ? "Renomear funil" : "Renomear coluna"}
-                </DialogTitle>
-                <DialogDescription>
-                  O novo nome será aplicado diretamente na conta Kommo e registrado na auditoria.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-2 py-2">
-                <Label htmlFor="kommo-structure-name">Novo nome</Label>
-                <Input
-                  id="kommo-structure-name"
-                  value={renameName}
-                  maxLength={100}
-                  onChange={(event) => setRenameName(event.target.value)}
-                />
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setRenameTarget(null)}>
-                  Cancelar
-                </Button>
-                <Button
-                  type="button"
-                  disabled={
-                    renameName.trim().length < 2
-                    || kommo.renamePipeline.isPending
-                    || kommo.renameStage.isPending
-                  }
-                  onClick={() => void handleRenameKommoStructure()}
-                >
-                  {(kommo.renamePipeline.isPending || kommo.renameStage.isPending) && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Salvar no Kommo
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          <Separator />
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Funil comercial</Label>
-              <Select
-                value={pipeline}
-                onValueChange={(value) => {
-                  setPipeline(value);
-                  setRules(INITIAL_RULES);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um funil" />
-                </SelectTrigger>
-                <SelectContent>
-                  {kommo.options?.pipelines.map((item) => (
-                    <SelectItem key={item.id} value={String(item.id)}>
-                      {item.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="rounded-xl border border-sky-500/20 bg-sky-500/5 p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <Workflow className="h-4 w-4 text-sky-600" />
-                Movimentação automática
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Cada evento do robô precisa apontar para uma etapa válida do Kommo.
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <h3 className="text-sm font-semibold">Regras do funil</h3>
-              <p className="text-xs text-muted-foreground">
-                Selecione a coluna de destino para todos os eventos.
-              </p>
-            </div>
-            <div className="overflow-hidden rounded-xl border">
-              <div className="hidden grid-cols-[minmax(0,1fr)_minmax(220px,0.7fr)] gap-4 border-b bg-muted/50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:grid">
-                <span>Evento do SDR</span>
-                <span>Coluna no Kommo</span>
-              </div>
-              <div className="divide-y">
-                {rules.map((rule) => (
-                  <div
-                    key={rule.id}
-                    className="grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.7fr)] md:items-center"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{rule.event}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {rule.description}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Select
-                        value={rule.stage}
-                        onValueChange={(value) => updateRuleStage(rule.id, value)}
-                      >
-                        <SelectTrigger
-                          className={!rule.stage ? "border-destructive" : ""}
-                          aria-label={`Coluna do Kommo para ${rule.event}`}
-                        >
-                          <SelectValue placeholder="Selecione uma coluna" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {selectedKommoPipeline?.statuses.map((stage) => (
-                            <SelectItem key={stage.id} value={String(stage.id)}>
-                              {stage.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="outline"
-                        title="Renomear esta coluna no Kommo"
-                        disabled={!rule.stage || !selectedKommoPipeline}
-                        onClick={() => {
-                          const stage = selectedKommoPipeline?.statuses.find(
-                            (item) => String(item.id) === rule.stage,
-                          );
-                          if (stage && selectedKommoPipeline) {
-                            openRenameDialog({
-                              type: "stage",
-                              id: stage.id,
-                              pipelineId: selectedKommoPipeline.id,
-                              currentName: stage.name,
-                            });
-                          }
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                        <span className="sr-only">Renomear coluna</span>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label>Responsável pelo handoff</Label>
-              <Select value={responsibleUserId} onValueChange={setResponsibleUserId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o responsável" />
-                </SelectTrigger>
-                <SelectContent>
-                  {kommo.options?.users.filter((user) => user.active).map((user) => (
-                    <SelectItem key={user.id} value={String(user.id)}>
-                      {user.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Tipo de tarefa</Label>
-              <Select value={taskTypeId} onValueChange={setTaskTypeId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {kommo.options?.taskTypes.map((taskType) => (
-                    <SelectItem key={taskType.id} value={String(taskType.id)}>
-                      {translateKommoTaskType(taskType.name)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="handoff-deadline">Prazo para assumir (minutos)</Label>
-              <Input
-                id="handoff-deadline"
-                type="number"
-                min={1}
-                max={1440}
-                value={handoffDeadline}
-                onChange={(event) => setHandoffDeadline(event.target.value)}
-              />
-            </div>
-          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void clint.refresh()}
+            disabled={clint.isLoading}
+          >
+            {clint.isLoading
+              ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              : <RefreshCw className="mr-2 h-4 w-4" />}
+            Validar novamente
+          </Button>
         </CardContent>
       </Card>
-
       <Card id="payment" className={currentStep === 5 ? "order-1 scroll-mt-6" : "hidden"}>
         <CardHeader>
           <div className="flex items-start gap-3">
@@ -1455,27 +878,17 @@ const SdrConfiguration = () => {
             <AlertDescription>
               O SDR não informa condições nem envia link de pagamento. Ao receber
               uma pergunta financeira ou concluir a coleta, ele interrompe o robô,
-              move o card para Aguardando Humano e cria a tarefa no Kommo.
+              move o negócio para Aguardando Humano e atribui o responsável na Clint.
             </AlertDescription>
           </Alert>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2">
             <div className="rounded-xl border p-4">
-              <p className="text-sm font-semibold">Responsável</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {kommo.options?.users.find((user) => String(user.id) === responsibleUserId)?.name ?? "Não selecionado"}
-              </p>
-            </div>
-            <div className="rounded-xl border p-4">
-              <p className="text-sm font-semibold">Prazo</p>
-              <p className="mt-1 text-sm text-muted-foreground">{handoffDeadline} minuto(s)</p>
+              <p className="text-sm font-semibold">CRM comercial</p>
+              <p className="mt-1 text-sm text-muted-foreground">Clint</p>
             </div>
             <div className="rounded-xl border p-4">
               <p className="text-sm font-semibold">Destino</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {selectedKommoPipeline?.statuses.find((stage) =>
-                  String(stage.id) === rules.find((rule) => rule.id === "awaitingHuman")?.stage
-                )?.name ?? "Não selecionado"}
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">Etapa Aguardando Humano</p>
             </div>
           </div>
         </CardContent>

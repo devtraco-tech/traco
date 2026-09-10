@@ -7,7 +7,6 @@ import { EmailNotifier } from "../infra/notifier.js";
 import type { ConversationQueue } from "../infra/queue.js";
 import type { SdrRepository } from "../infra/supabase-repository.js";
 import type { WahaClient } from "../infra/waha-client.js";
-import type { KommoClient } from "../infra/kommo-client.js";
 import { buildApp } from "./app.js";
 
 const config = loadConfig({
@@ -323,48 +322,5 @@ describe("API administrativa do WhatsApp", () => {
       mimetype: "image/png",
       data: "base64-qr",
     });
-  });
-});
-
-describe("Administração do funil Kommo", () => {
-  it("cria o funil padrão e registra o administrador na auditoria", async () => {
-    const pipeline = {
-      id: 100,
-      name: "Atendimento SDR",
-      statuses: [
-        { id: 201, name: "Novo Lead", sort: 10 },
-        { id: 202, name: "Qualificado", sort: 20 },
-      ],
-    };
-    const createStandardPipeline = vi.fn().mockResolvedValue({ pipeline, created: true });
-    const recordAdminAudit = vi.fn().mockResolvedValue(undefined);
-    const app = buildApp(config, {
-      repository: { recordAdminAudit } as unknown as SdrRepository,
-      queue: {} as ConversationQueue,
-      notifier: new EmailNotifier(),
-      adminAuthorizer: authorizedAdmin,
-      waha: wahaStub,
-      catalog: catalogStub,
-      kommoAdmin: { createStandardPipeline } as unknown as KommoClient,
-    });
-    apps.push(app);
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/api/sdr/kommo/pipelines/standard",
-      headers: {
-        authorization: "Bearer valid-token",
-        "content-type": "application/json",
-      },
-      payload: JSON.stringify({ name: "Atendimento SDR" }),
-    });
-
-    expect(response.statusCode).toBe(201);
-    expect(createStandardPipeline).toHaveBeenCalledWith("Atendimento SDR");
-    expect(recordAdminAudit).toHaveBeenCalledWith(expect.objectContaining({
-      actorUserId: "admin-1",
-      action: "kommo_pipeline_created",
-      targetExternalId: "100",
-    }));
   });
 });

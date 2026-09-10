@@ -5,7 +5,7 @@ import type { EnrollmentData, HandoffReason } from "../domain/types.js";
 import type { SupportedLanguage } from "../domain/language.js";
 
 export const SDR_QUEUE_NAME = "sdr-conversations";
-export const KOMMO_RETRY_QUEUE_NAME = "sdr-kommo-retry";
+export const CRM_RETRY_QUEUE_NAME = "sdr-clint-retry";
 
 export type ConversationJob =
   | { kind?: "process"; conversationId: string }
@@ -17,7 +17,7 @@ export type ConversationJob =
       baselineInboundAt: string;
     };
 
-export type KommoRetryJob =
+export type CrmRetryJob =
   | {
       operation: "flow";
       conversationId: string;
@@ -146,13 +146,13 @@ export class ConversationQueue {
   }
 }
 
-export class KommoRetryQueue {
+export class CrmRetryQueue {
   private readonly connection: Redis;
-  private readonly queue: Queue<KommoRetryJob>;
+  private readonly queue: Queue<CrmRetryJob>;
 
   constructor(redisUrl: string) {
     this.connection = createConnection(redisUrl);
-    this.queue = new Queue<KommoRetryJob>(KOMMO_RETRY_QUEUE_NAME, {
+    this.queue = new Queue<CrmRetryJob>(CRM_RETRY_QUEUE_NAME, {
       connection: this.connection,
       defaultJobOptions: {
         attempts: 5,
@@ -163,9 +163,9 @@ export class KommoRetryQueue {
     });
   }
 
-  async enqueue(job: KommoRetryJob): Promise<void> {
-    await this.queue.add("sync-kommo", job, {
-      jobId: `kommo-${job.operation}-${job.conversationId}-${Date.now()}`,
+  async enqueue(job: CrmRetryJob): Promise<void> {
+    await this.queue.add("sync-clint", job, {
+      jobId: `clint-${job.operation}-${job.conversationId}-${Date.now()}`,
     });
   }
 
@@ -194,12 +194,12 @@ export function createConversationWorker(
   };
 }
 
-export function createKommoRetryWorker(
+export function createCrmRetryWorker(
   redisUrl: string,
-  processor: Processor<KommoRetryJob>,
-): { worker: Worker<KommoRetryJob>; close: () => Promise<void> } {
+  processor: Processor<CrmRetryJob>,
+): { worker: Worker<CrmRetryJob>; close: () => Promise<void> } {
   const connection = createConnection(redisUrl);
-  const worker = new Worker<KommoRetryJob>(KOMMO_RETRY_QUEUE_NAME, processor, {
+  const worker = new Worker<CrmRetryJob>(CRM_RETRY_QUEUE_NAME, processor, {
     connection,
     concurrency: 2,
   });

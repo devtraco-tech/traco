@@ -8,11 +8,11 @@ import type { OpenAiAgent } from "../infra/openai-agent.js";
 import type { EmailNotifier } from "../infra/notifier.js";
 import type { SdrRepository } from "../infra/supabase-repository.js";
 import type { WahaClient } from "../infra/waha-client.js";
-import type { KommoRetryQueue } from "../infra/queue.js";
+import type { CrmRetryQueue } from "../infra/queue.js";
 import type { ConversationQueue } from "../infra/queue.js";
 import { isPhoneAllowed } from "../domain/phone-allowlist.js";
 import type { CatalogItemSnapshot } from "../domain/catalog.js";
-import type { KommoSyncService } from "./kommo-sync.js";
+import type { CrmSyncService } from "./crm-sync.js";
 import {
   resolveConversationLanguage,
   type SupportedLanguage,
@@ -31,8 +31,8 @@ type Dependencies = {
   model: string;
   contextMessageLimit: number;
   developmentAllowedPhoneNumbers: string[] | null;
-  kommo: KommoSyncService | null;
-  kommoRetryQueue: KommoRetryQueue | null;
+  crm: CrmSyncService;
+  crmRetryQueue: CrmRetryQueue;
   conversationQueue: ConversationQueue;
   enrollmentFollowUpIntervalMs: number;
   enrollmentFollowUpMaxAttempts: number;
@@ -141,9 +141,9 @@ export class ConversationProcessor {
         const scriptVersion = knowledge
           .find((document) => document.documentType === "commercial_script")
           ?.metadata?.version;
-        const notifyKommoBeforeEnrollment = flowDecision.notifyEnrollment === true;
-        if (notifyKommoBeforeEnrollment) {
-          await this.syncKommoFlowSafely(
+        const notifyCrmBeforeEnrollment = flowDecision.notifyEnrollment === true;
+        if (notifyCrmBeforeEnrollment) {
+          await this.syncCrmFlowSafely(
             context,
             flowDecision,
             courseBinding.snapshot,
@@ -168,8 +168,8 @@ export class ConversationProcessor {
           await repository.updateFlowState(conversationId, flowDecision.patch);
         }
 
-        if (!notifyKommoBeforeEnrollment) {
-          await this.syncKommoFlowSafely(
+        if (!notifyCrmBeforeEnrollment) {
+          await this.syncCrmFlowSafely(
             context,
             flowDecision,
             courseBinding.snapshot,
@@ -407,7 +407,7 @@ export class ConversationProcessor {
     const { repository, notifier, waha } = this.dependencies;
     await repository.requestHandoff(context.conversationId, reason, details);
     if (course) {
-      await this.syncKommoHandoffSafely(context, course, reason, details);
+      await this.syncCrmHandoffSafely(context, course, reason, details);
     }
 
     if (acknowledgeLead) {
@@ -456,14 +456,13 @@ export class ConversationProcessor {
     }
   }
 
-  private async syncKommoFlowSafely(
+  private async syncCrmFlowSafely(
     context: Awaited<ReturnType<SdrRepository["loadConversation"]>>,
     decision: CommercialFlowDecision,
     course: CatalogItemSnapshot,
   ): Promise<void> {
-    if (!this.dependencies.kommo) return;
     try {
-      await this.dependencies.kommo.syncFlow(
+      await this.dependencies.crm.syncFlow(
         context,
         decision.patch,
         course,
@@ -471,10 +470,10 @@ export class ConversationProcessor {
         decision.notifyEnrollment === true,
       );
     } catch (error) {
-      await this.auditKommoFailure(context, error);
-      if (decision.patch && this.dependencies.kommoRetryQueue) {
+      await this.auditCrmFailure(context, error);
+      if (decision.patch) {
         try {
-          await this.dependencies.kommoRetryQueue.enqueue({
+          await this.dependencies.crmRetryQueue.enqueue({
             operation: "flow",
             conversationId: context.conversationId,
             patch: decision.patch,
@@ -485,7 +484,7 @@ export class ConversationProcessor {
         } catch (queueError) {
           console.error(JSON.stringify({
             level: "error",
-            event: "kommo_retry_enqueue_failed",
+            event: "clint_retry_enqueue_failed",
             conversationId: context.conversationId,
             error: queueError instanceof Error ? queueError.message : String(queueError),
           }));
@@ -494,57 +493,54 @@ export class ConversationProcessor {
     }
   }
 
-  private async syncKommoHandoffSafely(
+  private async syncCrmHandoffSafely(
     context: Awaited<ReturnType<SdrRepository["loadConversation"]>>,
     course: CatalogItemSnapshot,
     reason: HandoffReason,
     details?: string,
   ): Promise<void> {
-    if (!this.dependencies.kommo) return;
     try {
-      await this.dependencies.kommo.syncHandoff(context, course, reason, details);
+      await this.dependencies.crm.syncHandoff(context, course, reason, details);
     } catch (error) {
-      await this.auditKommoFailure(context, error);
-      if (this.dependencies.kommoRetryQueue) {
-        try {
-          await this.dependencies.kommoRetryQueue.enqueue({
-            operation: "handoff",
-            conversationId: context.conversationId,
-            reason,
-            ...(details ? { details } : {}),
-          });
-        } catch (queueError) {
-          console.error(JSON.stringify({
-            level: "error",
-            event: "kommo_retry_enqueue_failed",
-            conversationId: context.conversationId,
-            error: queueError instanceof Error ? queueError.message : String(queueError),
-          }));
-        }
+      await this.auditCrmFailure(context, error);
+      try {
+        await this.dependencies.crmRetryQueue.enqueue({
+          operation: "handoff",
+          conversationId: context.conversationId,
+          reason,
+          ...(details ? { details } : {}),
+        });
+      } catch (queueError) {
+        console.error(JSON.stringify({
+          level: "error",
+          event: "clint_retry_enqueue_failed",
+          conversationId: context.conversationId,
+          error: queueError instanceof Error ? queueError.message : String(queueError),
+        }));
       }
     }
   }
 
-  private async auditKommoFailure(
+  private async auditCrmFailure(
     context: Awaited<ReturnType<SdrRepository["loadConversation"]>>,
     error: unknown,
   ): Promise<void> {
     const message = error instanceof Error ? error.message : String(error);
     console.error(JSON.stringify({
       level: "error",
-      event: "kommo_sync_failed",
+      event: "clint_sync_failed",
       conversationId: context.conversationId,
       error: message,
     }));
     try {
-      await this.dependencies.repository.markKommoSyncFailed(
+      await this.dependencies.repository.markClintSyncFailed(
         context.conversationId,
         message,
       );
     } catch (auditError) {
       console.error(JSON.stringify({
         level: "error",
-        event: "kommo_sync_audit_failed",
+        event: "clint_sync_audit_failed",
         conversationId: context.conversationId,
         error: auditError instanceof Error ? auditError.message : String(auditError),
       }));

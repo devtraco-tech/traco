@@ -14,16 +14,6 @@ if (!defined('ABSPATH')) {
 class ABOG_Integration {
     
     private $api_base_url = '';
-    // Kommo configuration - replace token with a secure option in production
-    private $kommo_base_url = 'https://cursosabogoiasorgbr.kommo.com/api/v4';
-    private $kommo_token = '';
-    // Kommo mapping defaults - update according to your Kommo account
-    private $kommo_pipeline_id = 10883891;
-    private $kommo_status_id = 83466699;
-    private $kommo_course_field_id = 997134; // custom field ID for course name
-    // plugin no longer forwards leads directly to Kommo; Supabase function handles forwarding
-    private $kommo_contact_email_field_id = 263916;
-    private $kommo_contact_phone_field_id = 263914;
     
     public function __construct() {
         add_action('wp_enqueue_scripts', array($this, 'enqueue_assets'));
@@ -36,13 +26,6 @@ class ABOG_Integration {
         add_action('wp_ajax_abog_proxy', array($this, 'ajax_proxy'));
         add_action('wp_ajax_nopriv_abog_proxy', array($this, 'ajax_proxy'));
         
-        // AJAX Endpoint for sending Form Lead directly to Kommo
-        add_action('wp_ajax_abog_send_kommo_lead', array($this, 'ajax_send_kommo_lead'));
-        add_action('wp_ajax_nopriv_abog_send_kommo_lead', array($this, 'ajax_send_kommo_lead'));
-
-        // Admin test endpoint for Kommo
-        add_action('admin_post_abog_test_kommo', array($this, 'handle_admin_test_kommo'));
-        add_action('admin_post_abog_clear_kommo_logs', array($this, 'handle_admin_clear_kommo_logs'));
         
         // Shortcodes
         add_shortcode('abog_courses', array($this, 'render_courses'));
@@ -60,14 +43,6 @@ class ABOG_Integration {
         add_action('wp_ajax_abog_create_patient_lead', array($this, 'ajax_create_patient_lead'));
         add_action('wp_ajax_nopriv_abog_create_patient_lead', array($this, 'ajax_create_patient_lead'));
 
-        // Load Kommo token and ids from constant or option if available
-        if (defined('ABOG_KOMMO_API_TOKEN') && !empty(ABOG_KOMMO_API_TOKEN)) {
-            $this->kommo_token = ABOG_KOMMO_API_TOKEN;
-        } else {
-            $opt = get_option('abog_kommo_bearer_token');
-            if (!empty($opt)) $this->kommo_token = $opt;
-        }
-
         // Load Supabase API base URL from constant or option
         if (defined('ABOG_SUPABASE_API_URL') && !empty(ABOG_SUPABASE_API_URL)) {
             $this->api_base_url = ABOG_SUPABASE_API_URL;
@@ -76,86 +51,8 @@ class ABOG_Integration {
             if (!empty($supabaseOpt)) $this->api_base_url = $supabaseOpt;
         }
 
-        // optional mapping overrides via constants or options
-        if (defined('ABOG_KOMMO_PIPELINE_ID')) $this->kommo_pipeline_id = intval(ABOG_KOMMO_PIPELINE_ID);
-        else {
-            $pipelineOpt = get_option('abog_kommo_pipeline_id');
-            if (!empty($pipelineOpt)) $this->kommo_pipeline_id = intval($pipelineOpt);
-        }
-
-        if (defined('ABOG_KOMMO_STATUS_ID')) $this->kommo_status_id = intval(ABOG_KOMMO_STATUS_ID);
-        else {
-            $statusOpt = get_option('abog_kommo_status_id');
-            if (!empty($statusOpt)) $this->kommo_status_id = intval($statusOpt);
-        }
-
-        if (defined('ABOG_KOMMO_COURSE_FIELD_ID')) $this->kommo_course_field_id = intval(ABOG_KOMMO_COURSE_FIELD_ID);
-        else {
-            $courseFieldOpt = get_option('abog_kommo_course_field_id');
-            if (!empty($courseFieldOpt)) $this->kommo_course_field_id = intval($courseFieldOpt);
-        }
-
-        if (defined('ABOG_KOMMO_CONTACT_EMAIL_FIELD_ID')) $this->kommo_contact_email_field_id = intval(ABOG_KOMMO_CONTACT_EMAIL_FIELD_ID);
-        else {
-            $emailFieldOpt = get_option('abog_kommo_contact_email_field_id');
-            if (!empty($emailFieldOpt)) $this->kommo_contact_email_field_id = intval($emailFieldOpt);
-        }
-
-        if (defined('ABOG_KOMMO_CONTACT_PHONE_FIELD_ID')) $this->kommo_contact_phone_field_id = intval(ABOG_KOMMO_CONTACT_PHONE_FIELD_ID);
-        else {
-            $phoneFieldOpt = get_option('abog_kommo_contact_phone_field_id');
-            if (!empty($phoneFieldOpt)) $this->kommo_contact_phone_field_id = intval($phoneFieldOpt);
-        }
     }
 
-    /**
-     * Clear stored Kommo logs
-     */
-    public function handle_admin_clear_kommo_logs() {
-        if (!current_user_can('manage_options')) {
-            wp_die('Unauthorized', 403);
-        }
-
-        check_admin_referer('abog_clear_kommo_logs_nonce');
-        update_option('abog_kommo_test_logs', array());
-        wp_redirect(admin_url('options-general.php?page=abog-integration'));
-        exit;
-    }
-
-    /**
-     * Send a payload to Kommo using configured token
-     * Returns WP HTTP response or WP_Error
-     */
-    public function send_to_kommo_payload($kommoData) {
-        if (empty($this->kommo_token)) {
-            return new WP_Error('no_token', 'Kommo API token not configured');
-        }
-        $args = array(
-            'headers' => array(
-                'Authorization' => 'Bearer ' . $this->kommo_token,
-                'Content-Type' => 'application/json'
-            ),
-            'body' => wp_json_encode($kommoData),
-            'timeout' => 20
-        );
-        $url = rtrim($this->kommo_base_url, '/') . '/leads/complex';
-        $response = wp_remote_post($url, $args);
-        return $response;
-    }
-
-    /**
-     * Append an entry to Kommo test logs
-     */
-    public function add_kommo_log($status, $message, $body = '') {
-        $logs = get_option('abog_kommo_test_logs', array());
-        $logs[] = array('time' => current_time('mysql'), 'status' => $status, 'message' => $message, 'body' => $body);
-        // Keep only latest 20
-        if (count($logs) > 20) {
-            $logs = array_slice($logs, -20);
-        }
-        update_option('abog_kommo_test_logs', $logs);
-    }
-    
     public function enqueue_assets() {
         $plugin_url = plugin_dir_url(__FILE__);
         $version = '3.0.9';
@@ -214,7 +111,6 @@ class ABOG_Integration {
             'proxyApiClassifieds' => admin_url('admin-ajax.php?action=abog_proxy&target=classifieds'),
             'createClassifiedUrl' => admin_url('admin-ajax.php?action=abog_create_classified'),
             'createPatientLeadUrl' => admin_url('admin-ajax.php?action=abog_create_patient_lead'),
-            'kommoLeadUrl' => admin_url('admin-ajax.php?action=abog_send_kommo_lead'),
             'painelBaseUrl' => $painel_url,
             'supabaseUrl' => $supabase_base,
             'supabaseAnonKey' => defined('ABOG_SUPABASE_ANON_KEY') ? ABOG_SUPABASE_ANON_KEY : get_option('abog_supabase_anon_key', '')
@@ -276,93 +172,6 @@ class ABOG_Integration {
         exit;
     }
 
-    /**
-     * Handles AJAX request to send a lead directly to Kommo (overriding Supabase logic).
-     */
-    public function ajax_send_kommo_lead() {
-        if (!isset($_POST['data'])) {
-            wp_send_json_error(array('error' => 'No data received'), 400);
-        }
-        
-        $data = json_decode(stripslashes($_POST['data']), true);
-
-        if (empty($data['name']) || empty($data['email']) || empty($data['course_title'])) {
-            wp_send_json_error(array('error' => 'Missing required fields (name, email, course_title)'), 400);
-        }
-
-        $course_title = sanitize_text_field($data['course_title']);
-        $name = sanitize_text_field($data['name']);
-        $email = sanitize_email($data['email']);
-        $phone = isset($data['phone']) ? sanitize_text_field($data['phone']) : '';
-        $cpf = isset($data['cpf']) ? sanitize_text_field($data['cpf']) : '';
-        $notes = isset($data['notes']) ? sanitize_textarea_field($data['notes']) : '';
-
-        // Monta o payload Kommo
-        $payload = array(
-            array(
-                'name' => 'Lead Web: ' . $course_title,
-                'price' => 0,
-                'pipeline_id' => $this->kommo_pipeline_id,
-                'status_id' => $this->kommo_status_id,
-                'custom_fields_values' => array(
-                    // Campo do Curso
-                    array('field_id' => $this->kommo_course_field_id, 'values' => array(array('value' => $course_title))),
-                ),
-                '_embedded' => array(
-                    'tags' => array(array('name' => 'FORMULÁRIO SITE')),
-                    'contacts' => array(array(
-                        'name' => $name,
-                        'custom_fields_values' => array(
-                            // Campo Email
-                            array('field_id' => $this->kommo_contact_email_field_id, 'values' => array(array('value' => $email, 'enum_code' => 'WORK'))),
-                        ),
-                    ))
-                )
-            )
-        );
-        
-        // Adiciona Telefone se existir
-        if (!empty($phone)) {
-            $phone_field = array('field_id' => $this->kommo_contact_phone_field_id, 'values' => array(array('value' => $phone, 'enum_code' => 'WORK')));
-            $payload[0]['_embedded']['contacts'][0]['custom_fields_values'][] = $phone_field;
-        }
-
-        // Adiciona anotações como Nota/Task
-        if (!empty($notes) || !empty($cpf)) {
-            $notes_text = "Observações do Lead:\n";
-            if (!empty($cpf)) $notes_text .= "CPF: {$cpf}\n";
-            if (!empty($notes)) $notes_text .= "Notas: {$notes}";
-
-            $payload[0]['_embedded']['notes'][] = array(
-                'note_type' => 'common',
-                'text' => $notes_text
-            );
-        }
-
-        // Envia para o Kommo
-        $result = $this->send_to_kommo_payload($payload);
-
-        if (is_wp_error($result)) {
-            error_log("ABOG Kommo Send Error: " . $result->get_error_message());
-            wp_send_json_error(array('error' => 'Falha ao comunicar com Kommo: ' . $result->get_error_message()), 500);
-        }
-
-        $status = wp_remote_retrieve_response_code($result);
-        $body = wp_remote_retrieve_body($result);
-
-        if ($status >= 200 && $status < 300) {
-            wp_send_json_success(array('message' => 'Lead enviado com sucesso para o Kommo!', 'kommo_status' => $status));
-        } else {
-            error_log("ABOG Kommo Send Failed - Status: {$status}, Body: {$body}");
-            // Tenta extrair a mensagem de erro da API Kommo
-            $error_message = json_decode($body, true)['_embedded']['errors'][0]['detail'] ?? "Erro HTTP {$status} ao enviar lead.";
-            wp_send_json_error(array('error' => $error_message), 500);
-        }
-    }
-
-    /**
-     * Register admin menu
-     */
     public function register_admin_menu() {
         add_options_page(
             'ABOG Integration',
@@ -373,79 +182,11 @@ class ABOG_Integration {
         );
     }
 
-    /**
-     * Handle admin test Kommo (admin_post handler)
-     */
-    public function handle_admin_test_kommo() {
-        if (!current_user_can('manage_options')) {
-            wp_die('Unauthorized', 403);
-        }
-
-        check_admin_referer('abog_test_kommo_nonce');
-
-        // Build a small test payload
-        $time = current_time('mysql');
-        $name = 'ABOG Test - ' . $time;
-        $admin_email = get_option('admin_email');
-        $payload = array(
-            array(
-                'name' => $name,
-                'price' => 0,
-                'pipeline_id' => $this->kommo_pipeline_id,
-                'status_id' => $this->kommo_status_id,
-                'custom_fields_values' => array(
-                    array('field_id' => $this->kommo_course_field_id, 'values' => array(array('value' => 'Teste via plugin')))
-                ),
-                '_embedded' => array(
-                    'tags' => array(array('name' => 'PLUGIN TEST')),
-                    'contacts' => array(array(
-                        'name' => $name,
-                        'custom_fields_values' => array(
-                            array('field_id' => $this->kommo_contact_email_field_id, 'values' => array(array('value' => $admin_email, 'enum_code' => 'WORK')))
-                        )
-                    ))
-                )
-            )
-        );
-
-        // Send to Kommo
-        $result = $this->send_to_kommo_payload($payload);
-        if (is_wp_error($result)) {
-            $this->add_kommo_log('error', $result->get_error_message(), '');
-            $redirect = add_query_arg('abog_kommo_test', 'error', admin_url('options-general.php?page=abog-integration'));
-        } else {
-            $status = wp_remote_retrieve_response_code($result);
-            $body = wp_remote_retrieve_body($result);
-            if ($status >= 200 && $status < 300) {
-                $this->add_kommo_log('success', 'OK', $body);
-                $redirect = add_query_arg('abog_kommo_test', 'success', admin_url('options-general.php?page=abog-integration'));
-            } else {
-                $this->add_kommo_log('error', 'HTTP ' . $status, $body);
-                $redirect = add_query_arg('abog_kommo_test', 'error', admin_url('options-general.php?page=abog-integration'));
-            }
-        }
-
-        wp_redirect($redirect);
-        exit;
-    }
-
-    /**
-     * Register settings and settings fields
-     */
     public function register_settings() {
         // Register settings - General
         register_setting('abog_integration_settings', 'abog_painel_base_url', array('sanitize_callback' => 'esc_url_raw'));
         register_setting('abog_integration_settings', 'abog_supabase_api_url', array('sanitize_callback' => 'esc_url_raw'));
         register_setting('abog_integration_settings', 'abog_supabase_anon_key', array('sanitize_callback' => 'sanitize_text_field'));
-
-        // Register settings - Kommo
-        register_setting('abog_integration_settings', 'abog_kommo_bearer_token', array('sanitize_callback' => 'sanitize_text_field'));
-        register_setting('abog_integration_settings', 'abog_kommo_pipeline_id', array('sanitize_callback' => 'absint'));
-        register_setting('abog_integration_settings', 'abog_kommo_status_id', array('sanitize_callback' => 'absint'));
-        register_setting('abog_integration_settings', 'abog_kommo_course_field_id', array('sanitize_callback' => 'absint'));
-        register_setting('abog_integration_settings', 'abog_kommo_contact_email_field_id', array('sanitize_callback' => 'absint'));
-        register_setting('abog_integration_settings', 'abog_kommo_contact_phone_field_id', array('sanitize_callback' => 'absint'));
-        // sending via plugin removed - Supabase function handles Kommo forwarding
 
         // General Settings Section
         add_settings_section('abog_general_section', 'Configurações Gerais', function() {
@@ -457,19 +198,6 @@ class ABOG_Integration {
         add_settings_field('abog_supabase_api_url', 'Supabase API URL', array($this, 'field_supabase_api_url'), 'abog_integration_settings', 'abog_general_section');
         add_settings_field('abog_supabase_anon_key', 'Supabase Anon Key', array($this, 'field_supabase_anon_key'), 'abog_integration_settings', 'abog_general_section');
 
-        // Kommo Section
-        add_settings_section('abog_kommo_section', 'Kommo CRM Integration', function() {
-            echo '<p>Configure Kommo API credentials and mapping for lead forwarding.</p>';
-        }, 'abog_integration_settings');
-
-        // Kommo Fields
-        add_settings_field('abog_kommo_bearer_token', 'Kommo Bearer Token', array($this, 'field_kommo_bearer_token'), 'abog_integration_settings', 'abog_kommo_section');
-        add_settings_field('abog_kommo_pipeline_id', 'Kommo Pipeline ID', array($this, 'field_kommo_pipeline_id'), 'abog_integration_settings', 'abog_kommo_section');
-        add_settings_field('abog_kommo_status_id', 'Kommo Status ID', array($this, 'field_kommo_status_id'), 'abog_integration_settings', 'abog_kommo_section');
-        add_settings_field('abog_kommo_course_field_id', 'Kommo - Course Field ID', array($this, 'field_kommo_course_field_id'), 'abog_integration_settings', 'abog_kommo_section');
-        add_settings_field('abog_kommo_contact_email_field_id', 'Kommo - Contact Email Field ID', array($this, 'field_kommo_contact_email_field_id'), 'abog_integration_settings', 'abog_kommo_section');
-        add_settings_field('abog_kommo_contact_phone_field_id', 'Kommo - Contact Phone Field ID', array($this, 'field_kommo_contact_phone_field_id'), 'abog_integration_settings', 'abog_kommo_section');
-        // Removed field 'Enviar leads direto via plugin' because plugin no longer forwards to Kommo
     }
 
     /**
@@ -487,55 +215,6 @@ class ABOG_Integration {
                 submit_button();
                 ?>
             </form>
-            <hr />
-            <h2>Testar Kommo</h2>
-            <?php if (isset($_GET['abog_kommo_test']) && $_GET['abog_kommo_test'] === 'success'): ?>
-                <div class="notice notice-success is-dismissible"><p>Teste enviado com sucesso para o Kommo. Confira se o lead apareceu no Kommo.</p></div>
-            <?php elseif (isset($_GET['abog_kommo_test']) && $_GET['abog_kommo_test'] === 'error'): ?>
-                <div class="notice notice-error is-dismissible"><p>Falha no teste para Kommo. Verifique o log abaixo para mais detalhes.</p></div>
-            <?php endif; ?>
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                <?php wp_nonce_field('abog_test_kommo_nonce'); ?>
-                <input type="hidden" name="action" value="abog_test_kommo" />
-                <button class="button button-primary" type="submit">Testar Kommo</button>
-            </form>
-
-            <h3>Logs de Kommo</h3>
-            <?php
-            $logs = get_option('abog_kommo_test_logs', array());
-            if (!empty($logs)): ?>
-                <table class="widefat fixed" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Status</th>
-                            <th>Mensagem</th>
-                            <th>Resposta</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php foreach (array_reverse($logs) as $entry): ?>
-                        <tr>
-                            <td><?php echo esc_html($entry['time']); ?></td>
-                            <td><?php echo esc_html($entry['status']); ?></td>
-                            <td><?php echo esc_html($entry['message']); ?></td>
-                            <td><pre><?php echo esc_html($entry['body']); ?></pre></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin-top:10px;">
-                    <?php wp_nonce_field('abog_clear_kommo_logs_nonce'); ?>
-                    <input type="hidden" name="action" value="abog_clear_kommo_logs" />
-                    <button class="button" type="submit">Limpar logs</button>
-                </form>
-            <?php else: ?>
-                <p>Sem logs recentes.</p>
-            <?php endif; ?>
-            <hr />
-            <h2>Observações</h2>
-            <p><strong>Atenção:</strong> O formulário de Pré-Matrícula agora envia leads diretamente para o Kommo via AJAX do WordPress (usando a mesma lógica do botão Testar Kommo).</p>
-            <p>Você também pode configurar os valores via constantes no <code>wp-config.php</code>, como <code>ABOG_KOMMO_API_TOKEN</code>, <code>ABOG_KOMMO_PIPELINE_ID</code>, etc. Constantes têm prioridade sobre as opções do banco de dados.</p>
         </div>
         <?php
     }
@@ -559,39 +238,6 @@ class ABOG_Integration {
         echo '<p class="description">Chave anônima (anon key) do Supabase. Usada para uploads de imagens no frontend. Pode ser definido via constante ABOG_SUPABASE_ANON_KEY no wp-config.php.</p>';
     }
 
-    public function field_kommo_bearer_token() {
-        $v = esc_attr(get_option('abog_kommo_bearer_token', ''));
-        echo "<input type='text' name='abog_kommo_bearer_token' value='$v' class='regular-text' />";
-        echo '<p class="description">Bearer token para o Kommo API (recomendado definir via wp-config.php para segurança).</p>';
-    }
-
-    public function field_kommo_pipeline_id() {
-        $v = esc_attr(get_option('abog_kommo_pipeline_id', $this->kommo_pipeline_id));
-        echo "<input type='number' name='abog_kommo_pipeline_id' value='$v' class='small-text' />";
-    }
-
-    public function field_kommo_status_id() {
-        $v = esc_attr(get_option('abog_kommo_status_id', $this->kommo_status_id));
-        echo "<input type='number' name='abog_kommo_status_id' value='$v' class='small-text' />";
-    }
-
-    public function field_kommo_course_field_id() {
-        $v = esc_attr(get_option('abog_kommo_course_field_id', $this->kommo_course_field_id));
-        echo "<input type='number' name='abog_kommo_course_field_id' value='$v' class='small-text' />";
-    }
-
-    public function field_kommo_contact_email_field_id() {
-        $v = esc_attr(get_option('abog_kommo_contact_email_field_id', $this->kommo_contact_email_field_id));
-        echo "<input type='number' name='abog_kommo_contact_email_field_id' value='$v' class='small-text' />";
-    }
-
-    public function field_kommo_contact_phone_field_id() {
-        $v = esc_attr(get_option('abog_kommo_contact_phone_field_id', $this->kommo_contact_phone_field_id));
-        echo "<input type='number' name='abog_kommo_contact_phone_field_id' value='$v' class='small-text' />";
-    }
-
-    // Forwarding option removed: Kommo forwarding handled by Supabase function
-    
     public function render_courses($atts) {
         ob_start();
         ?>

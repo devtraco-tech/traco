@@ -40,7 +40,7 @@ Para quem já atua, apresente o curso como atualização em protocolos simplific
 Finalize perguntando: "Faz sentido pra você?"
 
 ## Matrícula
-Depois do interesse explícito, notifique o responsável no Kommo e siga o fluxo normal de coleta dos dados. Contrato e pagamento permanecem com o atendimento humano.`;
+Depois do interesse explícito, notifique o responsável no Clint e siga o fluxo normal de coleta dos dados. Contrato e pagamento permanecem com o atendimento humano.`;
 
 export const OFFICIAL_FAQ = `# FAQ — Curso de Aperfeiçoamento em Implantodontia
 

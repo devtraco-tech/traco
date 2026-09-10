@@ -1,6 +1,6 @@
 /**
  * ABOG Integration - JavaScript Vanilla
- * Version: 3.0.1 (Integrado com envio Kommo AJAX)
+ * Version: 3.0.1
  */
 
 const ABOG = {
@@ -14,7 +14,6 @@ const ABOG = {
         proxyApiCourses: null,
         proxyApiTeachers: null,
         proxyApiClassifieds: null,
-        kommoLeadUrl: null,
         painelBaseUrl: 'https://painel.abogoias.org.br', // URL base do painel (configurável via PHP)
     },
 
@@ -1721,13 +1720,11 @@ const ABOG = {
         this.config.apiCourses = ABOG_CONFIG.apiCourses;
         this.config.apiTeachers = ABOG_CONFIG.apiTeachers;
         this.config.apiClassifieds = ABOG_CONFIG.apiClassifieds;
-        // Admin AJAX URL and nonce for sending leads to Kommo via plugin
         this.config.ajaxUrl = ABOG_CONFIG.ajaxUrl || null;
         // Proxy endpoints (admin-ajax) for server-side fetching to avoid CORS
         this.config.proxyApiCourses = ABOG_CONFIG.proxyApiCourses || null;
         this.config.proxyApiTeachers = ABOG_CONFIG.proxyApiTeachers || null;
         this.config.proxyApiClassifieds = ABOG_CONFIG.proxyApiClassifieds || null;
-        this.config.kommoLeadUrl = ABOG_CONFIG.kommoLeadUrl || null;
         this.config.apiCreateClassified = ABOG_CONFIG.apiCreateClassified || null;
         this.config.createClassifiedUrl = ABOG_CONFIG.createClassifiedUrl || null;
         this.config.apiCreatePatientLead = ABOG_CONFIG.apiCreatePatientLead || null;

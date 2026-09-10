@@ -28,14 +28,14 @@ const emailList = z
   )
   .pipe(z.array(z.email()).max(10));
 
-const booleanString = z
-  .enum(["true", "false"])
-  .default("false")
-  .transform((value) => value === "true");
-
-const optionalPositiveInteger = z.preprocess(
+const optionalUuid = z.preprocess(
   (value) => (value === "" || value === undefined ? undefined : value),
-  z.coerce.number().int().positive().optional(),
+  z.uuid().optional(),
+);
+
+const optionalClintFieldKey = z.preprocess(
+  (value) => (value === "" || value === undefined ? undefined : value),
+  z.string().trim().min(1).max(128).regex(/^[a-z\d_-]+$/iu).optional(),
 );
 
 const internalServiceUrl = z
@@ -78,31 +78,28 @@ const envSchema = z
     SDR_ENROLLMENT_FOLLOW_UP_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(10).default(3),
     SDR_TIME_ZONE: z.string().min(1).default("America/Sao_Paulo"),
     SDR_TEST_ALLOWED_PHONE_NUMBERS: phoneNumberList,
-    KOMMO_ENABLED: booleanString,
-    KOMMO_SUBDOMAIN: z.string().regex(/^[a-z0-9-]+$/u).optional(),
-    KOMMO_ACCESS_TOKEN: optionalSecret,
-    KOMMO_PIPELINE_ID: optionalPositiveInteger,
-    KOMMO_NEW_LEAD_STATUS_ID: optionalPositiveInteger,
-    KOMMO_QUALIFIED_STATUS_ID: optionalPositiveInteger,
-    KOMMO_INTERESTED_STATUS_ID: optionalPositiveInteger,
-    KOMMO_NEGOTIATION_STATUS_ID: optionalPositiveInteger,
-    KOMMO_DATA_COLLECTED_STATUS_ID: optionalPositiveInteger,
-    KOMMO_AWAITING_HUMAN_STATUS_ID: optionalPositiveInteger,
-    KOMMO_RESPONSIBLE_USER_ID: optionalPositiveInteger,
-    KOMMO_HANDOFF_TASK_TYPE_ID: optionalPositiveInteger,
-    KOMMO_HANDOFF_DEADLINE_MINUTES: z.coerce.number().int().min(1).max(1440).default(5),
-    KOMMO_FIELD_FULL_NAME_ID: optionalPositiveInteger,
-    KOMMO_FIELD_WHATSAPP_PHONE_ID: optionalPositiveInteger,
-    KOMMO_FIELD_CPF_ID: optionalPositiveInteger,
-    KOMMO_FIELD_BIRTH_DATE_ID: optionalPositiveInteger,
-    KOMMO_FIELD_MARITAL_STATUS_ID: optionalPositiveInteger,
-    KOMMO_FIELD_NATIONALITY_ID: optionalPositiveInteger,
-    KOMMO_FIELD_BIRTHPLACE_ID: optionalPositiveInteger,
-    KOMMO_FIELD_CRO_ID: optionalPositiveInteger,
-    KOMMO_FIELD_EMAIL_ID: optionalPositiveInteger,
-    KOMMO_FIELD_ADDRESS_ID: optionalPositiveInteger,
-    KOMMO_FIELD_DISTRICT_ID: optionalPositiveInteger,
-    KOMMO_FIELD_POSTAL_CODE_ID: optionalPositiveInteger,
+    CLINT_API_TOKEN: optionalSecret,
+    CLINT_ORIGIN_ID: optionalUuid,
+    CLINT_NEW_LEAD_STAGE_ID: optionalUuid,
+    CLINT_QUALIFIED_STAGE_ID: optionalUuid,
+    CLINT_INTERESTED_STAGE_ID: optionalUuid,
+    CLINT_NEGOTIATION_STAGE_ID: optionalUuid,
+    CLINT_DATA_COLLECTED_STAGE_ID: optionalUuid,
+    CLINT_AWAITING_HUMAN_STAGE_ID: optionalUuid,
+    CLINT_RESPONSIBLE_USER_ID: optionalUuid,
+    CLINT_HANDOFF_NOTE_FIELD_ID: optionalClintFieldKey,
+    CLINT_FIELD_FULL_NAME_ID: optionalClintFieldKey,
+    CLINT_FIELD_WHATSAPP_PHONE_ID: optionalClintFieldKey,
+    CLINT_FIELD_CPF_ID: optionalClintFieldKey,
+    CLINT_FIELD_BIRTH_DATE_ID: optionalClintFieldKey,
+    CLINT_FIELD_MARITAL_STATUS_ID: optionalClintFieldKey,
+    CLINT_FIELD_NATIONALITY_ID: optionalClintFieldKey,
+    CLINT_FIELD_BIRTHPLACE_ID: optionalClintFieldKey,
+    CLINT_FIELD_CRO_ID: optionalClintFieldKey,
+    CLINT_FIELD_EMAIL_ID: optionalClintFieldKey,
+    CLINT_FIELD_ADDRESS_ID: optionalClintFieldKey,
+    CLINT_FIELD_DISTRICT_ID: optionalClintFieldKey,
+    CLINT_FIELD_POSTAL_CODE_ID: optionalClintFieldKey,
   })
   .superRefine((value, context) => {
     if (value.NODE_ENV === "production") {
@@ -132,42 +129,6 @@ const envSchema = z
         path: ["SDR_TEST_ALLOWED_PHONE_NUMBERS"],
         message: "deve conter ao menos um número em desenvolvimento",
       });
-    }
-    if (value.KOMMO_ENABLED) {
-      const requiredFields = [
-        "KOMMO_SUBDOMAIN",
-        "KOMMO_ACCESS_TOKEN",
-        "KOMMO_PIPELINE_ID",
-        "KOMMO_NEW_LEAD_STATUS_ID",
-        "KOMMO_QUALIFIED_STATUS_ID",
-        "KOMMO_INTERESTED_STATUS_ID",
-        "KOMMO_NEGOTIATION_STATUS_ID",
-        "KOMMO_DATA_COLLECTED_STATUS_ID",
-        "KOMMO_AWAITING_HUMAN_STATUS_ID",
-        "KOMMO_RESPONSIBLE_USER_ID",
-        "KOMMO_HANDOFF_TASK_TYPE_ID",
-        "KOMMO_FIELD_FULL_NAME_ID",
-        "KOMMO_FIELD_WHATSAPP_PHONE_ID",
-        "KOMMO_FIELD_CPF_ID",
-        "KOMMO_FIELD_BIRTH_DATE_ID",
-        "KOMMO_FIELD_MARITAL_STATUS_ID",
-        "KOMMO_FIELD_NATIONALITY_ID",
-        "KOMMO_FIELD_BIRTHPLACE_ID",
-        "KOMMO_FIELD_CRO_ID",
-        "KOMMO_FIELD_EMAIL_ID",
-        "KOMMO_FIELD_ADDRESS_ID",
-        "KOMMO_FIELD_DISTRICT_ID",
-        "KOMMO_FIELD_POSTAL_CODE_ID",
-      ] as const;
-      for (const field of requiredFields) {
-        if (!value[field]) {
-          context.addIssue({
-            code: "custom",
-            path: [field],
-            message: "é obrigatório quando KOMMO_ENABLED=true",
-          });
-        }
-      }
     }
   });
 

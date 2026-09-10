@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ConversationContext } from "../domain/types.js";
 import type { SdrRepository } from "../infra/supabase-repository.js";
-import type { ConversationQueue, KommoRetryQueue } from "../infra/queue.js";
+import type { ConversationQueue, CrmRetryQueue } from "../infra/queue.js";
 import type { OpenAiAgent } from "../infra/openai-agent.js";
 import type { EmailNotifier } from "../infra/notifier.js";
 import type { WahaClient } from "../infra/waha-client.js";
 import { ConversationProcessor } from "./process-conversation.js";
+import type { CrmSyncService } from "./crm-sync.js";
 
 const baseline = "2026-08-18T12:00:00.000Z";
 
@@ -25,10 +26,10 @@ function context(messages: ConversationContext["messages"]): ConversationContext
     enrollmentStep: 0,
     enrollmentNotificationSent: true,
     configuredCourseId: "course-1",
-    kommoLeadId: null,
-    kommoContactId: null,
-    kommoStatusId: null,
-    kommoSyncStatus: "not_synced",
+    clintDealId: null,
+    clintContactId: null,
+    clintStageId: null,
+    clintSyncStatus: "not_synced",
     wahaSession: "default",
     enrollmentData: {},
     messages,
@@ -58,8 +59,8 @@ function processorWith(conversation: ConversationContext) {
     model: "test-model",
     contextMessageLimit: 20,
     developmentAllowedPhoneNumbers: null,
-    kommo: null,
-    kommoRetryQueue: null as KommoRetryQueue | null,
+    crm: {} as CrmSyncService,
+    crmRetryQueue: {} as CrmRetryQueue,
     enrollmentFollowUpIntervalMs: 4 * 3_600_000,
     enrollmentFollowUpMaxAttempts: 3,
     timeZone: "America/Sao_Paulo",

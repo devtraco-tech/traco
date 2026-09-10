@@ -27,6 +27,14 @@ describe("loadConfig", () => {
     expect(config.SDR_TEST_ALLOWED_PHONE_NUMBERS).toEqual([]);
   });
 
+  it("valida os identificadores UUID da Clint", () => {
+    expect(() => loadConfig({
+      ...validEnvironment,
+      CLINT_API_TOKEN: "token",
+      CLINT_ORIGIN_ID: "invalido",
+    })).toThrow(/UUID/u);
+  });
+
   it("aceita o host privado do Render para o WAHA", () => {
     const config = loadConfig({
       ...validEnvironment,

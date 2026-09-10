@@ -19,7 +19,7 @@ export class EmailNotifier {
   }
 
   async send(notification: Notification): Promise<void> {
-    // Eventos comerciais são tratados pelo Kommo. O e-mail é reservado para
+    // Eventos comerciais são tratados pelo Clint. O e-mail é reservado para
     // incidentes técnicos, reduzindo ruído e exposição desnecessária de dados.
     if (!this.enabled || notification.severity !== "critical") return;
 

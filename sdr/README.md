@@ -207,7 +207,7 @@ Após o primeiro deploy:
 2. defina `VITE_SDR_API_URL` no frontend com a URL pública da API;
 3. defina `FRONTEND_ORIGIN` na API com a origem HTTPS exata do frontend;
 4. conecte o número dedicado pelo QR Code da tela do SDR;
-5. valide `/health`, recebimento, resposta, Kommo e alerta crítico por e-mail.
+5. valide `/health`, recebimento, resposta, Clint e alerta crítico por e-mail.
 
 Os valores necessários e a ordem de publicação estão detalhados em
 `docs/sdr-render-homologation.md`.
@@ -226,37 +226,22 @@ Nesta primeira versão:
 Ao ocorrer handoff, a conversa muda para `waiting_human` e `bot_enabled=false`.
 Isso evita que o robô continue respondendo junto com o atendente.
 
-## Integração Kommo
+## Integração Clint
 
-Quando `KOMMO_ENABLED=true`, o worker localiza o card pelo número do WhatsApp ou
-cria um card no funil configurado:
+O worker usa exclusivamente a Clint para os leads de cursos. Ele localiza um
+negócio aberto pelo telefone e pela origem ou cria um novo negócio, depois avança
+pelas etapas Novo Lead, Qualificado, Interessado, Em Negociação, Dados Coletados
+e Aguardando Humano.
 
-- primeira mensagem: `Novo Lead`;
-- graduação confirmada: `Qualificado`;
-- interesse confirmado: `Interessado`;
-- início da coleta: `Em Negociação`;
-- coleta finalizada: `Dados Coletados`;
-- fallback, pagamento ou handoff: `Aguardando Humano`.
+Os dados de matrícula são gravados nos campos Clint configurados. Falhas entram
+na fila Redis `sdr-clint-retry`, com tentativas e backoff exponencial, sem
+interromper a resposta do SDR no WhatsApp. IDs do negócio, contato e etapa ficam
+em `sdr_conversations`.
 
-Os 12 dados de matrícula são gravados nos campos `SDR - ...` do card. Falhas de
-sincronização entram na fila Redis `sdr-kommo-retry`, com cinco tentativas e
-backoff exponencial. O mapeamento de funil, colunas, responsável e prazo pode ser
-administrado na etapa Kommo da interface; o token permanece somente no backend.
-
-Os IDs do lead, contato e etapa ficam em `sdr_conversations`. Falhas do Kommo
-são auditadas no banco, mas não interrompem a resposta do SDR no WhatsApp.
-Credenciais e IDs pertencem ao backend e nunca devem usar prefixo `VITE_`.
-
-Administradores também podem criar um funil padrão do SDR e renomear o funil ou
-suas etapas pela interface. Essas ações alteram diretamente o Kommo, exigem um
-token com permissão administrativa e são registradas em
-`sdr_admin_audit_logs`. A interface não permite excluir funis ou etapas.
-
-Antes de habilitar, aplique a migration
-`20260813120000_add_sdr_kommo_sync.sql`. Para inspecionar o funil sem alterar o
-Kommo, execute `npm run kommo:inspect`. O comando `kommo:test-lead` realiza uma
-escrita real e exige a confirmação explícita de homologação.
-
+Credenciais e UUIDs pertencem somente ao backend e nunca devem usar o prefixo
+`VITE_`. Configure todas as variáveis `CLINT_*` de `.env.example`. Para
+consultar origens, usuários e campos sem alterar dados, execute
+`npm run clint:inspect`.
 ## Segurança
 
 - Nunca use `SUPABASE_SERVICE_ROLE_KEY` no frontend.
@@ -268,7 +253,7 @@ escrita real e exige a confirmação explícita de homologação.
 
 ## Alertas críticos e retenção de dados
 
-O Kommo trata os eventos comerciais. Uma conta Resend exclusiva do SDR envia
+A Clint trata os eventos comerciais. Uma conta Resend exclusiva do SDR envia
 e-mail apenas em falhas técnicas críticas. Configure `RESEND_API_KEY`, `ALERT_EMAIL_FROM` e
 `ALERT_EMAIL_TO` somente no backend. Os e-mails não incluem nome, telefone
 completo nem conteúdo da conversa. A migration

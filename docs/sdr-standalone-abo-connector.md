@@ -21,7 +21,7 @@ Painel administrativo do SDR
   WAHA          ABO Goiás
   OpenAI             |
   Redis         API somente leitura de cursos
-  Kommo
+  Clint
   Banco SDR
 ```
 
@@ -53,7 +53,7 @@ da organização para esse contrato.
 6. O administrador escolhe um curso e o SDR grava um snapshot no banco próprio.
 7. Durante a conversa, o robô responde com esse snapshot e pode sincronizá-lo
    novamente para atualizar vagas, datas e condições.
-8. Leads, CPF, CRO, endereço, histórico e tokens permanecem no SDR/Kommo; não são
+8. Leads, CPF, CRO, endereço, histórico e tokens permanecem no SDR/Clint; não são
    gravados no catálogo de cursos.
 
 O endpoint existente `/functions/v1/wordpress-courses` pode cumprir o primeiro

@@ -15,9 +15,8 @@ import { createCatalogItemSnapshot, type CatalogProvider } from "../domain/catal
 import type { EmailNotifier } from "../infra/notifier.js";
 import type { ConversationQueue } from "../infra/queue.js";
 import type { SdrRepository } from "../infra/supabase-repository.js";
+import type { ClintClient } from "../infra/clint-client.js";
 import { WahaApiError, type WahaClient } from "../infra/waha-client.js";
-import type { KommoClient } from "../infra/kommo-client.js";
-import type { KommoAdminConfiguration } from "../infra/supabase-repository.js";
 import { verifyWahaHmac } from "../lib/hmac.js";
 import { isPhoneAllowed, maskPhoneNumber } from "../domain/phone-allowlist.js";
 import {
@@ -32,8 +31,7 @@ type ApiDependencies = {
   adminAuthorizer: AdminAuthorizerLike;
   waha: WahaClient;
   catalog: CatalogProvider;
-  kommoAdmin?: KommoClient | null;
-  kommoDefaultConfiguration?: KommoAdminConfiguration | null;
+  clintAdmin?: ClintClient | null;
 };
 
 type RawJsonBody = {
@@ -91,7 +89,6 @@ export function buildApp(
     timestamp: new Date().toISOString(),
   }));
 
-  const adminActors = new WeakMap<FastifyRequest, string>();
   const requireAdmin = async (request: FastifyRequest, reply: FastifyReply) => {
     const result = await dependencies.adminAuthorizer.authorize(
       request.headers.authorization,
@@ -99,13 +96,6 @@ export function buildApp(
     if (!result.authorized) {
       return reply.code(result.statusCode).send({ error: result.message });
     }
-    adminActors.set(request, result.userId);
-  };
-
-  const adminActor = (request: FastifyRequest): string => {
-    const actor = adminActors.get(request);
-    if (!actor) throw new Error("Administrador autenticado não identificado.");
-    return actor;
   };
 
   app.get(
@@ -191,195 +181,24 @@ export function buildApp(
   );
 
   app.get(
-    "/api/sdr/kommo/options",
+    "/api/sdr/clint/status",
     { onRequest: requireAdmin },
     async (_request, reply) => {
-      if (!dependencies.kommoAdmin) {
-        return reply.code(503).send({ error: "Integração Kommo não configurada no backend" });
-      }
-      return dependencies.kommoAdmin.listAdminOptions();
-    },
-  );
-
-  app.post(
-    "/api/sdr/kommo/pipelines/standard",
-    { onRequest: requireAdmin },
-    async (request, reply) => {
-      if (!dependencies.kommoAdmin) {
-        return reply.code(503).send({ error: "Integração Kommo não configurada no backend" });
-      }
-      const body = (request.body as RawJsonBody).parsed as Record<string, unknown>;
-      const name = typeof body?.name === "string" ? body.name : "";
-      if (name.trim().length < 2 || name.trim().length > 100) {
-        return reply.code(400).send({ error: "Nome do funil deve ter entre 2 e 100 caracteres" });
-      }
-      const result = await dependencies.kommoAdmin.createStandardPipeline(name);
-      if (result.created) {
-        await dependencies.repository.recordAdminAudit({
-          actorUserId: adminActor(request),
-          action: "kommo_pipeline_created",
-          targetType: "kommo_pipeline",
-          targetExternalId: String(result.pipeline.id),
-          newState: result.pipeline,
+      if (!dependencies.clintAdmin) {
+        return reply.code(503).send({
+          configured: false,
+          connected: false,
+          originId: null,
+          responsibleUserId: null,
+          error: "Integração Clint não configurada no backend",
         });
       }
-      return reply.code(result.created ? 201 : 200).send(result);
-    },
-  );
-
-  app.patch(
-    "/api/sdr/kommo/pipelines/:pipelineId",
-    { onRequest: requireAdmin },
-    async (request, reply) => {
-      if (!dependencies.kommoAdmin) {
-        return reply.code(503).send({ error: "Integração Kommo não configurada no backend" });
-      }
-      const pipelineId = Number((request.params as Record<string, string>).pipelineId);
-      const body = (request.body as RawJsonBody).parsed as Record<string, unknown>;
-      const name = typeof body?.name === "string" ? body.name : "";
-      if (!Number.isSafeInteger(pipelineId) || pipelineId <= 0) {
-        return reply.code(400).send({ error: "pipelineId inválido" });
-      }
-      if (name.trim().length < 2 || name.trim().length > 100) {
-        return reply.code(400).send({ error: "Nome do funil deve ter entre 2 e 100 caracteres" });
-      }
-      const result = await dependencies.kommoAdmin.renamePipeline(pipelineId, name);
-      await dependencies.repository.recordAdminAudit({
-        actorUserId: adminActor(request),
-        action: "kommo_pipeline_renamed",
-        targetType: "kommo_pipeline",
-        targetExternalId: String(pipelineId),
-        previousState: { name: result.previousName },
-        newState: { name: result.pipeline.name },
-      });
-      return result;
-    },
-  );
-
-  app.patch(
-    "/api/sdr/kommo/pipelines/:pipelineId/stages/:stageId",
-    { onRequest: requireAdmin },
-    async (request, reply) => {
-      if (!dependencies.kommoAdmin) {
-        return reply.code(503).send({ error: "Integração Kommo não configurada no backend" });
-      }
-      const params = request.params as Record<string, string>;
-      const pipelineId = Number(params.pipelineId);
-      const stageId = Number(params.stageId);
-      const body = (request.body as RawJsonBody).parsed as Record<string, unknown>;
-      const name = typeof body?.name === "string" ? body.name : "";
-      if (
-        !Number.isSafeInteger(pipelineId) || pipelineId <= 0
-        || !Number.isSafeInteger(stageId) || stageId <= 0
-      ) {
-        return reply.code(400).send({ error: "Funil ou coluna inválidos" });
-      }
-      if (name.trim().length < 2 || name.trim().length > 100) {
-        return reply.code(400).send({ error: "Nome da coluna deve ter entre 2 e 100 caracteres" });
-      }
-      const result = await dependencies.kommoAdmin.renamePipelineStage(
-        pipelineId,
-        stageId,
-        name,
-      );
-      await dependencies.repository.recordAdminAudit({
-        actorUserId: adminActor(request),
-        action: "kommo_stage_renamed",
-        targetType: "kommo_stage",
-        targetExternalId: String(stageId),
-        previousState: { pipelineId, name: result.previousName },
-        newState: { pipelineId, name: result.pipeline.statuses.find((item) => item.id === stageId)?.name },
-      });
-      return result;
-    },
-  );
-
-  app.get(
-    "/api/sdr/kommo/config",
-    { onRequest: requireAdmin },
-    async () => ({
-      configuration:
-        (await dependencies.repository.getKommoConfiguration(config.WAHA_SESSION))
-        ?? dependencies.kommoDefaultConfiguration
-        ?? null,
-      tokenConfigured: Boolean(config.KOMMO_ACCESS_TOKEN),
-    }),
-  );
-
-  app.put(
-    "/api/sdr/kommo/config",
-    { onRequest: requireAdmin },
-    async (request, reply) => {
-      if (!dependencies.kommoAdmin || !dependencies.kommoDefaultConfiguration) {
-        return reply.code(503).send({ error: "Integração Kommo não configurada no backend" });
-      }
-      const body = (request.body as RawJsonBody).parsed as Record<string, any>;
-      const positive = (value: unknown): number | null => {
-        const parsed = Number(value);
-        return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
-      };
-      const pipelineId = positive(body.pipelineId);
-      const stages = body.stages as Record<string, unknown> | undefined;
-      const responsibleUserId = positive(body.responsibleUserId);
-      const taskTypeId = positive(body.taskTypeId);
-      const deadlineMinutes = positive(body.deadlineMinutes);
-      const stageKeys = [
-        "newLead",
-        "qualified",
-        "interested",
-        "negotiation",
-        "dataCollected",
-        "awaitingHuman",
-      ] as const;
-      const stageIds = Object.fromEntries(
-        stageKeys.map((key) => [key, positive(stages?.[key])]),
-      ) as Record<(typeof stageKeys)[number], number | null>;
-      if (
-        !pipelineId
-        || !responsibleUserId
-        || !taskTypeId
-        || !deadlineMinutes
-        || deadlineMinutes > 1440
-        || stageKeys.some((key) => !stageIds[key])
-      ) {
-        return reply.code(400).send({ error: "Mapeamento Kommo incompleto ou inválido" });
-      }
-
-      const options = await dependencies.kommoAdmin.listAdminOptions();
-      const pipeline = options.pipelines.find((item) => item.id === pipelineId);
-      if (!pipeline) return reply.code(400).send({ error: "Funil Kommo não encontrado" });
-      const allowedStatuses = new Set(pipeline.statuses.map((status) => status.id));
-      if (stageKeys.some((key) => !allowedStatuses.has(stageIds[key]!))) {
-        return reply.code(400).send({ error: "Uma etapa não pertence ao funil selecionado" });
-      }
-      if (!options.users.some((user) => user.id === responsibleUserId && user.active)) {
-        return reply.code(400).send({ error: "Responsável Kommo inativo ou inexistente" });
-      }
-      if (!options.taskTypes.some((taskType) => taskType.id === taskTypeId)) {
-        return reply.code(400).send({ error: "Tipo de tarefa Kommo inexistente" });
-      }
-
-      const configuration: KommoAdminConfiguration = {
-        enabled: body.enabled !== false,
-        subdomain: config.KOMMO_SUBDOMAIN!,
-        stages: {
-          pipelineId,
-          newLeadStatusId: stageIds.newLead!,
-          qualifiedStatusId: stageIds.qualified!,
-          interestedStatusId: stageIds.interested!,
-          negotiationStatusId: stageIds.negotiation!,
-          dataCollectedStatusId: stageIds.dataCollected!,
-          handoffStatusId: stageIds.awaitingHuman!,
-        },
-        enrollmentFields: dependencies.kommoDefaultConfiguration.enrollmentFields,
-        handoff: { responsibleUserId, taskTypeId, deadlineMinutes },
-      };
+      await dependencies.clintAdmin.listOrigins();
       return {
-        configuration: await dependencies.repository.saveKommoConfiguration(
-          config.WAHA_SESSION,
-          configuration,
-        ),
-        tokenConfigured: true,
+        configured: true,
+        connected: true,
+        originId: config.CLINT_ORIGIN_ID ?? null,
+        responsibleUserId: config.CLINT_RESPONSIBLE_USER_ID ?? null,
       };
     },
   );

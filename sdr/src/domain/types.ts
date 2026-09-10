@@ -40,10 +40,10 @@ export type ConversationContext = {
   enrollmentStep: number;
   enrollmentNotificationSent: boolean;
   configuredCourseId: string | null;
-  kommoLeadId: number | null;
-  kommoContactId: number | null;
-  kommoStatusId: number | null;
-  kommoSyncStatus: "not_synced" | "synced" | "failed";
+  clintDealId: string | null;
+  clintContactId: string | null;
+  clintStageId: string | null;
+  clintSyncStatus: "not_synced" | "synced" | "failed";
   wahaSession: string;
   enrollmentData: EnrollmentData;
   messages: ConversationMessage[];

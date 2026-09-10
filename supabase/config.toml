@@ -9,9 +9,6 @@ verify_jwt = false
 [functions.public-teachers]
 verify_jwt = false
 
-[functions.kommo-lead]
-verify_jwt = false
-
 [functions.create-public-classified]
 verify_jwt = false
 
@@ -28,9 +25,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.fb-capi-event]
-verify_jwt = false
-
-[functions.kommo-patient-lead]
 verify_jwt = false
 
 [functions.send-lead-confirmation]

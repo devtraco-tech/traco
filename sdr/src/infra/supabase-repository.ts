@@ -9,13 +9,6 @@ import type {
   IngestResult,
 } from "../domain/types.js";
 import type { CatalogBinding, CatalogItemSnapshot } from "../domain/catalog.js";
-import type { KommoRuntimeConfiguration } from "./kommo-client.js";
-
-export type KommoAdminConfiguration = KommoRuntimeConfiguration & {
-  enabled: boolean;
-  subdomain: string;
-};
-
 export type KnowledgeDocument = {
   documentType: "faq" | "pdf" | "audience_matrix" | "commercial_script" | "follow_up";
   title: string;
@@ -131,7 +124,7 @@ export class SdrRepository {
     const conversationResult = await this.client
       .from("sdr_conversations")
       .select(
-        "id, lead_id, status, bot_enabled, waha_session, flow_stage, lead_qualification, audience_profile, interest_confirmed, enrollment_step, enrollment_notification_sent, configured_course_id, kommo_lead_id, kommo_contact_id, kommo_status_id, kommo_sync_status",
+        "id, lead_id, status, bot_enabled, waha_session, flow_stage, lead_qualification, audience_profile, interest_confirmed, enrollment_step, enrollment_notification_sent, configured_course_id, clint_deal_id, clint_contact_id, clint_stage_id, clint_sync_status",
       )
       .eq("id", conversationId)
       .single();
@@ -212,16 +205,16 @@ export class SdrRepository {
       configuredCourseId: conversationResult.data.configured_course_id
         ? String(conversationResult.data.configured_course_id)
         : null,
-      kommoLeadId: conversationResult.data.kommo_lead_id === null
-        ? null
-        : Number(conversationResult.data.kommo_lead_id),
-      kommoContactId: conversationResult.data.kommo_contact_id === null
-        ? null
-        : Number(conversationResult.data.kommo_contact_id),
-      kommoStatusId: conversationResult.data.kommo_status_id === null
-        ? null
-        : Number(conversationResult.data.kommo_status_id),
-      kommoSyncStatus: conversationResult.data.kommo_sync_status as ConversationContext["kommoSyncStatus"],
+      clintDealId: conversationResult.data.clint_deal_id
+        ? String(conversationResult.data.clint_deal_id)
+        : null,
+      clintContactId: conversationResult.data.clint_contact_id
+        ? String(conversationResult.data.clint_contact_id)
+        : null,
+      clintStageId: conversationResult.data.clint_stage_id
+        ? String(conversationResult.data.clint_stage_id)
+        : null,
+      clintSyncStatus: conversationResult.data.clint_sync_status as ConversationContext["clintSyncStatus"],
       wahaSession: String(conversationResult.data.waha_session),
       enrollmentData: (enrollmentResult.data ?? {}) as EnrollmentData,
       messages,
@@ -298,44 +291,34 @@ export class SdrRepository {
     }
   }
 
-  async saveKommoSync(
+  async saveClintSync(
     conversationId: string,
-    values: {
-      leadId: number;
-      contactId?: number | null;
-      statusId: number;
-    },
+    values: { dealId: string; contactId?: string | null; stageId: string },
   ): Promise<void> {
     const payload: Record<string, unknown> = {
-      kommo_lead_id: values.leadId,
-      kommo_status_id: values.statusId,
-      kommo_sync_status: "synced",
-      kommo_last_synced_at: new Date().toISOString(),
-      kommo_sync_error: null,
+      clint_deal_id: values.dealId,
+      clint_stage_id: values.stageId,
+      clint_sync_status: "synced",
+      clint_last_synced_at: new Date().toISOString(),
+      clint_sync_error: null,
     };
-    if (values.contactId !== undefined) {
-      payload.kommo_contact_id = values.contactId;
-    }
+    if (values.contactId !== undefined) payload.clint_contact_id = values.contactId;
     const { error } = await this.client
       .from("sdr_conversations")
       .update(payload)
       .eq("id", conversationId);
-    if (error) {
-      throw new Error(`Falha ao salvar vínculo Kommo: ${error.message}`);
-    }
+    if (error) throw new Error(`Falha ao salvar vínculo Clint: ${error.message}`);
   }
 
-  async markKommoSyncFailed(conversationId: string, message: string): Promise<void> {
+  async markClintSyncFailed(conversationId: string, message: string): Promise<void> {
     const { error } = await this.client
       .from("sdr_conversations")
       .update({
-        kommo_sync_status: "failed",
-        kommo_sync_error: message.slice(0, 1_000),
+        clint_sync_status: "failed",
+        clint_sync_error: message.slice(0, 1_000),
       })
       .eq("id", conversationId);
-    if (error) {
-      throw new Error(`Falha ao auditar erro Kommo: ${error.message}`);
-    }
+    if (error) throw new Error(`Falha ao auditar erro Clint: ${error.message}`);
   }
 
   async claimQueuedMessages(conversationId: string): Promise<string[]> {
@@ -506,107 +489,6 @@ export class SdrRepository {
     );
     if (error) throw new Error(`Falha ao vincular item do catálogo ao SDR: ${error.message}`);
     return { itemId: snapshot.id, slug: snapshot.slug, snapshot, syncedAt };
-  }
-
-  async getKommoConfiguration(
-    wahaSession: string,
-  ): Promise<KommoAdminConfiguration | null> {
-    const { data, error } = await this.client
-      .from("sdr_robot_configs")
-      .select("kommo_enabled, kommo_subdomain, kommo_pipeline_id, kommo_stage_mappings, kommo_field_mappings, kommo_responsible_user_id, kommo_handoff_task_type_id, kommo_handoff_deadline_minutes")
-      .eq("waha_session", wahaSession)
-      .maybeSingle();
-    if (error) throw new Error(`Falha ao carregar configuração Kommo: ${error.message}`);
-    if (!data?.kommo_pipeline_id || !data.kommo_subdomain) return null;
-    const stages = (data.kommo_stage_mappings ?? {}) as Record<string, unknown>;
-    const fields = (data.kommo_field_mappings ?? {}) as Record<string, unknown>;
-    const requiredNumber = (source: Record<string, unknown>, key: string): number => {
-      const value = Number(source[key]);
-      if (!Number.isSafeInteger(value) || value <= 0) {
-        throw new Error(`Configuração Kommo inválida no campo ${key}.`);
-      }
-      return value;
-    };
-    return {
-      enabled: Boolean(data.kommo_enabled),
-      subdomain: String(data.kommo_subdomain),
-      stages: {
-        pipelineId: Number(data.kommo_pipeline_id),
-        newLeadStatusId: requiredNumber(stages, "newLead"),
-        qualifiedStatusId: requiredNumber(stages, "qualified"),
-        interestedStatusId: requiredNumber(stages, "interested"),
-        negotiationStatusId: requiredNumber(stages, "negotiation"),
-        dataCollectedStatusId: requiredNumber(stages, "dataCollected"),
-        handoffStatusId: requiredNumber(stages, "awaitingHuman"),
-      },
-      enrollmentFields: {
-        full_name: requiredNumber(fields, "full_name"),
-        whatsapp_phone: requiredNumber(fields, "whatsapp_phone"),
-        cpf: requiredNumber(fields, "cpf"),
-        birth_date: requiredNumber(fields, "birth_date"),
-        marital_status: requiredNumber(fields, "marital_status"),
-        nationality: requiredNumber(fields, "nationality"),
-        birthplace: requiredNumber(fields, "birthplace"),
-        cro: requiredNumber(fields, "cro"),
-        email: requiredNumber(fields, "email"),
-        address: requiredNumber(fields, "address"),
-        district: requiredNumber(fields, "district"),
-        postal_code: requiredNumber(fields, "postal_code"),
-      },
-      handoff: {
-        responsibleUserId: Number(data.kommo_responsible_user_id),
-        taskTypeId: Number(data.kommo_handoff_task_type_id),
-        deadlineMinutes: Number(data.kommo_handoff_deadline_minutes),
-      },
-    };
-  }
-
-  async saveKommoConfiguration(
-    wahaSession: string,
-    configuration: KommoAdminConfiguration,
-  ): Promise<KommoAdminConfiguration> {
-    const configId = await this.ensureRobotConfig(wahaSession);
-    const { error } = await this.client
-      .from("sdr_robot_configs")
-      .update({
-        kommo_enabled: configuration.enabled,
-        kommo_subdomain: configuration.subdomain,
-        kommo_pipeline_id: configuration.stages.pipelineId,
-        kommo_stage_mappings: {
-          newLead: configuration.stages.newLeadStatusId,
-          qualified: configuration.stages.qualifiedStatusId,
-          interested: configuration.stages.interestedStatusId,
-          negotiation: configuration.stages.negotiationStatusId,
-          dataCollected: configuration.stages.dataCollectedStatusId,
-          awaitingHuman: configuration.stages.handoffStatusId,
-        },
-        kommo_field_mappings: configuration.enrollmentFields,
-        kommo_responsible_user_id: configuration.handoff.responsibleUserId,
-        kommo_handoff_task_type_id: configuration.handoff.taskTypeId,
-        kommo_handoff_deadline_minutes: configuration.handoff.deadlineMinutes,
-      })
-      .eq("id", configId);
-    if (error) throw new Error(`Falha ao salvar configuração Kommo: ${error.message}`);
-    return configuration;
-  }
-
-  async recordAdminAudit(input: {
-    actorUserId: string;
-    action: "kommo_pipeline_created" | "kommo_pipeline_renamed" | "kommo_stage_renamed";
-    targetType: "kommo_pipeline" | "kommo_stage";
-    targetExternalId: string;
-    previousState?: Record<string, unknown> | null;
-    newState: Record<string, unknown>;
-  }): Promise<void> {
-    const { error } = await this.client.from("sdr_admin_audit_logs").insert({
-      actor_user_id: input.actorUserId,
-      action: input.action,
-      target_type: input.targetType,
-      target_external_id: input.targetExternalId,
-      previous_state: input.previousState ?? null,
-      new_state: input.newState,
-    });
-    if (error) throw new Error(`Falha ao registrar auditoria administrativa: ${error.message}`);
   }
 
   private async ensureRobotConfig(wahaSession: string): Promise<string> {

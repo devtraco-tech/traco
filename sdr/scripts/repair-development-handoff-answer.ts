@@ -62,5 +62,5 @@ console.log(JSON.stringify({
   conversationId,
   clearedField: "full_name",
   enrollmentStep: 0,
-  kommoLeadId: context.kommoLeadId,
+  clintDealId: context.clintDealId,
 }, null, 2));

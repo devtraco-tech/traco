@@ -9,7 +9,6 @@ export interface OldContact {
   creation_date: string | null;
   modified_date: string | null;
   created_at: string;
-  kommo_sent: boolean;
 }
 
 interface OldContactInsert {
@@ -125,47 +124,6 @@ export const useOldContacts = () => {
     },
   });
 
-  const sendToKommo = useMutation({
-    mutationFn: async (contacts: OldContact[]) => {
-      const batchSize = 5;
-      let sent = 0;
-
-      for (let i = 0; i < contacts.length; i += batchSize) {
-        const batch = contacts.slice(i, i + batchSize);
-        const payload = batch.map(c => ({
-          type: "old" as const,
-          name: c.nome,
-          phone: c.celular,
-          old_contact_id: c.id,
-        }));
-
-        const { data, error } = await supabase.functions.invoke("kommo-patient-lead", {
-          body: payload,
-        });
-
-        if (error) throw error;
-        sent += batch.length;
-      }
-
-      return sent;
-    },
-    onSuccess: (count) => {
-      queryClient.invalidateQueries({ queryKey: ["old-contacts"] });
-      toast({
-        title: "Enviado ao Kommo",
-        description: `${count} contatos enviados ao CRM com sucesso.`,
-      });
-    },
-    onError: (error: Error) => {
-      queryClient.invalidateQueries({ queryKey: ["old-contacts"] });
-      toast({
-        title: "Erro ao enviar ao Kommo",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
   return {
     contacts: contacts?.data || [],
     totalCount: contacts?.count || 0,
@@ -173,6 +131,5 @@ export const useOldContacts = () => {
     importContacts,
     deleteContact,
     bulkDeleteContacts,
-    sendToKommo,
   };
 };

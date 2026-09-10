@@ -474,12 +474,12 @@ export type Database = {
       }
       course_leads: {
         Row: {
+          clint_deal_id: string | null
           course_id: string
           cpf: string | null
           created_at: string
           email: string
           id: string
-          kommo_lead_id: string | null
           name: string
           notes: string | null
           phone: string | null
@@ -488,12 +488,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          clint_deal_id?: string | null
           course_id: string
           cpf?: string | null
           created_at?: string
           email: string
           id?: string
-          kommo_lead_id?: string | null
           name: string
           notes?: string | null
           phone?: string | null
@@ -502,12 +502,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          clint_deal_id?: string | null
           course_id?: string
           cpf?: string | null
           created_at?: string
           email?: string
           id?: string
-          kommo_lead_id?: string | null
           name?: string
           notes?: string | null
           phone?: string | null
@@ -1034,7 +1034,6 @@ export type Database = {
           created_at: string
           creation_date: string | null
           id: string
-          kommo_sent: boolean
           modified_date: string | null
           nome: string
         }
@@ -1043,7 +1042,6 @@ export type Database = {
           created_at?: string
           creation_date?: string | null
           id?: string
-          kommo_sent?: boolean
           modified_date?: string | null
           nome: string
         }
@@ -1052,7 +1050,6 @@ export type Database = {
           created_at?: string
           creation_date?: string | null
           id?: string
-          kommo_sent?: boolean
           modified_date?: string | null
           nome?: string
         }
@@ -1103,7 +1100,6 @@ export type Database = {
           full_name: string
           gender: string
           id: string
-          kommo_lead_id: string | null
           landline_phone: string | null
           message: string
           mobile_phone: string
@@ -1120,7 +1116,6 @@ export type Database = {
           full_name: string
           gender: string
           id?: string
-          kommo_lead_id?: string | null
           landline_phone?: string | null
           message: string
           mobile_phone: string
@@ -1137,7 +1132,6 @@ export type Database = {
           full_name?: string
           gender?: string
           id?: string
-          kommo_lead_id?: string | null
           landline_phone?: string | null
           message?: string
           mobile_phone?: string
@@ -1266,7 +1260,6 @@ export type Database = {
           id: string
           is_exam_return: boolean
           is_return: boolean | null
-          kommo_lead_id: string | null
           medical_history: string | null
           mobile_phone: string | null
           no_show_count: number
@@ -1306,7 +1299,6 @@ export type Database = {
           id?: string
           is_exam_return?: boolean
           is_return?: boolean | null
-          kommo_lead_id?: string | null
           medical_history?: string | null
           mobile_phone?: string | null
           no_show_count?: number
@@ -1346,7 +1338,6 @@ export type Database = {
           id?: string
           is_exam_return?: boolean
           is_return?: boolean | null
-          kommo_lead_id?: string | null
           medical_history?: string | null
           mobile_phone?: string | null
           no_show_count?: number

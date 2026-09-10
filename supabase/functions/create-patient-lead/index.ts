@@ -135,39 +135,6 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
 
-    // Send to Kommo CRM
-    try {
-      const kommoPayload = {
-        type: "new" as const,
-        name: leadData.full_name,
-        phone: leadData.mobile_phone,
-        landline_phone: leadData.landline_phone || undefined,
-        city: leadData.city,
-        state: leadData.state,
-        message: leadData.message,
-        gender: leadData.gender,
-        birth_date: leadData.birth_date,
-        lead_id: lead.id,
-      };
-
-      const kommoRes = await fetch(`${supabaseUrl}/functions/v1/kommo-patient-lead`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${supabaseServiceKey}`,
-        },
-        body: JSON.stringify(kommoPayload),
-      });
-
-      if (kommoRes.ok) {
-        console.log("Lead sent to Kommo successfully");
-      } else {
-        console.error("Failed to send lead to Kommo:", await kommoRes.text());
-      }
-    } catch (kommoErr) {
-      console.error("Error sending to Kommo:", kommoErr);
-    }
-
     // Get active notification emails
     const { data: notificationEmails, error: emailsError } = await supabase
       .from("patient_notification_emails")

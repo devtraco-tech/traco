@@ -24,7 +24,6 @@ const SKIP_KEYS = new Set([
   "assigned_clinic_id",
   "assigned_class_id",
   "assigned_specialty_id",
-  "kommo_lead_id",
 ]);
 
 export const upper = (v: unknown): string =>

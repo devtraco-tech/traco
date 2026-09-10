@@ -39,7 +39,6 @@ import {
   ArrowUp,
   ArrowDown,
   History,
-  Send,
   Activity
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
@@ -91,9 +90,9 @@ interface OldContactCSVRow {
 
 const PatientLeads = () => {
   const navigate = useNavigate();
-  const { leads, isLoading, stats, updateLeadStatus, updateLeadNotes, deleteLead, bulkDeleteLeads, importLeads, sendToKommo: sendPatientToKommo, promoteToTriage, bulkPromoteToTriage } = usePatientLeads();
+  const { leads, isLoading, stats, updateLeadStatus, updateLeadNotes, deleteLead, bulkDeleteLeads, importLeads, promoteToTriage, bulkPromoteToTriage } = usePatientLeads();
   const { emails, isLoading: emailsLoading, addEmail, updateEmail, deleteEmail } = usePatientNotificationEmails();
-  const { contacts: oldContacts, isLoading: oldContactsLoading, importContacts, deleteContact, bulkDeleteContacts, totalCount: oldContactsCount, sendToKommo } = useOldContacts();
+  const { contacts: oldContacts, isLoading: oldContactsLoading, importContacts, deleteContact, bulkDeleteContacts, totalCount: oldContactsCount } = useOldContacts();
   const { isAdmin, isLoading: roleLoading } = useUserRole();
   const { toast } = useToast();
   
@@ -110,7 +109,6 @@ const PatientLeads = () => {
 
   // Multi-filter state for "Todos os Leads"
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [kommoFilter, setKommoFilter] = useState<"all" | "sent" | "not_sent">("all");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [stateFilter, setStateFilter] = useState<string>("all");
@@ -158,7 +156,6 @@ const PatientLeads = () => {
     message: "Lead importado via CSV",
   });
   const [importAsOldContacts, setImportAsOldContacts] = useState(false);
-  const [sendToKommoAfterImport, setSendToKommoAfterImport] = useState(true);
 
   // Old Contacts CSV Import
   const oldContactsFileInputRef = useRef<HTMLInputElement>(null);
@@ -481,27 +478,12 @@ const PatientLeads = () => {
     });
 
     importLeads.mutate(leadsToImport, {
-      onSuccess: (count) => {
+      onSuccess: () => {
         setImportDialogOpen(false);
         setCsvData([]);
-        
-        if (sendToKommoAfterImport) {
-          // After local import, we need to find the new leads IDs to send to Kommo
-          // Since importLeads returns the inserted rows, we can use them
-          // But wait, the mutation returns the count. 
-          // Re-fetching leads and sending those without kommo_lead_id might be better,
-          // or we can modify the mutation to return the data.
-          // Actually, let's just toast and the user can send manually, 
-          // OR we can trigger a sync for all unsent leads.
-          toast({
-            title: "Leads importados",
-            description: `${count} leads foram importados. Você pode enviá-los ao Kommo agora ou manualmente depois.`,
-          });
-        }
-      }
+      },
     });
   };
-
   const filteredLeads = (() => {
     // Basic filter: start with leads that are NOT 'completed' (unless explicitly filtered for completed)
     let baseLeads = leads?.filter(l => l.status !== 'completed') || [];
@@ -520,10 +502,6 @@ const PatientLeads = () => {
         (l.message || '').toLowerCase().includes(q)
       );
     }
-
-    // Kommo filter
-    if (kommoFilter === "sent") result = result.filter(l => !!l.kommo_lead_id);
-    else if (kommoFilter === "not_sent") result = result.filter(l => !l.kommo_lead_id);
 
     // State filter
     if (stateFilter !== "all") {
@@ -580,7 +558,6 @@ const PatientLeads = () => {
   const activeFilterCount =
     (statusFilter !== "all" ? 1 : 0) +
     (searchTerm.trim() ? 1 : 0) +
-    (kommoFilter !== "all" ? 1 : 0) +
     (stateFilter !== "all" ? 1 : 0) +
     (dateFrom ? 1 : 0) +
     (dateTo ? 1 : 0);
@@ -588,7 +565,6 @@ const PatientLeads = () => {
   const clearAllFilters = () => {
     setStatusFilter("all");
     setSearchTerm("");
-    setKommoFilter("all");
     setStateFilter("all");
     setDateFrom("");
     setDateTo("");
@@ -844,50 +820,9 @@ const PatientLeads = () => {
               {bulkPromoteToTriage.isPending ? "Promovendo..." : `Promover à Fila 1 (${selectedLeadIds.size})`}
             </Button>
           )}
-          {selectedLeadIds.size > 0 && (
-            <Button 
-              variant="default"
-              onClick={() => {
-                const selected = leads?.filter(l => selectedLeadIds.has(l.id)) || [];
-                const notSent = selected.filter(l => !l.kommo_lead_id);
-                if (notSent.length === 0) {
-                  toast({
-                    title: "Todos já enviados",
-                    description: "Os leads selecionados já foram enviados ao Kommo.",
-                  });
-                  return;
-                }
-                sendPatientToKommo.mutate(notSent, {
-                  onSuccess: () => setSelectedLeadIds(new Set()),
-                });
-              }}
-              disabled={sendPatientToKommo.isPending}
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {sendPatientToKommo.isPending ? "Enviando..." : `Enviar ao Kommo (${selectedLeadIds.size})`}
-            </Button>
-          )}
           <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
             <Upload className="h-4 w-4 mr-2" />
             Importar CSV
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              const unsent = leads?.filter(l => !l.kommo_lead_id) || [];
-              if (unsent.length === 0) {
-                toast({
-                  title: "Sincronização concluída",
-                  description: "Todos os leads já foram enviados ao Kommo.",
-                });
-                return;
-              }
-              sendPatientToKommo.mutate(unsent);
-            }}
-            disabled={sendPatientToKommo.isPending || !leads || leads.length === 0}
-          >
-            <History className="h-4 w-4 mr-2" />
-            Sincronizar Pendentes
           </Button>
         </div>
       </div>
@@ -1001,17 +936,6 @@ const PatientLeads = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-xs">Enviado ao Kommo</Label>
-                  <Select value={kommoFilter} onValueChange={(v) => setKommoFilter(v as any)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="sent">Enviados</SelectItem>
-                      <SelectItem value="not_sent">Não enviados</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
                   <Label className="text-xs">Estado</Label>
                   <Select value={stateFilter} onValueChange={setStateFilter}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -1097,7 +1021,6 @@ const PatientLeads = () => {
                           {getSortIcon('created_at')}
                         </div>
                       </TableHead>
-                      <TableHead>Kommo</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1169,16 +1092,6 @@ const PatientLeads = () => {
                             </div>
                           ) : (
                             <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {lead.kommo_lead_id ? (
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Enviado
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">—</span>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
@@ -1341,8 +1254,7 @@ const PatientLeads = () => {
                 <p className="font-bold text-sm">O que são os Contatos Antigos?</p>
                 <p className="text-sm text-muted-foreground">
                   São leads históricos importados via planilha (base anterior). Use esta área para
-                  reativá-los: selecione contatos e envie ao Kommo, ou migre-os para a base de Leads de Pacientes.
-                  A coluna <strong>Kommo</strong> indica se o contato já foi sincronizado.
+                  reativá-los ou migrá-los para a base de Leads de Pacientes.
                 </p>
               </div>
             </CardContent>
@@ -1366,27 +1278,6 @@ const PatientLeads = () => {
                   />
                   {selectedOldContactIds.size > 0 && (
                     <>
-                      <Button 
-                        variant="default"
-                        onClick={() => {
-                          const selected = oldContacts.filter(c => selectedOldContactIds.has(c.id));
-                          const notSent = selected.filter(c => !c.kommo_sent);
-                          if (notSent.length === 0) {
-                            toast({
-                              title: "Todos já enviados",
-                              description: "Os contatos selecionados já foram enviados ao Kommo.",
-                            });
-                            return;
-                          }
-                          sendToKommo.mutate(notSent, {
-                            onSuccess: () => setSelectedOldContactIds(new Set()),
-                          });
-                        }}
-                        disabled={sendToKommo.isPending}
-                      >
-                        <Send className="h-4 w-4 mr-2" />
-                        {sendToKommo.isPending ? "Enviando..." : `Enviar ao Kommo (${selectedOldContactIds.size})`}
-                      </Button>
                       <Button 
                         variant="default"
                         onClick={() => setMigrateDialogOpen(true)}
@@ -1453,7 +1344,6 @@ const PatientLeads = () => {
                         </div>
                       </TableHead>
                       <TableHead>Data Modificação</TableHead>
-                      <TableHead>Kommo</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1488,16 +1378,6 @@ const PatientLeads = () => {
                             </div>
                           ) : (
                             <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {contact.kommo_sent ? (
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Enviado
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">—</span>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
@@ -1797,16 +1677,6 @@ const PatientLeads = () => {
               />
             </div>
 
-            <div className="flex items-center space-x-2 py-2">
-              <Switch 
-                id="send-kommo-import" 
-                checked={sendToKommoAfterImport}
-                onCheckedChange={setSendToKommoAfterImport}
-              />
-              <Label htmlFor="send-kommo-import" className="cursor-pointer font-normal">
-                Sugerir envio ao Kommo após importar
-              </Label>
-            </div>
 
               <div className="flex flex-col gap-2 mt-4">
                 <Label className="flex items-center gap-2 text-sm font-medium cursor-pointer">

@@ -115,57 +115,50 @@ services:
         value: "20"
       - key: SDR_MAX_RETRIES
         value: "3"
-      - key: KOMMO_ENABLED
-        value: "true"
-      - key: KOMMO_SUBDOMAIN
+      - key: CLINT_API_TOKEN
         sync: false
-      - key: KOMMO_ACCESS_TOKEN
+      - key: CLINT_ORIGIN_ID
         sync: false
-      - key: KOMMO_PIPELINE_ID
+      - key: CLINT_NEW_LEAD_STAGE_ID
         sync: false
-      - key: KOMMO_NEW_LEAD_STATUS_ID
+      - key: CLINT_QUALIFIED_STAGE_ID
         sync: false
-      - key: KOMMO_QUALIFIED_STATUS_ID
+      - key: CLINT_INTERESTED_STAGE_ID
         sync: false
-      - key: KOMMO_INTERESTED_STATUS_ID
+      - key: CLINT_NEGOTIATION_STAGE_ID
         sync: false
-      - key: KOMMO_NEGOTIATION_STATUS_ID
+      - key: CLINT_DATA_COLLECTED_STAGE_ID
         sync: false
-      - key: KOMMO_DATA_COLLECTED_STATUS_ID
+      - key: CLINT_AWAITING_HUMAN_STAGE_ID
         sync: false
-      - key: KOMMO_AWAITING_HUMAN_STATUS_ID
+      - key: CLINT_RESPONSIBLE_USER_ID
         sync: false
-      - key: KOMMO_RESPONSIBLE_USER_ID
+      - key: CLINT_HANDOFF_NOTE_FIELD_ID
         sync: false
-      - key: KOMMO_HANDOFF_TASK_TYPE_ID
+      - key: CLINT_FIELD_FULL_NAME_ID
         sync: false
-      - key: KOMMO_HANDOFF_DEADLINE_MINUTES
-        value: "5"
-      - key: KOMMO_FIELD_FULL_NAME_ID
+      - key: CLINT_FIELD_WHATSAPP_PHONE_ID
         sync: false
-      - key: KOMMO_FIELD_WHATSAPP_PHONE_ID
+      - key: CLINT_FIELD_CPF_ID
         sync: false
-      - key: KOMMO_FIELD_CPF_ID
+      - key: CLINT_FIELD_BIRTH_DATE_ID
         sync: false
-      - key: KOMMO_FIELD_BIRTH_DATE_ID
+      - key: CLINT_FIELD_MARITAL_STATUS_ID
         sync: false
-      - key: KOMMO_FIELD_MARITAL_STATUS_ID
+      - key: CLINT_FIELD_NATIONALITY_ID
         sync: false
-      - key: KOMMO_FIELD_NATIONALITY_ID
+      - key: CLINT_FIELD_BIRTHPLACE_ID
         sync: false
-      - key: KOMMO_FIELD_BIRTHPLACE_ID
+      - key: CLINT_FIELD_CRO_ID
         sync: false
-      - key: KOMMO_FIELD_CRO_ID
+      - key: CLINT_FIELD_EMAIL_ID
         sync: false
-      - key: KOMMO_FIELD_EMAIL_ID
+      - key: CLINT_FIELD_ADDRESS_ID
         sync: false
-      - key: KOMMO_FIELD_ADDRESS_ID
+      - key: CLINT_FIELD_DISTRICT_ID
         sync: false
-      - key: KOMMO_FIELD_DISTRICT_ID
+      - key: CLINT_FIELD_POSTAL_CODE_ID
         sync: false
-      - key: KOMMO_FIELD_POSTAL_CODE_ID
-        sync: false
-
   - type: worker
     name: traco-sdr-worker
     runtime: node
@@ -175,6 +168,50 @@ services:
     buildCommand: npm ci && npm run build
     startCommand: npm run start:worker
     envVars:
+      - key: CLINT_API_TOKEN
+        sync: false
+      - key: CLINT_ORIGIN_ID
+        sync: false
+      - key: CLINT_NEW_LEAD_STAGE_ID
+        sync: false
+      - key: CLINT_QUALIFIED_STAGE_ID
+        sync: false
+      - key: CLINT_INTERESTED_STAGE_ID
+        sync: false
+      - key: CLINT_NEGOTIATION_STAGE_ID
+        sync: false
+      - key: CLINT_DATA_COLLECTED_STAGE_ID
+        sync: false
+      - key: CLINT_AWAITING_HUMAN_STAGE_ID
+        sync: false
+      - key: CLINT_RESPONSIBLE_USER_ID
+        sync: false
+      - key: CLINT_HANDOFF_NOTE_FIELD_ID
+        sync: false
+      - key: CLINT_FIELD_FULL_NAME_ID
+        sync: false
+      - key: CLINT_FIELD_WHATSAPP_PHONE_ID
+        sync: false
+      - key: CLINT_FIELD_CPF_ID
+        sync: false
+      - key: CLINT_FIELD_BIRTH_DATE_ID
+        sync: false
+      - key: CLINT_FIELD_MARITAL_STATUS_ID
+        sync: false
+      - key: CLINT_FIELD_NATIONALITY_ID
+        sync: false
+      - key: CLINT_FIELD_BIRTHPLACE_ID
+        sync: false
+      - key: CLINT_FIELD_CRO_ID
+        sync: false
+      - key: CLINT_FIELD_EMAIL_ID
+        sync: false
+      - key: CLINT_FIELD_ADDRESS_ID
+        sync: false
+      - key: CLINT_FIELD_DISTRICT_ID
+        sync: false
+      - key: CLINT_FIELD_POSTAL_CODE_ID
+        sync: false
       - key: NODE_ENV
         value: production
       - key: LOG_LEVEL
@@ -235,57 +272,6 @@ services:
         value: "20"
       - key: SDR_MAX_RETRIES
         value: "3"
-      - key: KOMMO_ENABLED
-        value: "true"
-      - key: KOMMO_SUBDOMAIN
-        sync: false
-      - key: KOMMO_ACCESS_TOKEN
-        sync: false
-      - key: KOMMO_PIPELINE_ID
-        sync: false
-      - key: KOMMO_NEW_LEAD_STATUS_ID
-        sync: false
-      - key: KOMMO_QUALIFIED_STATUS_ID
-        sync: false
-      - key: KOMMO_INTERESTED_STATUS_ID
-        sync: false
-      - key: KOMMO_NEGOTIATION_STATUS_ID
-        sync: false
-      - key: KOMMO_DATA_COLLECTED_STATUS_ID
-        sync: false
-      - key: KOMMO_AWAITING_HUMAN_STATUS_ID
-        sync: false
-      - key: KOMMO_RESPONSIBLE_USER_ID
-        sync: false
-      - key: KOMMO_HANDOFF_TASK_TYPE_ID
-        sync: false
-      - key: KOMMO_HANDOFF_DEADLINE_MINUTES
-        value: "5"
-      - key: KOMMO_FIELD_FULL_NAME_ID
-        sync: false
-      - key: KOMMO_FIELD_WHATSAPP_PHONE_ID
-        sync: false
-      - key: KOMMO_FIELD_CPF_ID
-        sync: false
-      - key: KOMMO_FIELD_BIRTH_DATE_ID
-        sync: false
-      - key: KOMMO_FIELD_MARITAL_STATUS_ID
-        sync: false
-      - key: KOMMO_FIELD_NATIONALITY_ID
-        sync: false
-      - key: KOMMO_FIELD_BIRTHPLACE_ID
-        sync: false
-      - key: KOMMO_FIELD_CRO_ID
-        sync: false
-      - key: KOMMO_FIELD_EMAIL_ID
-        sync: false
-      - key: KOMMO_FIELD_ADDRESS_ID
-        sync: false
-      - key: KOMMO_FIELD_DISTRICT_ID
-        sync: false
-      - key: KOMMO_FIELD_POSTAL_CODE_ID
-        sync: false
-
   # Executa diariamente à meia-noite de Brasília (03:00 UTC).
   - type: cron
     name: traco-sdr-retention

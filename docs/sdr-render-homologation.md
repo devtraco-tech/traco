@@ -9,7 +9,7 @@ escolhido explicitamente durante a criação do Blueprint.
 - Suba as alterações para um repositório Git acessível pelo Render.
 - Tenha um número de WhatsApp dedicado ao SDR.
 - Confirme que todas as migrations do SDR estão no Supabase de desenvolvimento.
-- Tenha as credenciais da OpenAI, Kommo, catálogo, Resend e Supabase.
+- Tenha as credenciais da OpenAI, Clint, catálogo, Resend e Supabase.
 - Não copie `sdr/.env.local` para o Render.
 
 ## Serviços criados
@@ -29,7 +29,7 @@ com 2 CPU e 4 GB de RAM (plano `pro` no Render).
 
 ## Valores solicitados pelo Render
 
-Preencha os mesmos valores de Supabase, catálogo, OpenAI, Resend e Kommo tanto na
+Preencha os mesmos valores de Supabase, catálogo, OpenAI, Resend e Clint tanto na
 API quanto no worker. O cron de retenção precisa somente do Supabase.
 
 ### API
@@ -42,12 +42,12 @@ API quanto no worker. O cron de retenção precisa somente do Supabase.
 - `CATALOG_API_KEY`: chave do endpoint de cursos.
 - `OPENAI_API_KEY`: chave exclusiva do SDR.
 - `RESEND_API_KEY`, `ALERT_EMAIL_FROM`, `ALERT_EMAIL_TO`: alerta crítico.
-- todas as credenciais, etapas, campos, responsável e tipo de tarefa do Kommo.
+- todas as credenciais, origem, etapas, campos e responsável da Clint.
 
 ### Worker
 
-Repita os valores de Supabase, catálogo, OpenAI, Resend e Kommo informados na API.
-API e worker precisam apontar para o mesmo banco, funil e conta Kommo.
+Repita os valores de Supabase, catálogo, OpenAI, Resend e Clint informados na API.
+API e worker precisam apontar para o mesmo banco, funil e conta Clint.
 
 ### WAHA
 
@@ -70,7 +70,7 @@ worker. A sessão fica no disco `/app/.sessions`.
 2. Configure no frontend `VITE_SDR_API_URL=https://URL-DA-API` e publique-o.
 3. Abra a configuração do SDR, gere o QR Code e conecte o número dedicado.
 4. Envie uma mensagem de outro telefone.
-5. Confirme resposta no WhatsApp e criação do card em `Novo Lead` no Kommo.
+5. Confirme a resposta no WhatsApp e a criação do negócio em `Novo Lead` na Clint.
 6. Peça atendimento humano e confirme etapa, tarefa, nota e notificação.
 7. Teste o alerta crítico de e-mail.
 8. Monitore os logs da API, worker, WAHA e fila durante todo o piloto.

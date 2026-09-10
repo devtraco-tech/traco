@@ -14,7 +14,6 @@ export interface ClinicalData {
 
 export type PatientData = {
   id: string;
-  kommo_lead_id: string | null;
   full_name: string;
   mobile_phone: string | null;
   phone: string | null;
@@ -46,7 +45,6 @@ export type PatientData = {
 export const globalMockPatients: PatientData[] = [
   {
     id: "1",
-    kommo_lead_id: null,
     full_name: "João Silva Sauro",
     mobile_phone: "(61) 99822-1234",
     phone: "(61) 3333-4444",
@@ -69,7 +67,6 @@ export const globalMockPatients: PatientData[] = [
   },
   {
     id: "2",
-    kommo_lead_id: null,
     full_name: "Maria de Lourdes Almeida",
     mobile_phone: "(61) 98765-4321",
     phone: null,
@@ -92,7 +89,6 @@ export const globalMockPatients: PatientData[] = [
   },
   {
     id: "3",
-    kommo_lead_id: null,
     full_name: "Carlos Roberto Neves",
     mobile_phone: "(61) 97777-6666",
     phone: null,
