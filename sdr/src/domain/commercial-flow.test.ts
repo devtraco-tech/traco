@@ -243,6 +243,53 @@ describe("decideCommercialFlow", () => {
     expect(decision.messages[0]).toContain("pessoa do time");
   });
 
+  it("responde a objeção financeira do script sem iniciar a matrícula", () => {
+    const decision = decideCommercialFlow(
+      context("match", { audienceProfile: "beginner" }),
+      "Faz sim, mas achei muito caro",
+      course,
+    );
+
+    expect(decision.handled).toBe(true);
+    expect(decision.messages).toHaveLength(1);
+    expect(decision.messages[0]).toContain("Entendo sua preocupação");
+    expect(decision.messages[0]).toContain("condições comerciais documentadas");
+    expect(decision.messages[0]).toContain("pessoa do time");
+    expect(decision.patch).toMatchObject({
+      flowStage: "match",
+      interestConfirmed: true,
+    });
+    expect(decision.notifyEnrollment).toBeUndefined();
+  });
+
+  it("recupera a objeção financeira após a pergunta de confirmação", () => {
+    const decision = decideCommercialFlow(
+      context("profile", {
+        leadQualification: "graduated",
+        audienceProfile: "beginner",
+        messages: [
+          {
+            id: "message-1",
+            direction: "outbound",
+            role: "assistant",
+            content: "Perfeito! O curso foi desenvolvido também para quem está começando. Faz sentido pra você?",
+            status: "sent",
+            createdAt: "2026-09-10T13:05:00.000Z",
+          },
+        ],
+      }),
+      "Faz sim, mais achei muito caro",
+      course,
+    );
+
+    expect(decision.handled).toBe(true);
+    expect(decision.messages[0]).toContain("Entendo sua preocupação");
+    expect(decision.patch).toMatchObject({
+      flowStage: "match",
+      interestConfirmed: true,
+    });
+  });
+
   it("inicia o fluxo determinístico quando um graduado pede a matrícula", () => {
     const decision = decideCommercialFlow(
       context("profile", { leadQualification: "graduated" }),

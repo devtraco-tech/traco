@@ -329,6 +329,18 @@ function audienceObjectionResponse(
   return null;
 }
 
+function followsMatchConfirmationPrompt(context: ConversationContext): boolean {
+  const lastAssistantMessage = [...context.messages]
+    .reverse()
+    .find((message) => message.role === "assistant");
+  if (!lastAssistantMessage) return false;
+
+  const value = normalize(lastAssistantMessage.content);
+  return /\b(faz sentido (pra|para) voce|does (that|it) make sense|tiene sentido para ti)\b/u.test(
+    value,
+  );
+}
+
 function requestsEnrollment(text: string): boolean {
   const value = normalize(text);
   return (
@@ -574,6 +586,24 @@ export function decideCommercialFlow(
     };
   }
 
+  const objectionResponse = audienceObjectionResponse(currentText, language);
+  if (
+    objectionResponse
+    && (context.flowStage === "match" || followsMatchConfirmationPrompt(context))
+  ) {
+    const interest = confirmsInterest(currentText);
+    const patch: FlowPatch | undefined = interest === true
+      ? { flowStage: "match", interestConfirmed: true }
+      : context.flowStage === "match"
+        ? undefined
+        : { flowStage: "match" };
+    return {
+      handled: true,
+      messages: [objectionResponse],
+      ...(patch ? { patch } : {}),
+    };
+  }
+
   if (context.flowStage === "profile") {
     if (
       context.leadQualification === "graduated"
@@ -583,7 +613,6 @@ export function decideCommercialFlow(
     }
     const profile = profileFrom(currentText);
     if (profile === "unknown") return { handled: false, messages: [] };
-    const objectionResponse = audienceObjectionResponse(currentText, language);
     return {
       handled: true,
       messages: [
@@ -595,10 +624,6 @@ export function decideCommercialFlow(
   }
 
   if (context.flowStage === "match") {
-    const objectionResponse = audienceObjectionResponse(currentText, language);
-    if (objectionResponse) {
-      return { handled: true, messages: [objectionResponse] };
-    }
     const interest = confirmsInterest(currentText);
     if (interest === null) return { handled: false, messages: [] };
     if (!interest) {
