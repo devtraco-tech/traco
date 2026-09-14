@@ -33,13 +33,14 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 
 describe("ClintClient", () => {
   it("reutiliza negócio aberto do mesmo telefone e origem", async () => {
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(json({
-      data: [{ id: ids.deal, contact_id: ids.contact }],
-    }));
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(json({ data: [{ id: ids.deal, contact_id: ids.contact }] }))
+      .mockResolvedValueOnce(json({ data: { id: ids.contact, name: "Maria" } }));
     const client = new ClintClient("token", stages, fetcher);
 
     const result = await client.ensureDeal({
       name: "Maria",
+      contactName: "Maria",
       phoneE164: "+5562999999999",
       courseTitle: "Implantodontia",
       stageId: ids.newLead,
@@ -50,15 +51,42 @@ describe("ClintClient", () => {
     expect(fetcher.mock.calls[0]?.[1]?.headers).toMatchObject({ "api-token": "token" });
   });
 
+  it("corrige o nome do contato ligado a um negócio aberto", async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(json({ data: [{ id: ids.deal, contact_id: ids.contact }] }))
+      .mockResolvedValueOnce(json({
+        data: { id: ids.contact, name: "+55 (62) 99999-9999" },
+      }))
+      .mockResolvedValueOnce(json({ data: { id: ids.contact } }));
+    const client = new ClintClient("token", stages, fetcher);
+
+    const result = await client.ensureDeal({
+      name: "Maria",
+      contactName: "Maria",
+      phoneE164: "+5562999999999",
+      courseTitle: "Implantodontia",
+      stageId: ids.newLead,
+    });
+
+    expect(result).toEqual({ dealId: ids.deal, contactId: ids.contact, merged: true });
+    expect(String(fetcher.mock.calls[2]?.[0])).toBe(
+      `https://api.clint.digital/v1/contacts/${ids.contact}`,
+    );
+    expect(JSON.parse(String(fetcher.mock.calls[2]?.[1]?.body))).toEqual({ name: "Maria" });
+  });
+
   it("cria negócio ligado a um contato existente", async () => {
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(json({ data: [] }))
-      .mockResolvedValueOnce(json({ data: [{ id: ids.contact, ddi: "55", phone: "62999999999" }] }))
+      .mockResolvedValueOnce(json({
+        data: [{ id: ids.contact, ddi: "55", phone: "62999999999", name: "Maria" }],
+      }))
       .mockResolvedValueOnce(json({ data: { id: ids.deal, contact_id: ids.contact } }, 201));
     const client = new ClintClient("token", stages, fetcher);
 
     const result = await client.ensureDeal({
       name: "Maria",
+      contactName: "Maria",
       phoneE164: "+5562999999999",
       courseTitle: "Implantodontia",
       stageId: ids.newLead,
@@ -69,6 +97,83 @@ describe("ClintClient", () => {
     expect(body).toMatchObject({
       origin_id: ids.origin,
       stage_id: ids.newLead,
+      contact_id: ids.contact,
+    });
+  });
+
+  it("cria explicitamente o contato com o nome do WhatsApp", async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(json({ data: [] }))
+      .mockResolvedValueOnce(json({ data: [] }))
+      .mockResolvedValueOnce(json({ data: { id: ids.contact, name: "Maria" } }, 201))
+      .mockResolvedValueOnce(json({ data: { id: ids.deal, contact_id: ids.contact } }, 201));
+    const client = new ClintClient("token", stages, fetcher);
+
+    await client.ensureDeal({
+      name: "Maria",
+      contactName: "Maria",
+      phoneE164: "+5562999999999",
+      courseTitle: "Implantodontia",
+      stageId: ids.newLead,
+    });
+
+    expect(String(fetcher.mock.calls[2]?.[0])).toBe("https://api.clint.digital/v1/contacts");
+    expect(JSON.parse(String(fetcher.mock.calls[2]?.[1]?.body))).toEqual({
+      name: "Maria",
+      ddi: "+55",
+      phone: "62999999999",
+    });
+    expect(JSON.parse(String(fetcher.mock.calls[3]?.[1]?.body))).toMatchObject({
+      contact_id: ids.contact,
+    });
+  });
+
+  it.each([null, "5562999999999", "+55 (62) 99999-9999", "Lead WhatsApp"])(
+    "preenche nome substituível do contato existente: %s",
+    async (currentName) => {
+      const fetcher = vi.fn<typeof fetch>()
+        .mockResolvedValueOnce(json({ data: [] }))
+        .mockResolvedValueOnce(json({
+          data: [{ id: ids.contact, ddi: "55", phone: "62999999999", name: currentName }],
+        }))
+        .mockResolvedValueOnce(json({ data: { id: ids.contact } }))
+        .mockResolvedValueOnce(json({ data: { id: ids.deal, contact_id: ids.contact } }, 201));
+      const client = new ClintClient("token", stages, fetcher);
+
+      await client.ensureDeal({
+        name: "Maria",
+        contactName: "Maria",
+        phoneE164: "+5562999999999",
+        courseTitle: "Implantodontia",
+        stageId: ids.newLead,
+      });
+
+      expect(String(fetcher.mock.calls[2]?.[0])).toBe(
+        `https://api.clint.digital/v1/contacts/${ids.contact}`,
+      );
+      expect(JSON.parse(String(fetcher.mock.calls[2]?.[1]?.body))).toEqual({ name: "Maria" });
+    },
+  );
+
+  it("preserva nome manual do contato existente", async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(json({ data: [] }))
+      .mockResolvedValueOnce(json({
+        data: [{ id: ids.contact, ddi: "55", phone: "62999999999", name: "Maria da Silva" }],
+      }))
+      .mockResolvedValueOnce(json({ data: { id: ids.deal, contact_id: ids.contact } }, 201));
+    const client = new ClintClient("token", stages, fetcher);
+
+    await client.ensureDeal({
+      name: "Maria WhatsApp",
+      contactName: "Maria WhatsApp",
+      phoneE164: "+5562999999999",
+      courseTitle: "Implantodontia",
+      stageId: ids.newLead,
+    });
+
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(JSON.parse(String(fetcher.mock.calls[2]?.[1]?.body))).toMatchObject({
       contact_id: ids.contact,
     });
   });

@@ -90,17 +90,24 @@ export class ClintSyncService {
     targetStageId: string,
   ): Promise<string> {
     if (context.clintDealId) {
+      const contactId = await this.client.syncContactName({
+        contactId: context.clintContactId,
+        phoneE164: context.phoneE164,
+        name: context.displayName,
+      });
       if (context.clintStageId !== targetStageId) {
         await this.client.updateDealStage(context.clintDealId, targetStageId);
       }
       await this.repository.saveClintSync(context.conversationId, {
         dealId: context.clintDealId,
+        contactId,
         stageId: targetStageId,
       });
       return context.clintDealId;
     }
     const result = await this.client.ensureDeal({
       name: context.displayName?.trim() || "Lead WhatsApp",
+      contactName: context.displayName,
       phoneE164: context.phoneE164,
       courseTitle: course.title,
       stageId: targetStageId,

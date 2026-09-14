@@ -26,6 +26,7 @@ export type ClintRuntimeConfiguration = {
 
 export type ClintDealInput = {
   name: string;
+  contactName?: string | null;
   phoneE164: string;
   courseTitle: string;
   stageId: string;
@@ -38,6 +39,11 @@ export type ClintDealResult = {
 };
 
 type Fetcher = typeof fetch;
+
+type ClintContact = {
+  id: string;
+  name: string | null;
+};
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
@@ -56,10 +62,28 @@ export class ClintClient {
   async ensureDeal(input: ClintDealInput): Promise<ClintDealResult> {
     this.validateStage(input.stageId);
     const phone = this.normalizePhone(input.phoneE164);
+    const contactName = this.normalizeContactName(input.contactName);
     const existing = await this.findDealByPhone(phone);
-    if (existing) return { ...existing, merged: true };
+    if (existing) {
+      const contactId = await this.syncContactName({
+        contactId: existing.contactId,
+        phoneE164: input.phoneE164,
+        name: contactName,
+      });
+      return {
+        ...existing,
+        contactId,
+        merged: true,
+      };
+    }
 
-    const contact = await this.findContactByPhone(phone);
+    let contact = await this.findContactByPhone(phone);
+    if (contact && contactName && this.shouldReplaceContactName(contact.name, phone)) {
+      await this.updateContactName(contact.id, contactName);
+      contact = { ...contact, name: contactName };
+    } else if (!contact && contactName) {
+      contact = await this.createContact(phone, contactName);
+    }
     const response = await this.request<Record<string, unknown>>("/deals", {
       method: "POST",
       body: JSON.stringify({
@@ -76,6 +100,23 @@ export class ClintClient {
       contactId: this.optionalUuid(deal.contact_id) ?? contact?.id ?? null,
       merged: false,
     };
+  }
+
+  async syncContactName(input: {
+    contactId?: string | null;
+    phoneE164: string;
+    name?: string | null;
+  }): Promise<string | null> {
+    const contactName = this.normalizeContactName(input.name);
+    if (!contactName) return input.contactId ?? null;
+    const phone = this.normalizePhone(input.phoneE164);
+    const contact = input.contactId
+      ? await this.getContact(input.contactId)
+      : await this.findContactByPhone(phone);
+    if (contact && this.shouldReplaceContactName(contact.name, phone)) {
+      await this.updateContactName(contact.id, contactName);
+    }
+    return contact?.id ?? input.contactId ?? null;
   }
 
   async updateDealStage(dealId: string, stageId: string): Promise<void> {
@@ -158,7 +199,7 @@ export class ClintClient {
     };
   }
 
-  private async findContactByPhone(phone: string): Promise<{ id: string } | null> {
+  private async findContactByPhone(phone: string): Promise<ClintContact | null> {
     const response = await this.request<unknown>(
       `/contacts?ddi=55&phone=${encodeURIComponent(phone.replace(/^55/u, ""))}&limit=1000`,
     );
@@ -166,7 +207,62 @@ export class ClintClient {
       const candidate = `${String(contact.ddi ?? "")}${String(contact.phone ?? "")}`.replace(/\D/gu, "");
       return candidate === phone;
     });
-    return exact ? { id: this.readUuid(exact, "id", "Contato Clint encontrado sem ID válido.") } : null;
+    return exact ? this.toContact(exact, "Contato Clint encontrado sem ID válido.") : null;
+  }
+
+  private async getContact(contactId: string): Promise<ClintContact | null> {
+    const response = await this.request<Record<string, unknown>>(`/contacts/${contactId}`);
+    const contact = this.unwrapObject(response, "contact");
+    return Object.keys(contact).length > 0
+      ? this.toContact(contact, "Contato Clint encontrado sem ID válido.")
+      : null;
+  }
+
+  private async createContact(phone: string, name: string): Promise<ClintContact> {
+    const response = await this.request<Record<string, unknown>>("/contacts", {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        ddi: "+55",
+        phone: phone.replace(/^55/u, ""),
+      }),
+    });
+    return this.toContact(
+      this.unwrapObject(response, "contact"),
+      "A Clint não retornou o ID do contato criado.",
+    );
+  }
+
+  private async updateContactName(contactId: string, name: string): Promise<void> {
+    this.validateUuid(contactId, "Contato Clint");
+    await this.request(`/contacts/${contactId}`, {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    });
+  }
+
+  private toContact(contact: Record<string, unknown>, invalidIdMessage: string): ClintContact {
+    return {
+      id: this.readUuid(contact, "id", invalidIdMessage),
+      name: typeof contact.name === "string" ? contact.name.trim() || null : null,
+    };
+  }
+
+  private normalizeContactName(value: string | null | undefined): string | null {
+    const name = value?.trim().replace(/\s+/gu, " ") ?? "";
+    if (!name || /^\+?[\d\s().-]+$/u.test(name)) return null;
+    return name.slice(0, 200);
+  }
+
+  private shouldReplaceContactName(currentName: string | null, phone: string): boolean {
+    const current = currentName?.trim() ?? "";
+    if (!current) return true;
+    if (["lead whatsapp", "contato whatsapp"].includes(current.toLocaleLowerCase("pt-BR"))) {
+      return true;
+    }
+    const currentDigits = current.replace(/\D/gu, "");
+    const nationalPhone = phone.replace(/^55/u, "");
+    return currentDigits.length >= 10 && (currentDigits === phone || currentDigits === nationalPhone);
   }
 
   private get allowedStageIds(): Set<string> {

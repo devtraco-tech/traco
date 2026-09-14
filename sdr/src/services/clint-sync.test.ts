@@ -67,6 +67,7 @@ describe("ClintSyncService", () => {
     expect(client.ensureDeal).toHaveBeenCalledWith(expect.objectContaining({
       stageId: stages.qualifiedStageId,
       phoneE164: context.phoneE164,
+      contactName: context.displayName,
     }));
     expect(repository.saveClintSync).toHaveBeenCalledWith(context.conversationId, {
       dealId: id(3, 1),
@@ -79,6 +80,7 @@ describe("ClintSyncService", () => {
     const linked = { ...context, clintDealId: id(3, 1), clintStageId: stages.qualifiedStageId };
     const client = {
       ensureDeal: vi.fn(),
+      syncContactName: vi.fn().mockResolvedValue(id(4, 1)),
       updateDealStage: vi.fn(),
       prepareHumanHandoff: vi.fn(),
     };
@@ -87,6 +89,11 @@ describe("ClintSyncService", () => {
 
     await service.syncHandoff(linked, course, "explicit_request");
 
+    expect(client.syncContactName).toHaveBeenCalledWith({
+      contactId: context.clintContactId,
+      phoneE164: context.phoneE164,
+      name: context.displayName,
+    });
     expect(client.updateDealStage).toHaveBeenCalledWith(id(3, 1), stages.handoffStageId);
     expect(client.prepareHumanHandoff).toHaveBeenCalledWith(id(3, 1), expect.objectContaining({
       responsibleUserId: runtime.handoff.responsibleUserId,
