@@ -319,10 +319,12 @@ describe("decideCommercialFlow", () => {
   it("notifica o interesse e segue diretamente para os dados da matrícula", () => {
     const decision = decideCommercialFlow(
       context("match", { audienceProfile: "beginner" }),
-      "Sim, faz sentido para mim",
+      "Sim, faz sentido para mim e quero me matricular",
     );
     expect(decision.notifyEnrollment).toBe(true);
     expect(decision.messages[0]).toContain("Nome completo:");
+    expect(decision.messages[0]).not.toMatch(/atendimento|responsável|encaminh/iu);
+    expect(decision.handoffAfterFlow).toBeUndefined();
     expect(decision.patch).toMatchObject({
       flowStage: "enrollment",
       interestConfirmed: true,

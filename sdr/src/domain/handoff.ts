@@ -16,11 +16,6 @@ const RULES: Array<{ reason: HandoffReason; pattern: RegExp; interruptFlow?: boo
   {
     reason: "commercial_high_intent",
     pattern:
-      /\b(quero|desejo|vou)\s+(me\s+)?(matricular|inscrever)|\bcomo\s+(faço|faco)\s+(a\s+)?(matrícula|matricula|inscrição|inscricao)|\b(i want to|how (can|do) i)\s+(enroll|register)|\b(quiero|deseo)\s+(inscribirme|matricularme)|\bcómo\s+(puedo\s+)?(inscribirme|matricularme)/iu,
-  },
-  {
-    reason: "commercial_high_intent",
-    pattern:
       /\b(desconto|negociar|parcelamento|parcelar|formas? de pagamento|meios? de pagamento|pagamento|pagar|pix|boleto|cart[aã]o|entrada|discount|negotiate|installments?|payment|pay|credit card|descuento|negociar|cuotas|formas? de pago|pago|pagar|tarjeta)\b/iu,
     interruptFlow: true,
   },

@@ -4,7 +4,6 @@ import { evaluateHandoff, shouldInterruptCurrentFlow } from "./handoff.js";
 describe("evaluateHandoff", () => {
   it.each([
     ["Quero falar com um atendente", "explicit_request", true],
-    ["Como faço a matrícula?", "commercial_high_intent", false],
     ["Vocês conseguem dar desconto?", "commercial_high_intent", true],
     ["Quais são as formas de pagamento?", "commercial_high_intent", true],
     ["Posso pagar no PIX?", "commercial_high_intent", true],
@@ -33,10 +32,14 @@ describe("evaluateHandoff", () => {
     ).toBe(true);
   });
 
-  it("não transforma pedido de matrícula em handoff antes do fluxo comercial", () => {
-    expect(
-      shouldInterruptCurrentFlow(evaluateHandoff("Quero me matricular")),
-    ).toBe(false);
+  it.each([
+    "Quero me matricular",
+    "Como faço a matrícula?",
+    "I want to enroll",
+    "Quiero matricularme",
+  ])("mantém pedido de matrícula no fluxo normal do SDR: %s", (text) => {
+    expect(evaluateHandoff(text)).toEqual({ shouldHandoff: false });
+    expect(shouldInterruptCurrentFlow(evaluateHandoff(text))).toBe(false);
   });
 
   it("encaminha pagamento imediatamente mesmo durante outro fluxo", () => {
