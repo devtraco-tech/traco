@@ -187,6 +187,18 @@ function formatCurrency(
   }
 }
 
+function isProsthodonticsCourse(course: CatalogItemSnapshot | undefined): boolean {
+  if (!course) return false;
+  return normalize(`${course.slug ?? ""} ${course.title} ${course.area ?? ""}`)
+    .includes("protese dentaria");
+}
+
+function isImplantologyCourse(course: CatalogItemSnapshot | undefined): boolean {
+  if (!course) return false;
+  return normalize(`${course.slug ?? ""} ${course.title} ${course.area ?? ""}`)
+    .includes("implantodontia");
+}
+
 function coursePresentation(
   course: CatalogItemSnapshot | undefined,
   language: SupportedLanguage,
@@ -207,6 +219,23 @@ function coursePresentation(
   const formatDate = (value: string | null) => value
     ? new Date(`${value}T12:00:00`).toLocaleDateString(locale)
     : null;
+  if (isProsthodonticsCourse(course)) {
+    if (language === "en") return [
+      `The ${course.title} program at ABO Goiás focuses on oral rehabilitation, integrating function, aesthetics, diagnosis, clinical planning, digital workflows, laboratory practice, and supervised patient care.`,
+      "The confirmed structure is 856 hours across 25 monthly modules over more than two years, with over 578 clinical hours. The institutional offer is 25 installments of BRL 2,800; the current start date and availability must be confirmed by the team.",
+      "Do you already work with Prosthodontics, or would this be your first training in the field?",
+    ];
+    if (language === "es") return [
+      `La ${course.title} de ABO Goiás está enfocada en rehabilitación oral e integra función, estética, diagnóstico, planificación clínica, flujos digitales, práctica de laboratorio y atención clínica supervisada.`,
+      "La estructura confirmada es de 856 horas en 25 módulos mensuales durante más de dos años, con más de 578 horas clínicas. La condición institucional es de 25 cuotas de R$ 2.800; la fecha de inicio y la disponibilidad actuales deben ser confirmadas por el equipo.",
+      "¿Ya trabajas con Prótesis Dental o esta sería tu primera formación en el área?",
+    ];
+    return [
+      `A *${course.title}* da ABO Goiás é voltada à reabilitação oral e integra função, estética, diagnóstico, planejamento clínico, fluxos digitais, prática laboratorial e atendimento clínico supervisionado. Entre os diferenciais estão a equipe multidisciplinar, a ampla disponibilidade de pacientes e o foco em reabilitações implantossuportadas.`,
+      "Estas são as informações confirmadas sobre o curso 👇\n\n⏳ Carga horária: 856h, em 25 módulos mensais ao longo de mais de 2 anos\n🦷 Prática: mais de 578 horas clínicas\n📚 Encontros: de quarta-feira a sábado, uma vez ao mês\n💰 Investimento: 25x de R$ 2.800\n\nA data de início e a disponibilidade da turma precisam ser confirmadas pela equipe.",
+      "Agora quero entender seu momento profissional: você já atua com Prótese Dentária ou essa será sua primeira formação na área?",
+    ];
+  }
   if (language === "en") {
     const details = [
       course.workload !== null ? `${course.workload} hours` : null,
@@ -221,17 +250,33 @@ function coursePresentation(
       `To better understand your background: do you already work in ${course.area ?? "this field"}, or would this be your first training in it?`,
     ];
   }
-  if (language === "es") {
+  if (language === "es" && isImplantologyCourse(course)) {
     return [
       "Este *Curso de Perfeccionamiento en Implantología* en el que demostraste interés es *referente en el mercado desde hace más de 20 años*. Su objetivo es que *en 10 meses seas capaz de planificar y colocar implantes con seguridad*, desde casos unitarios hasta prótesis sobre implantes. Cuenta con los siguientes diferenciales:\n\n💎 Implantes, kit quirúrgico y motor de implantes incluidos (excepto contraángulo)\n💎 Protocolos simplificados, guía quirúrgica y flujo digital\n💎 Práctica de laboratorio y clínica supervisada\n💎 Amplia disponibilidad de pacientes para la práctica\n💎 Coordinación: Dr. Getúlio Souza de Marães, doctor en Implantología\n💎 Equipo de profesores especialistas, másteres y doctores",
       "Estas son las principales informaciones sobre el curso 👇\n\n📅 Inicio: 18/09\n⏳ Duración: 10 meses | 140 h\n📚 Encuentros: generalmente un viernes y un sábado por mes\n💰 Inversión: 10 cuotas de R$ 1.700\n\nLos materiales están incluidos (implantes, kit quirúrgico y motor de implantes); solo es necesario adquirir el contraángulo para implantes.",
       "Bien... ahora quiero entender tu momento para poder orientarte: ¿ya realizas casos de Implantología o este será tu primer paso en el área?",
     ];
   }
-  return [
+  if (language === "pt" && isImplantologyCourse(course)) return [
     "Esse *Curso de Aperfeiçoamento em Implantodontia* que você demonstrou interesse é *referência no mercado há mais de 20 anos* e o objetivo dele é que *em 10 meses você seja capaz de planejar e operar implantes com segurança*, desde casos unitários até próteses sobre implante, e conta com diferenciais como:\n\n💎 Implantes, kit cirúrgico e motor de implante inclusos (exceto contra-ângulo)\n💎 Protocolos simplificados, guia cirúrgica e fluxo digital\n💎 Prática laboratorial e clínica supervisionada\n💎 Ampla disponibilidade de pacientes para prática\n💎 Coordenação: Dr. Getúlio Souza de Marães, doutor em Implantodontia\n💎 Equipe de professores especialistas, mestres e doutores",
     "Estas são as principais informações sobre esse curso 👇\n\n📅 Início: 18/09\n⏳ Duração: 10 meses | 140h\n📚 Encontros: geralmente uma sexta e um sábado por mês\n💰 Investimento: 10x de R$ 1.700\n\nLembrando que os materiais estão inclusos (implantes, kit cirúrgico e motor de implante), sendo necessário adquirir apenas o contra-ângulo para implantes.",
     "Bom... agora deixa eu entender seu momento pra te ajudar, você já faz casos de Implantodontia ou esse será seu primeiro passo na área?",
+  ];
+  const details = [
+    course.workload !== null ? `${course.workload}h` : null,
+    course.duration,
+    course.periodicity,
+    course.installment_suggestion ?? investment,
+  ].filter(Boolean);
+  if (language === "es") return [
+    `El curso seleccionado es ${course.title}. Presentaré solamente la información confirmada en el catálogo oficial.`,
+    details.length ? `Información disponible: ${details.join("; ")}.` : "Las demás condiciones deben ser confirmadas con el equipo responsable.",
+    `¿Ya trabajas en ${course.area ?? "esta área"} o esta sería tu primera formación?`,
+  ];
+  return [
+    `O curso selecionado é ${course.title}. Vou apresentar somente as informações confirmadas no catálogo oficial.`,
+    details.length ? `Informações disponíveis: ${details.join("; ")}.` : "As demais condições precisam ser confirmadas com a equipe responsável.",
+    `Você já atua em ${course.area ?? "essa área"} ou essa seria sua primeira formação?`,
   ];
 }
 
@@ -241,6 +286,17 @@ function profileMatch(
   language: SupportedLanguage,
 ): string {
   const title = course?.title ?? "essa formação";
+  if (isProsthodonticsCourse(course)) {
+    if (language === "en") return profile === "beginner"
+      ? `Perfect. ${title} develops the fundamentals progressively through laboratory and supervised clinical practice, with emphasis on diagnosis and planning. Does that make sense for you?`
+      : `Excellent. ${title} can deepen your work with digital workflows, complex rehabilitation, implant-supported prostheses, and integrated clinical planning. Does that fit your current goals?`;
+    if (language === "es") return profile === "beginner"
+      ? `Perfecto. ${title} desarrolla los fundamentos de forma progresiva, con práctica de laboratorio y clínica supervisada, además de énfasis en diagnóstico y planificación. ¿Tiene sentido para ti?`
+      : `Excelente. ${title} puede profundizar tu actuación con flujos digitales, rehabilitaciones complejas, prótesis sobre implantes y planificación clínica integrada. ¿Tiene sentido para ti?`;
+    return profile === "beginner"
+      ? `Perfeito! A ${title} desenvolve os fundamentos de forma progressiva, com prática laboratorial e clínica supervisionada, além de foco em diagnóstico e planejamento.\n\nFaz sentido para você?`
+      : `Excelente! A ${title} pode aprofundar sua atuação com fluxos digitais, reabilitações complexas, próteses sobre implantes e planejamento clínico integrado.\n\nFaz sentido para você?`;
+  }
   if (language === "en") {
     return profile === "beginner"
       ? `I understand. The ${title} program starts with the fundamentals and progresses through the course content. Since suitability depends on your experience and the prerequisites, the team can confirm whether this class is right for you. Does that make sense for you?`
@@ -273,7 +329,7 @@ function qualificationFrom(text: string): LeadQualification {
 function profileFrom(text: string): AudienceProfile {
   const value = normalize(text);
   if (
-    /\b(nunca|primeiro passo|primeira formacao|primeira especializacao|comecando|comecar na area|iniciante|ainda nao faco|recem[- ]formado|recem[- ]formada|formei agora|pouca experiencia|nao faco implante|nao realizo implante|never|first training|first course|beginner|starting|do not work in|recently graduated|little experience|primera formacion|primer curso|primer paso|principiante|empezando|aun no trabajo|no hago implantes|no realizo implantes|recien[- ]graduado|recien[- ]graduada)\b/u.test(
+    /\b(nunca|primeiro passo|primeira formacao|primeira especializacao|comecando|comecar na area|iniciante|ainda nao faco|recem[- ]formado|recem[- ]formada|formei agora|pouca experiencia|nao faco implante|nao realizo implante|nao faco protese|nao atuo com protese|never|first training|first course|beginner|starting|do not work in|recently graduated|little experience|primera formacion|primer curso|primer paso|principiante|empezando|aun no trabajo|no hago implantes|no realizo implantes|no hago protesis|recien[- ]graduado|recien[- ]graduada)\b/u.test(
       value,
     )
   ) {
@@ -292,6 +348,7 @@ function profileFrom(text: string): AudienceProfile {
 function audienceObjectionResponse(
   text: string,
   language: SupportedLanguage,
+  course?: CatalogItemSnapshot,
 ): string | null {
   if (language === "en") return null;
   const value = normalize(text);
@@ -313,6 +370,11 @@ function audienceObjectionResponse(
   if (
     /\b(mesmo conhecimento|mesmo conteudo|ja conheco|conteudo repetido|nao vale a pena pagar|mismo conocimiento|mismo contenido|ya conozco|contenido repetido|no vale la pena pagar)\b/u.test(value)
   ) {
+    if (isProsthodonticsCourse(course)) {
+      return language === "es"
+        ? "Entre los diferenciales documentados están los flujos digitales, las rehabilitaciones complejas e implantosoportadas, la clínica integrada y el equipo multidisciplinario. ¿Cuál de estos puntos sería más relevante para tu rutina?"
+        : "Entre os diferenciais documentados estão os fluxos digitais, as reabilitações complexas e implantossuportadas, a clínica integrada e a equipe multidisciplinar. Qual desses pontos seria mais relevante para a sua rotina?";
+    }
     return language === "es"
       ? "Entre los diferenciales documentados están los protocolos simplificados, la guía quirúrgica, el flujo digital, la planificación y la práctica supervisada con pacientes reales. ¿Cuál de estos puntos sería más relevante para tu rutina?"
       : "Entre os diferenciais documentados estão protocolos simplificados, guia cirúrgica, fluxo digital, planejamento e prática supervisionada em paciente real. Qual desses pontos seria mais relevante para a sua rotina?";
@@ -586,7 +648,7 @@ export function decideCommercialFlow(
     };
   }
 
-  const objectionResponse = audienceObjectionResponse(currentText, language);
+  const objectionResponse = audienceObjectionResponse(currentText, language, course);
   if (
     objectionResponse
     && (context.flowStage === "match" || followsMatchConfirmationPrompt(context))

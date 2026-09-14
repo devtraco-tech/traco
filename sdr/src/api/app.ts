@@ -19,10 +19,7 @@ import type { ClintClient } from "../infra/clint-client.js";
 import { WahaApiError, type WahaClient } from "../infra/waha-client.js";
 import { verifyWahaHmac } from "../lib/hmac.js";
 import { isPhoneAllowed, maskPhoneNumber } from "../domain/phone-allowlist.js";
-import {
-  OFFICIAL_TRAINING_DOCUMENTS,
-  TRAINING_VERSION,
-} from "../training/official-training.js";
+import { getCourseTraining } from "../training/course-training.js";
 
 type ApiDependencies = {
   repository: SdrRepository;
@@ -154,11 +151,15 @@ export function buildApp(
   app.post(
     "/api/sdr/training/install",
     { onRequest: requireAdmin },
-    async () => dependencies.repository.installOfficialTraining(
-      config.WAHA_SESSION,
-      OFFICIAL_TRAINING_DOCUMENTS,
-      TRAINING_VERSION,
-    ),
+    async () => {
+      const binding = await dependencies.repository.getCatalogBinding(config.WAHA_SESSION);
+      const training = getCourseTraining(binding?.slug);
+      return dependencies.repository.installOfficialTraining(
+        config.WAHA_SESSION,
+        training.documents,
+        training.version,
+      );
+    },
   );
 
   app.put(
@@ -172,10 +173,12 @@ export function buildApp(
       if (body.script.length > 30_000) {
         return reply.code(400).send({ error: "O script deve ter no máximo 30.000 caracteres" });
       }
+      const binding = await dependencies.repository.getCatalogBinding(config.WAHA_SESSION);
+      const training = getCourseTraining(binding?.slug);
       return dependencies.repository.saveCommercialScript(
         config.WAHA_SESSION,
         body.script.trim(),
-        TRAINING_VERSION,
+        training.version,
       );
     },
   );

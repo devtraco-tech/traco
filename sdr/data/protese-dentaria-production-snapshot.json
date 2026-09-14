@@ -1,0 +1,51 @@
+{
+  "id": "75426b08-ecbc-43f3-958d-ad69860943c8",
+  "title": "Especialização em Prótese Dentária",
+  "slug": "especializacao-em-protese-dentaria",
+  "area": "Prótese Dentária",
+  "modality": "presencial",
+  "target_audience": "cirurgioes_dentistas",
+  "status": "draft",
+  "display_status": null,
+  "description": "Especialização voltada à reabilitação oral, integrando função, estética, diagnóstico, planejamento clínico, fluxos digitais, prática laboratorial e atendimento clínico supervisionado.",
+  "prerequisites": "Graduação em Odontologia e CRO ativo.",
+  "differentials": "Equipe multidisciplinar de protesistas, implantodontistas e periodontistas; mais de 578 horas de prática clínica; ampla disponibilidade de pacientes; foco em reabilitações implantossuportadas; aplicação de fluxos digitais; professores especialistas, mestres e doutores.",
+  "program": "Fluxos de trabalho parcial e totalmente digitais; facetas e lentes de contato cerâmicas; próteses sobre implantes; facetas de resina composta; princípios de oclusão; próteses totais e removíveis; prótese parcial fixa; clínica integrada de prótese; planejamento digital; fotografia odontológica; exames por imagem e planejamento cirúrgico-protético; cirurgias de tecido mole; integração com Endodontia e Periodontia; materiais dentários; Ética e Legislação Odontológica; Bioética; Metodologia Científica.",
+  "workload": 856,
+  "practical_workload": 578,
+  "duration": "25 módulos, com duração superior a 2 anos",
+  "periodicity": "Encontros mensais, de quarta-feira a sábado",
+  "schedule": "Quarta, quinta e sexta: 08:00 às 12:00 e 14:00 às 20:00. Sábado: 08:00 às 12:00.",
+  "vacancies": 0,
+  "occupied_vacancies": 0,
+  "available_vacancies": 0,
+  "currency": "real",
+  "investment": 70000,
+  "investment_details": "25 parcelas de R$ 2.800,00. O material institucional informa 5% de desconto no pagamento integral do semestre. Condições facilitadas devem ser confirmadas com o atendimento humano.",
+  "installment_suggestion": "25x de R$ 2.800,00",
+  "registration_deadline": null,
+  "suggested_start_date": null,
+  "effective_start_date": null,
+  "end_date": null,
+  "public_url": null,
+  "location": "ABO Goiás — Avenida Itália, nº 1047, Jardim Europa, Goiânia/GO, CEP 74325-110",
+  "materials": "O coordenador encaminhará no início da especialização uma lista de materiais para as aulas práticas.",
+  "teacher": {
+    "id": "6b2b0304-a48e-4b59-8817-64c84fb58d58",
+    "name": "Prof. Sicknan Soares",
+    "bio": "Doutor em Reabilitação Oral, professor da Universidade Federal de Goiás e autor do livro Reabilitação Oral — Prótese sobre implante: fluxos analógico e digital (Santos Pub, 2021).",
+    "photo_url": null
+  },
+  "source_notes": {
+    "course_project": "ESPECIALIZAÇÃO EM PRÓTESE DENTÁRIA.pdf",
+    "faq": "FAQ - Especialização Prótese Dentária.pdf",
+    "audience_matrix": "MATRIZ PUBLICO PARA IA.pptx.pdf",
+    "commercial_flow": "Fluxo de Atendimento - Prótese.docx.pdf",
+    "reference_only": "Fluxo de Atendimento - Build Up foi usado somente como referência estrutural e não como fonte factual deste curso.",
+    "pending_confirmation": [
+      "O fluxo comercial informa 25x de R$ 2.500,00, mas o projeto institucional informa 25x de R$ 2.800,00; foi priorizado o projeto institucional.",
+      "O fluxo informa início em 03/03 sem ano; nenhuma data foi cadastrada.",
+      "Quantidade de vagas não consta nos documentos; o cadastro permanece em rascunho com zero vagas."
+    ]
+  }
+}

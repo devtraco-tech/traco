@@ -33,6 +33,26 @@ const course: CatalogItemSnapshot = {
   end_date: "2028-09-24",
 };
 
+const prosthodonticsCourse: CatalogItemSnapshot = {
+  ...course,
+  id: "course-protese",
+  title: "Especialização em Prótese Dentária",
+  slug: "especializacao-em-protese-dentaria",
+  area: "Prótese Dentária",
+  investment: 70000,
+  investment_details: "25 parcelas de R$ 2.800,00",
+  installment_suggestion: "25x de R$ 2.800,00",
+  workload: 856,
+  vacancies: 0,
+  available_vacancies: 0,
+  duration: "25 módulos, com duração superior a 2 anos",
+  periodicity: "Encontros mensais, de quarta-feira a sábado",
+  suggested_start_date: null,
+  effective_start_date: null,
+  registration_deadline: null,
+  end_date: null,
+};
+
 function context(
   flowStage: FlowStage,
   overrides: Partial<ConversationContext> = {},
@@ -64,6 +84,43 @@ function context(
 }
 
 describe("decideCommercialFlow", () => {
+  it("apresenta Prótese sem reutilizar dados de Implantodontia", () => {
+    const decision = decideCommercialFlow(
+      context("qualification"),
+      "Sim, sou dentista formado",
+      prosthodonticsCourse,
+    );
+
+    const content = decision.messages.join("\n");
+    expect(content).toContain("Especialização em Prótese Dentária");
+    expect(content).toContain("856h");
+    expect(content).toContain("mais de 578 horas clínicas");
+    expect(content).toContain("25x de R$ 2.800");
+    expect(content).not.toContain("Getúlio");
+    expect(content).not.toContain("10x de R$ 1.700");
+    expect(content).not.toContain("18/09");
+  });
+
+  it("adapta perfil e objeção ao conteúdo de Prótese", () => {
+    const beginner = decideCommercialFlow(
+      context("profile", { leadQualification: "graduated" }),
+      "Ainda não atuo com prótese",
+      prosthodonticsCourse,
+    );
+    expect(beginner.patch?.audienceProfile).toBe("beginner");
+    expect(beginner.messages.join(" ")).toContain("prática laboratorial e clínica supervisionada");
+    expect(beginner.messages.join(" ")).not.toContain("guia cirúrgica");
+
+    const objection = decideCommercialFlow(
+      context("match", { audienceProfile: "experienced" }),
+      "Tenho receio de pagar pelo mesmo conteúdo que já conheço",
+      prosthodonticsCourse,
+    );
+    expect(objection.messages[0]).toContain("reabilitações complexas");
+    expect(objection.messages[0]).toContain("equipe multidisciplinar");
+    expect(objection.messages[0]).not.toContain("protocolos simplificados");
+  });
+
   it("conduz a apresentação e a qualificação em inglês", () => {
     const presentation = decideCommercialFlow(
       context("presentation"),

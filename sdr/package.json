@@ -13,6 +13,7 @@
     "seed:test-sdr-config": "tsx scripts/seed-test-sdr-config.ts",
     "seed:training": "tsx scripts/seed-official-training.ts",
     "seed:pilot-course": "tsx scripts/seed-pilot-implantodontia.ts",
+    "seed:prosthodontics": "tsx scripts/seed-protese-dentaria.ts",
     "queue:cleanup:dev": "tsx scripts/cleanup-development-queue.ts --confirm-development-cleanup",
     "queue:retry:dev": "tsx scripts/retry-development-conversation.ts",
     "conversation:close:dev": "tsx scripts/close-development-conversation.ts --confirm-development-close",

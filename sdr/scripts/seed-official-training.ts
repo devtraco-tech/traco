@@ -1,9 +1,6 @@
 import dotenv from "dotenv";
 import { SdrRepository } from "../src/infra/supabase-repository.js";
-import {
-  OFFICIAL_TRAINING_DOCUMENTS,
-  TRAINING_VERSION,
-} from "../src/training/official-training.js";
+import { getCourseTraining } from "../src/training/course-training.js";
 
 dotenv.config({ path: ".env.local" });
 
@@ -20,10 +17,16 @@ if (!serviceRoleKey) {
 }
 
 const repository = new SdrRepository(supabaseUrl, serviceRoleKey);
+const binding = await repository.getCatalogBinding(wahaSession);
+const selectedTraining = getCourseTraining(binding?.slug);
 const training = await repository.installOfficialTraining(
   wahaSession,
-  OFFICIAL_TRAINING_DOCUMENTS,
-  TRAINING_VERSION,
+  selectedTraining.documents,
+  selectedTraining.version,
 );
 
-console.log(JSON.stringify({ project: "abo-traco-dev", training }, null, 2));
+console.log(JSON.stringify({
+  project: "abo-traco-dev",
+  courseSlug: binding?.slug ?? null,
+  training,
+}, null, 2));
