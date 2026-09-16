@@ -61,6 +61,74 @@ const COPY = {
   },
 } satisfies Record<SupportedLanguage, Record<string, string>>;
 
+function prosthodonticsOpening(
+  displayName: string | null,
+  language: SupportedLanguage,
+): string {
+  const name = displayName?.trim().split(/\s+/u)[0];
+  if (language === "en") {
+    return `Hello${name ? `, ${name}` : ""}! How are you? 😊\n\nI’m Julyane, Commercial Consultant at ABO Goiás. I saw your interest in our Prosthodontics specialization and would like to better understand what you are looking for.\n\nHave you already graduated in Dentistry?`;
+  }
+  if (language === "es") {
+    return `¡Hola${name ? `, ${name}` : ""}! ¿Todo bien? 😊\n\nSoy Julyane, Consultora Comercial de ABO Goiás. Vi que te interesó nuestra Especialización en Prótesis Dental y quisiera entender un poco mejor lo que estás buscando.\n\n¿Ya te graduaste en Odontología?`;
+  }
+  return `Olá${name ? `, ${name}` : ""}! Tudo bem? 😊\n\nSou a Julyane, Consultora Comercial da ABO Goiás. Vi que você demonstrou interesse em nossa Especialização em Prótese Dentária e gostaria de entender um pouquinho melhor o que você está buscando.\n\nVocê já é formado(a) em Odontologia?`;
+}
+
+function prosthodonticsProfileQuestion(
+  displayName: string | null,
+  language: SupportedLanguage,
+): string {
+  const name = displayName?.trim().split(/\s+/u)[0];
+  if (language === "en") {
+    return `Perfect${name ? `, ${name}` : ""}! 😊 Do you currently work with Prosthodontics, or are you looking for this specialization to start working in the field?`;
+  }
+  if (language === "es") {
+    return `¡Perfecto${name ? `, ${name}` : ""}! 😊 ¿Actualmente trabajas con Prótesis Dental o buscas la especialización para comenzar a trabajar en el área?`;
+  }
+  return `Perfeito${name ? `, ${name}` : ""}! 😊\n\nE hoje você já atua com Prótese Dentária ou está buscando a especialização justamente para começar a atuar nessa área?`;
+}
+
+function prosthodonticsMotivationQuestion(language: SupportedLanguage): string {
+  if (language === "en") {
+    return "I understand! 😊 What sparked your interest in the Prosthodontics specialization at this point in your career?";
+  }
+  if (language === "es") {
+    return "¡Entiendo! 😊 ¿Qué despertó tu interés en la Especialización en Prótesis Dental en este momento de tu carrera?";
+  }
+  return "Entendi! 😊 E o que despertou seu interesse pela Especialização em Prótese Dentária neste momento?";
+}
+
+function prosthodonticsHandoffMessage(
+  displayName: string | null,
+  language: SupportedLanguage,
+): string {
+  const name = displayName?.trim().split(/\s+/u)[0];
+  if (language === "en") {
+    return `Perfect${name ? `, ${name}` : ""}! Do you have any specific questions we can help with? Our consultant will continue with the investment proposal and the next steps.`;
+  }
+  if (language === "es") {
+    return `¡Perfecto${name ? `, ${name}` : ""}! ¿Tienes alguna duda puntual en la que podamos ayudarte? Nuestro consultor continuará con la propuesta de inversión y los próximos pasos.`;
+  }
+  return `Perfeito${name ? `, ${name}` : ""}! Tem alguma dúvida pontual em que possamos contribuir? Nosso consultor dará continuidade com a proposta de investimento e os próximos passos.`;
+}
+
+function prosthodonticsHandoffDecision(
+  context: ConversationContext,
+  language: SupportedLanguage,
+): CommercialFlowDecision {
+  return {
+    handled: true,
+    messages: [prosthodonticsHandoffMessage(context.displayName, language)],
+    patch: { interestConfirmed: true },
+    notifyEnrollment: !context.enrollmentNotificationSent,
+    handoffAfterFlow: {
+      reason: "commercial_high_intent",
+      details: "Pré-atendimento de Prótese concluído. O consultor deve apresentar o investimento, negociar e conduzir matrícula e pagamento.",
+    },
+  };
+}
+
 const FIELD_LABELS: Record<SupportedLanguage, Record<EnrollmentField, string>> = {
   pt: {
   full_name: "Nome completo",
@@ -222,18 +290,22 @@ function coursePresentation(
   if (isProsthodonticsCourse(course)) {
     if (language === "en") return [
       `The ${course.title} program at ABO Goiás focuses on oral rehabilitation, integrating function, aesthetics, diagnosis, clinical planning, digital workflows, laboratory practice, and supervised patient care.`,
-      "The confirmed structure is 856 hours across 25 monthly modules over more than two years, with over 578 clinical hours. The institutional offer is 25 installments of BRL 2,800; the current start date and availability must be confirmed by the team.",
-      "Do you already work with Prosthodontics, or would this be your first training in the field?",
+      "The program has a complete structure and a multidisciplinary faculty of specialists, masters, and doctors, with clinical experience in Prosthodontics, Implantology, and Periodontics. It also emphasizes implant-supported rehabilitation and digital workflows.",
+      "The confirmed structure is 856 hours across 25 monthly modules over more than two years. Classes run Wednesday through Friday from 8 a.m. to noon and 2 p.m. to 8 p.m., and Saturday from 8 a.m. to noon.",
+      "Based on what I shared, does this specialization make sense for your current career moment?",
     ];
     if (language === "es") return [
       `La ${course.title} de ABO Goiás está enfocada en rehabilitación oral e integra función, estética, diagnóstico, planificación clínica, flujos digitales, práctica de laboratorio y atención clínica supervisada.`,
-      "La estructura confirmada es de 856 horas en 25 módulos mensuales durante más de dos años, con más de 578 horas clínicas. La condición institucional es de 25 cuotas de R$ 2.800; la fecha de inicio y la disponibilidad actuales deben ser confirmadas por el equipo.",
-      "¿Ya trabajas con Prótesis Dental o esta sería tu primera formación en el área?",
+      "El programa cuenta con una estructura completa y un equipo multidisciplinario de especialistas, másteres y doctores con experiencia clínica en Prótesis, Implantología y Periodoncia. También se destacan las rehabilitaciones implantosoportadas y los flujos digitales.",
+      "La estructura confirmada es de 856 horas en 25 módulos mensuales durante más de dos años. Las clases son de miércoles a viernes, de 8:00 a 12:00 y de 14:00 a 20:00, y los sábados de 8:00 a 12:00.",
+      "Por todo lo que compartí, ¿esta especialización tiene sentido para tu momento profesional actual?",
     ];
     return [
-      `A *${course.title}* da ABO Goiás é voltada à reabilitação oral e integra função, estética, diagnóstico, planejamento clínico, fluxos digitais, prática laboratorial e atendimento clínico supervisionado. Entre os diferenciais estão a equipe multidisciplinar, a ampla disponibilidade de pacientes e o foco em reabilitações implantossuportadas.`,
-      "Estas são as informações confirmadas sobre o curso 👇\n\n⏳ Carga horária: 856h, em 25 módulos mensais ao longo de mais de 2 anos\n🦷 Prática: mais de 578 horas clínicas\n📚 Encontros: de quarta-feira a sábado, uma vez ao mês\n💰 Investimento: 25x de R$ 2.800\n\nA data de início e a disponibilidade da turma precisam ser confirmadas pela equipe.",
-      "Agora quero entender seu momento profissional: você já atua com Prótese Dentária ou essa será sua primeira formação na área?",
+      `A *${course.title}* da ABO Goiás vai capacitar você para atuar com reabilitação oral, integrando função, estética, diagnóstico e planejamento clínico. A formação inclui prática laboratorial, atendimento clínico supervisionado e aplicação dos fluxos digitais mais recentes.`,
+      "Você contará com estrutura completa e uma equipe multidisciplinar de protesistas, implantodontistas e periodontistas, formada por especialistas, mestres e doutores. Entre os diferenciais estão a ampla disponibilidade de pacientes e o enfoque nas reabilitações implantossuportadas.",
+      "A ABO atua há mais de 70 anos e já formou e certificou mais de 55 mil alunos. A instituição conta com clínicas equipadas, laboratórios para treinamento prático e salas preparadas para o ensino teórico.\n\n🌐 Site: abogoias.org.br\n📸 Instagram: instagram.com/abogoias",
+      "⏳ Carga horária: 856h em 25 módulos mensais\n📚 Horários: quarta, quinta e sexta, das 08h às 12h e das 14h às 20h; sábado, das 08h às 12h\n👨‍🏫 Coordenação: Prof. Sicknan Soares, doutor em Reabilitação Oral e professor da UFG",
+      "Diante de tudo o que compartilhei, a nossa especialização faz sentido para o seu atual momento de carreira?",
     ];
   }
   if (language === "en") {
@@ -498,6 +570,11 @@ function fieldFromLabel(label: string): EnrollmentField | null {
   return null;
 }
 
+function requestsCommercialTerms(text: string): boolean {
+  const value = normalize(text);
+  return /\b(preco|valor|investimento|parcela|parcelamento|desconto|pagamento|boleto|contrato|matricula|price|cost|investment|installment|discount|payment|contract|enrollment|precio|valor|inversion|cuota|descuento|pago|contrato|matricula)\b/u.test(value);
+}
+
 function parseInlineNumberedValues(text: string): Map<number, string> {
   const markerPattern = /(?<!\S)(\d{1,2})(?:[.)-]\s*|\s+)/gu;
   const markers: Array<{ itemNumber: number; start: number; valueStart: number }> = [];
@@ -626,7 +703,11 @@ export function decideCommercialFlow(
   if (context.flowStage === "presentation") {
     return {
       handled: true,
-      messages: [COPY[language].presentation],
+      messages: [
+        isProsthodonticsCourse(course)
+          ? prosthodonticsOpening(context.displayName, language)
+          : COPY[language].presentation,
+      ],
       patch: { flowStage: "qualification" },
     };
   }
@@ -641,11 +722,26 @@ export function decideCommercialFlow(
         patch: { flowStage: "disqualified", leadQualification: qualification },
       };
     }
+    if (isProsthodonticsCourse(course)) {
+      return {
+        handled: true,
+        messages: [prosthodonticsProfileQuestion(context.displayName, language)],
+        patch: { flowStage: "profile", leadQualification: qualification },
+      };
+    }
     return {
       handled: true,
       messages: coursePresentation(course, language),
       patch: { flowStage: "profile", leadQualification: qualification },
     };
+  }
+
+  if (
+    context.flowStage === "match"
+    && isProsthodonticsCourse(course)
+    && requestsCommercialTerms(currentText)
+  ) {
+    return prosthodonticsHandoffDecision(context, language);
   }
 
   const objectionResponse = audienceObjectionResponse(currentText, language, course);
@@ -667,6 +763,27 @@ export function decideCommercialFlow(
   }
 
   if (context.flowStage === "profile") {
+    if (isProsthodonticsCourse(course)) {
+      if (requestsEnrollment(currentText)) {
+        return prosthodonticsHandoffDecision(context, language);
+      }
+      if (context.audienceProfile === "unknown") {
+        const profile = profileFrom(currentText);
+        if (profile === "unknown") return { handled: false, messages: [] };
+        return {
+          handled: true,
+          messages: [prosthodonticsMotivationQuestion(language)],
+          patch: { audienceProfile: profile },
+        };
+      }
+
+      if (!currentText.trim()) return { handled: false, messages: [] };
+      return {
+        handled: true,
+        messages: coursePresentation(course, language),
+        patch: { flowStage: "match" },
+      };
+    }
     if (
       context.leadQualification === "graduated"
       && requestsEnrollment(currentText)
@@ -696,6 +813,9 @@ export function decideCommercialFlow(
         ],
         patch: { interestConfirmed: false },
       };
+    }
+    if (isProsthodonticsCourse(course)) {
+      return prosthodonticsHandoffDecision(context, language);
     }
     const decision = enrollmentDecision(language);
     decision.notifyEnrollment = !context.enrollmentNotificationSent;

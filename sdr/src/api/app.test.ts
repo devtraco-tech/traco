@@ -324,3 +324,64 @@ describe("API administrativa do WhatsApp", () => {
     });
   });
 });
+
+describe("PUT /api/sdr/training/pdf", () => {
+  it("salva uma URL HTTPS e normaliza a extensão do arquivo", async () => {
+    const saveCoursePdf = vi.fn().mockResolvedValue({ readiness: { pdf: true } });
+    const app = buildApp(config, {
+      repository: { saveCoursePdf } as unknown as SdrRepository,
+      queue: {} as ConversationQueue,
+      notifier: new EmailNotifier(),
+      adminAuthorizer: authorizedAdmin,
+      waha: wahaStub,
+      catalog: catalogStub,
+    });
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "PUT",
+      url: "/api/sdr/training/pdf",
+      headers: {
+        authorization: "Bearer valid-token",
+        "content-type": "application/json",
+      },
+      payload: JSON.stringify({
+        sourceUrl: "https://files.example.com/material?id=123",
+        title: "Folder do curso",
+      }),
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(saveCoursePdf).toHaveBeenCalledWith(
+      "default",
+      "https://files.example.com/material?id=123",
+      "Folder do curso.pdf",
+    );
+  });
+
+  it("recusa uma URL sem HTTPS", async () => {
+    const saveCoursePdf = vi.fn();
+    const app = buildApp(config, {
+      repository: { saveCoursePdf } as unknown as SdrRepository,
+      queue: {} as ConversationQueue,
+      notifier: new EmailNotifier(),
+      adminAuthorizer: authorizedAdmin,
+      waha: wahaStub,
+      catalog: catalogStub,
+    });
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "PUT",
+      url: "/api/sdr/training/pdf",
+      headers: {
+        authorization: "Bearer valid-token",
+        "content-type": "application/json",
+      },
+      payload: JSON.stringify({ sourceUrl: "http://files.example.com/material.pdf" }),
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(saveCoursePdf).not.toHaveBeenCalled();
+  });
+});

@@ -2,6 +2,12 @@ export type WahaSendResult = {
   providerMessageId?: string;
 };
 
+export type WahaFile = {
+  url: string;
+  filename: string;
+  mimetype: string;
+};
+
 export type WahaSessionStatus =
   | "MISSING"
   | "STOPPED"
@@ -140,21 +146,25 @@ export class WahaClient {
       }),
     });
 
-    const body = await readJsonObject(response);
+    return sendResult(await readJsonObject(response));
+  }
 
-    const nestedId =
-      typeof body.id === "object" && body.id
-        ? (body.id as Record<string, unknown>)._serialized
-        : undefined;
+  async sendFile(
+    chatId: string,
+    file: WahaFile,
+    caption?: string,
+  ): Promise<WahaSendResult> {
+    const response = await this.request("/api/sendFile", {
+      method: "POST",
+      body: JSON.stringify({
+        session: this.session,
+        chatId,
+        ...(caption ? { caption } : {}),
+        file,
+      }),
+    });
 
-    const providerMessageId =
-      typeof body.id === "string"
-        ? body.id
-        : typeof nestedId === "string"
-          ? nestedId
-          : undefined;
-
-    return providerMessageId ? { providerMessageId } : {};
+    return sendResult(await readJsonObject(response));
   }
 
   private async request(
@@ -233,4 +243,18 @@ export class WahaClient {
 
 async function readJsonObject(response: Response): Promise<Record<string, unknown>> {
   return (await response.json().catch(() => ({}))) as Record<string, unknown>;
+}
+
+function sendResult(body: Record<string, unknown>): WahaSendResult {
+  const nestedId =
+    typeof body.id === "object" && body.id
+      ? (body.id as Record<string, unknown>)._serialized
+      : undefined;
+  const providerMessageId =
+    typeof body.id === "string"
+      ? body.id
+      : typeof nestedId === "string"
+        ? nestedId
+        : undefined;
+  return providerMessageId ? { providerMessageId } : {};
 }

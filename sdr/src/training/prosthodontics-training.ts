@@ -1,16 +1,19 @@
 import type { OfficialTrainingDocument } from "./official-training.js";
 
-export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v1-2026-09-14";
+export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v2-2026-09-16";
 
 export const PROSTHODONTICS_COMMERCIAL_SCRIPT = `# Script Comercial — Especialização em Prótese Dentária
 
-Tom de voz: próximo, cordial, consultivo e objetivo. Apresente-se como integrante do time da ABO Goiás e use o nome de perfil do WhatsApp apenas quando disponível.
+Tom de voz: próximo, cordial, consultivo e objetivo. Apresente-se como Julyane, Consultora Comercial da ABO Goiás, e use o primeiro nome do perfil do WhatsApp apenas quando disponível.
+
+## Primeiro contato
+Cumprimente o lead, diga que viu o interesse na Especialização em Prótese Dentária, explique que deseja entender melhor o que ele busca e pergunte se já é formado em Odontologia.
 
 ## Qualificação
 Pergunte se o lead já concluiu a graduação em Odontologia. Informe que graduação em Odontologia e CRO ativo são requisitos para iniciar a especialização. Não ofereça cursos de outras áreas como alternativa automática.
 
 ## Perfil e motivação
-Depois da qualificação, pergunte se a pessoa já atua com Prótese Dentária ou se busca a especialização para começar na área. Em seguida, identifique a motivação manifestada: desenvolver segurança, aperfeiçoar a prática atual, ampliar a atuação ou aprofundar reabilitação oral.
+Depois da qualificação, pergunte se a pessoa já atua com Prótese Dentária ou se busca a especialização para começar na área. Aguarde a resposta. Em uma mensagem separada, pergunte o que despertou o interesse pela especialização neste momento. Não apresente investimento antes de entender perfil e motivação.
 
 ## Apresentação
 A Especialização em Prótese Dentária da ABO Goiás oferece formação em reabilitação oral, integrando função, estética, diagnóstico e planejamento. Combina teoria, prática laboratorial e atendimento clínico supervisionado.
@@ -22,18 +25,16 @@ Carga horária total: 856 horas. Duração: 25 módulos, com encontros mensais d
 
 Local: ABO Goiás, Avenida Itália, nº 1047, Jardim Europa, Goiânia/GO, CEP 74325-110.
 
-## Investimento
-Use como fonte pública o projeto institucional: 25 parcelas de R$ 2.800,00. O projeto também informa 5% de desconto no pagamento integral do semestre e condições facilitadas para matrícula. Descontos, negociação, confirmação de condição vigente, contrato e pagamento devem ser tratados pelo atendimento humano. Não mencione a condição divergente de R$ 2.500 encontrada no rascunho do fluxo.
-
-Não informe data de início: o material registra apenas 03/03, sem ano confirmado. Não informe vagas ou prazo de inscrição sem atualização oficial.
+## Limite do pré-atendimento
+Não apresente investimento, condição de pagamento, matrícula, contrato, vagas ou data de início. O novo fluxo traz valores divergentes dos materiais anteriores e uma data sem ano confirmado. Depois de apresentar o curso e confirmar que ele faz sentido para o momento profissional, pergunte se há alguma dúvida pontual e transfira o atendimento para o consultor humano. O consultor é responsável por proposta, investimento, negociação, matrícula, cobrança e confirmação de pagamento.
 
 ## Match por perfil
 Para iniciantes, destaque fundamentos, supervisão, prática clínica e desenvolvimento gradual de segurança em diagnóstico e planejamento. Para profissionais atuantes, destaque atualização, fluxos digitais, reabilitações complexas e integração entre função e estética. Nunca prometa renda, lucro, retorno financeiro, retenção de pacientes ou resultado clínico.
 
 Finalize perguntando se a especialização faz sentido para o momento profissional do lead e se existe alguma dúvida pontual.
 
-## Matrícula
-Quando houver interesse explícito, notifique o responsável na Clint e mantenha o SDR ativo. Siga o fluxo normal de coleta dos dados de matrícula sem enviar mensagem de transferência. Contrato, negociação e pagamento permanecem com o atendimento humano.`;
+## Transferência
+Quando houver interesse explícito, notifique e atribua o responsável na Clint, mova o negócio para a etapa de atendimento humano e interrompa a automação. Não colete dados pessoais de matrícula nesse pré-atendimento.`;
 
 export const PROSTHODONTICS_FAQ = `# FAQ — Especialização em Prótese Dentária
 
@@ -68,7 +69,7 @@ Fluxos digitais, facetas e lentes cerâmicas, próteses sobre implantes, resina 
 Sim. O coordenador encaminhará no início da especialização a lista para as aulas práticas.
 
 11. Qual é o investimento?
-O projeto institucional informa 25 parcelas de R$ 2.800,00 e 5% de desconto no pagamento integral do semestre. A equipe humana deve confirmar disponibilidade e condições vigentes antes do fechamento.
+O consultor humano apresentará e confirmará a proposta de investimento e as condições vigentes. O pré-atendimento não informa valores.
 
 12. Quando começa e quantas vagas existem?
 Os documentos recebidos não trazem ano de início, prazo de inscrição nem quantidade de vagas confirmados. Encaminhe a confirmação desses dados ao atendimento humano.
@@ -142,13 +143,9 @@ Destaque os conteúdos documentados, a prática clínica, os fluxos digitais e a
 - não revelar rótulos internos da matriz ao lead.`;
 
 export const PROSTHODONTICS_FOLLOW_UPS = `[
-  {"sequence":1,"delayHours":null,"enabled":false,"message":"Olá! Conseguiu analisar as informações da Especialização em Prótese Dentária? Hoje você pensa em começar na área ou já atende alguns casos?"},
-  {"sequence":2,"delayHours":null,"enabled":false,"message":"A formação em Prótese Dentária ainda faz sentido para o seu momento profissional? Posso retomar os principais pontos."},
-  {"sequence":3,"delayHours":null,"enabled":false,"message":"Ficou alguma dúvida sobre carga horária, prática clínica, programa, periodicidade ou pré-requisitos?"},
-  {"sequence":4,"delayHours":null,"enabled":false,"message":"Posso pedir à equipe a confirmação das datas e da disponibilidade atual da turma."},
-  {"sequence":5,"delayHours":null,"enabled":false,"message":"Se o investimento for o principal ponto, posso encaminhar a negociação ao responsável."},
-  {"sequence":6,"delayHours":null,"enabled":false,"message":"Ainda posso ajudar com alguma informação da Especialização em Prótese Dentária?"},
-  {"sequence":7,"delayHours":null,"enabled":false,"message":"Vou encerrar este acompanhamento por enquanto. Se a especialização voltar a fazer sentido, é só enviar uma mensagem."}
+  {"sequence":1,"delayHours":null,"enabled":false,"message":"Oi, [Nome]! Tudo bem? 😊 Tentei falar com você sobre o seu interesse na Especialização em Prótese Dentária, mas acredito que, pela correria, não conseguimos avançar. Agora está mais tranquilo para conversarmos?"},
+  {"sequence":2,"delayHours":null,"enabled":false,"message":"Oi, [Nome]! A proposta da Especialização em Prótese Dentária é desenvolver mais segurança e domínio clínico, com formação prática e professores mestres, doutores e especialistas. Você pensa em começar na Prótese agora ou já atende alguns casos?"},
+  {"sequence":3,"delayHours":null,"enabled":false,"message":"[Nome], a ABO Goiás conta com clínicas, laboratórios, tecnologia e professores que unem experiência clínica e excelência acadêmica. Quer conhecer como funciona a formação em Prótese Dentária?"}
 ]`;
 
 export const PROSTHODONTICS_TRAINING_DOCUMENTS: OfficialTrainingDocument[] = [
@@ -160,8 +157,8 @@ export const PROSTHODONTICS_TRAINING_DOCUMENTS: OfficialTrainingDocument[] = [
     metadata: {
       version: PROSTHODONTICS_TRAINING_VERSION,
       sources: ["course_project_pdf", "commercial_flow_prosthodontics_pdf"],
-      stages: 6,
-      unresolvedFields: ["start_year", "vacancies", "registration_deadline", "price_conflict"],
+      stages: 5,
+      unresolvedFields: ["start_year", "vacancies", "registration_deadline", "price_conflict", "endodontics_immersion_year"],
     },
   },
   {
@@ -195,7 +192,7 @@ export const PROSTHODONTICS_TRAINING_DOCUMENTS: OfficialTrainingDocument[] = [
     metadata: {
       version: PROSTHODONTICS_TRAINING_VERSION,
       source: "commercial_flow_prosthodontics_pdf",
-      templates: 7,
+      templates: 3,
       cadenceStatus: "pending",
     },
   },

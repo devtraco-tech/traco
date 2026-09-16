@@ -60,6 +60,15 @@ export function useSdrTraining(enabled: boolean) {
     onSuccess: updateCache,
   });
 
+  const savePdf = useMutation({
+    mutationFn: ({ sourceUrl, title }: { sourceUrl: string; title: string }) =>
+      sdrRequest<SdrTrainingConfiguration>("/api/sdr/training/pdf", {
+        method: "PUT",
+        body: JSON.stringify({ sourceUrl, title }),
+      }),
+    onSuccess: updateCache,
+  });
+
   return {
     configuration: query.data,
     isLoading: query.isLoading,
@@ -67,5 +76,6 @@ export function useSdrTraining(enabled: boolean) {
     refresh: query.refetch,
     install,
     saveScript,
+    savePdf,
   };
 }

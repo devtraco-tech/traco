@@ -84,31 +84,52 @@ function context(
 }
 
 describe("decideCommercialFlow", () => {
-  it("apresenta Prótese sem reutilizar dados de Implantodontia", () => {
-    const decision = decideCommercialFlow(
+  it("segue qualificação, perfil e motivação antes de apresentar Prótese", () => {
+    const qualification = decideCommercialFlow(
       context("qualification"),
       "Sim, sou dentista formado",
+      prosthodonticsCourse,
+    );
+    expect(qualification.messages[0]).toContain("já atua com Prótese Dentária");
+    expect(qualification.messages.join(" ")).not.toContain("R$ 2.800");
+
+    const profile = decideCommercialFlow(
+      context("profile", { leadQualification: "graduated" }),
+      "Ainda não atuo com prótese",
+      prosthodonticsCourse,
+    );
+    expect(profile.patch?.audienceProfile).toBe("beginner");
+    expect(profile.patch?.flowStage).toBeUndefined();
+    expect(profile.messages[0]).toContain("o que despertou seu interesse");
+
+    const decision = decideCommercialFlow(
+      context("profile", {
+        leadQualification: "graduated",
+        audienceProfile: "beginner",
+      }),
+      "Quero desenvolver segurança para começar a atuar",
       prosthodonticsCourse,
     );
 
     const content = decision.messages.join("\n");
     expect(content).toContain("Especialização em Prótese Dentária");
     expect(content).toContain("856h");
-    expect(content).toContain("mais de 578 horas clínicas");
-    expect(content).toContain("25x de R$ 2.800");
+    expect(content).toContain("Sicknan Soares");
+    expect(content).not.toContain("R$ 2.800");
     expect(content).not.toContain("Getúlio");
     expect(content).not.toContain("10x de R$ 1.700");
     expect(content).not.toContain("18/09");
+    expect(decision.patch?.flowStage).toBe("match");
   });
 
-  it("adapta perfil e objeção ao conteúdo de Prótese", () => {
+  it("adapta objeção ao conteúdo de Prótese", () => {
     const beginner = decideCommercialFlow(
       context("profile", { leadQualification: "graduated" }),
       "Ainda não atuo com prótese",
       prosthodonticsCourse,
     );
     expect(beginner.patch?.audienceProfile).toBe("beginner");
-    expect(beginner.messages.join(" ")).toContain("prática laboratorial e clínica supervisionada");
+    expect(beginner.messages.join(" ")).toContain("o que despertou seu interesse");
     expect(beginner.messages.join(" ")).not.toContain("guia cirúrgica");
 
     const objection = decideCommercialFlow(
@@ -119,6 +140,41 @@ describe("decideCommercialFlow", () => {
     expect(objection.messages[0]).toContain("reabilitações complexas");
     expect(objection.messages[0]).toContain("equipe multidisciplinar");
     expect(objection.messages[0]).not.toContain("protocolos simplificados");
+  });
+
+  it("apresenta Julyane e transfere Prótese antes de investimento e matrícula", () => {
+    const opening = decideCommercialFlow(
+      context("presentation", { displayName: "Victor Silva" }),
+      "Olá",
+      prosthodonticsCourse,
+    );
+    expect(opening.messages[0]).toContain("Olá, Victor!");
+    expect(opening.messages[0]).toContain("Sou a Julyane, Consultora Comercial da ABO Goiás");
+
+    const handoff = decideCommercialFlow(
+      context("match", {
+        leadQualification: "graduated",
+        audienceProfile: "experienced",
+      }),
+      "Sim, faz sentido para mim",
+      prosthodonticsCourse,
+    );
+    expect(handoff.messages[0]).toContain("Nosso consultor dará continuidade");
+    expect(handoff.messages.join(" ")).not.toContain("Nome completo:");
+    expect(handoff.patch).toEqual({ interestConfirmed: true });
+    expect(handoff.notifyEnrollment).toBe(true);
+    expect(handoff.handoffAfterFlow?.reason).toBe("commercial_high_intent");
+
+    const investmentQuestion = decideCommercialFlow(
+      context("match", {
+        leadQualification: "graduated",
+        audienceProfile: "experienced",
+      }),
+      "Qual é o valor e a forma de pagamento?",
+      prosthodonticsCourse,
+    );
+    expect(investmentQuestion.handoffAfterFlow?.reason).toBe("commercial_high_intent");
+    expect(investmentQuestion.messages.join(" ")).not.toMatch(/R\$|2\.800|2\.500/u);
   });
 
   it("conduz a apresentação e a qualificação em inglês", () => {

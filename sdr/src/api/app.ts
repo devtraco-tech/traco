@@ -183,6 +183,33 @@ export function buildApp(
     },
   );
 
+  app.put(
+    "/api/sdr/training/pdf",
+    { onRequest: requireAdmin },
+    async (request, reply) => {
+      const body = (request.body as RawJsonBody).parsed as Record<string, unknown>;
+      const sourceUrl = typeof body?.sourceUrl === "string" ? body.sourceUrl.trim() : "";
+      const title = typeof body?.title === "string" ? body.title.trim() : "Material do curso.pdf";
+      let parsedUrl: URL;
+      try {
+        parsedUrl = new URL(sourceUrl);
+      } catch {
+        return reply.code(400).send({ error: "Informe uma URL válida para o PDF" });
+      }
+      if (parsedUrl.protocol !== "https:") {
+        return reply.code(400).send({ error: "A URL do PDF deve usar HTTPS" });
+      }
+      if (!title || title.length > 180) {
+        return reply.code(400).send({ error: "O nome do PDF deve ter entre 1 e 180 caracteres" });
+      }
+      return dependencies.repository.saveCoursePdf(
+        config.WAHA_SESSION,
+        parsedUrl.toString(),
+        title.toLowerCase().endsWith(".pdf") ? title : `${title}.pdf`,
+      );
+    },
+  );
+
   app.get(
     "/api/sdr/clint/status",
     { onRequest: requireAdmin },

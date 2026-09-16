@@ -45,6 +45,37 @@ const HANDOFF_ACK: Record<SupportedLanguage, string> = {
   es: "Entiendo. Derivaré tu conversación a una persona de nuestro equipo, que continuará atendiéndote por aquí.",
 };
 
+const PDF_COPY: Record<SupportedLanguage, { caption: string; unavailable: string }> = {
+  pt: {
+    caption: "Segue o PDF com as informações do curso.",
+    unavailable: "O PDF do curso ainda não está disponível para envio. Posso responder às suas dúvidas por aqui.",
+  },
+  en: {
+    caption: "Here is the PDF with the course information.",
+    unavailable: "The course PDF is not available to send yet. I can answer your questions here.",
+  },
+  es: {
+    caption: "Aquí tienes el PDF con la información del curso.",
+    unavailable: "El PDF del curso aún no está disponible para enviar. Puedo responder tus preguntas por aquí.",
+  },
+};
+
+export function requestsCoursePdf(text: string): boolean {
+  const value = text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/gu, "")
+    .toLowerCase();
+  if (/\bpdf\b/u.test(value)) return true;
+  const asksToReceive = /\b(envia|enviar|manda|mandar|receber|quero|gostaria|tem|possui|send|share|receive|want|have|envia|enviar|manda|compartir|recibir|quiero|tiene)\b/u;
+  const courseDocument = /\b(folder|folheto|brochura|brochure|catalogo|catalog|ementa|grade curricular|programa do curso|course program|programa del curso|material do curso|course material|material del curso|projeto pedagogico)\b/u;
+  return asksToReceive.test(value) && courseDocument.test(value);
+}
+
+function safePdfFilename(title: string): string {
+  const safe = title.replace(/[\\/:*?"<>|]/gu, "-").trim() || "material-do-curso.pdf";
+  return safe.toLowerCase().endsWith(".pdf") ? safe : `${safe}.pdf`;
+}
+
 export class ConversationProcessor {
   constructor(private readonly dependencies: Dependencies) {}
 
@@ -102,6 +133,26 @@ export class ConversationProcessor {
     await repository.recordEvent("processing_started", conversationId, context.leadId, {
       message_ids: claimedIds,
     });
+
+    if (requestsCoursePdf(currentText)) {
+      const pdf = knowledge.find(
+        (document) => document.documentType === "pdf" && document.sourceUrl,
+      );
+      if (!pdf?.sourceUrl) {
+        await this.sendMessages(context, [PDF_COPY[language].unavailable], "pdf:unavailable");
+        await repository.markMessages(claimedIds, "sent");
+        return;
+      }
+      try {
+        await this.sendPdf(context, pdf.sourceUrl, pdf.title, language);
+        await repository.markMessages(claimedIds, "sent");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await repository.markMessages(claimedIds, "failed", message);
+        await this.handoff(context, "waha_unavailable", message, false, courseBinding.snapshot, language);
+      }
+      return;
+    }
 
     const deterministicHandoff = evaluateHandoff(currentText);
     if (
@@ -518,6 +569,43 @@ export class ConversationProcessor {
           error: queueError instanceof Error ? queueError.message : String(queueError),
         }));
       }
+    }
+  }
+
+  private async sendPdf(
+    context: Awaited<ReturnType<SdrRepository["loadConversation"]>>,
+    sourceUrl: string,
+    title: string,
+    language: SupportedLanguage,
+  ): Promise<void> {
+    const { repository, waha } = this.dependencies;
+    const caption = PDF_COPY[language].caption;
+    const outboundId = await repository.createOutboundMessage(
+      context.conversationId,
+      caption,
+      "pdf:course-material",
+    );
+    try {
+      const result = await waha.sendFile(
+        context.whatsappId,
+        {
+          url: sourceUrl,
+          filename: safePdfFilename(title),
+          mimetype: "application/pdf",
+        },
+        caption,
+      );
+      await repository.markOutboundSent(outboundId, result.providerMessageId);
+      await repository.recordEvent(
+        "response_sent",
+        context.conversationId,
+        context.leadId,
+        { message_id: outboundId, model: "pdf:course-material", media_type: "application/pdf" },
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      await repository.markOutboundFailed(outboundId, message);
+      throw error;
     }
   }
 

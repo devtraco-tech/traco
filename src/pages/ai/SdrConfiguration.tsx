@@ -10,6 +10,7 @@ import {
   ChevronRight,
   CircleDashed,
   Clock3,
+  FileText,
   Loader2,
   MessageSquareText,
   PauseCircle,
@@ -101,6 +102,8 @@ const SdrConfiguration = () => {
   const [robotName, setRobotName] = useState("Assistente Comercial Traço");
   const [isActive, setIsActive] = useState(false);
   const [commercialScript, setCommercialScript] = useState(INITIAL_SCRIPT);
+  const [pdfSourceUrl, setPdfSourceUrl] = useState("");
+  const [pdfTitle, setPdfTitle] = useState("Material do curso.pdf");
   const [isSaving, setIsSaving] = useState(false);
   const [courseBound, setCourseBound] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -113,6 +116,15 @@ const SdrConfiguration = () => {
     setCommercialScript(configuration.script);
     loadedTrainingVersion.current = configuration.version;
   }, [training.configuration]);
+
+  useEffect(() => {
+    const pdf = training.configuration?.documents.find(
+      (document) => document.documentType === "pdf" && document.active,
+    );
+    if (!pdf) return;
+    setPdfSourceUrl(pdf.sourceUrl ?? "");
+    setPdfTitle(pdf.title);
+  }, [training.configuration?.documents]);
 
   useEffect(() => {
     if (whatsappConnected && !wasWhatsappConnected.current) {
@@ -252,6 +264,22 @@ const SdrConfiguration = () => {
     } catch (error) {
       toast({
         title: "Não foi possível instalar o treinamento",
+        description: error instanceof Error ? error.message : "Erro inesperado.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSavePdf = async () => {
+    try {
+      await training.savePdf.mutateAsync({ sourceUrl: pdfSourceUrl, title: pdfTitle });
+      toast({
+        title: "PDF comercial salvo",
+        description: "O SDR poderá enviar este documento quando o lead solicitar.",
+      });
+    } catch (error) {
+      toast({
+        title: "Não foi possível salvar o PDF",
         description: error instanceof Error ? error.message : "Erro inesperado.",
         variant: "destructive",
       });
@@ -730,7 +758,7 @@ const SdrConfiguration = () => {
               { label: "FAQ", detail: "28 respostas", ready: training.configuration?.readiness.faq },
               { label: "Personas", detail: "2 perfis", ready: training.configuration?.readiness.audienceMatrix },
               { label: "Follow-ups", detail: training.configuration?.readiness.followUpCadence ? "Cadência ativa" : "Cadência pendente", ready: training.configuration?.readiness.followUpCadence },
-              { label: "PDF comercial", detail: "Documento pendente", ready: training.configuration?.readiness.pdf },
+              { label: "PDF comercial", detail: training.configuration?.readiness.pdf ? "Pronto para envio" : "Documento pendente", ready: training.configuration?.readiness.pdf },
             ].map((item) => (
               <div key={item.label} className={`rounded-lg border p-3 ${item.ready ? "border-emerald-500/25 bg-emerald-500/5" : "bg-muted/30"}`}>
                 <div className="flex items-center gap-2">
@@ -756,6 +784,50 @@ const SdrConfiguration = () => {
               {training.install.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BookOpen className="mr-2 h-4 w-4" />}
               {training.configuration?.readiness.ready ? "Reinstalar versão oficial" : "Instalar treinamento oficial"}
             </Button>
+          </div>
+          <div className="space-y-4 rounded-lg border bg-muted/20 p-4">
+            <div className="flex items-start gap-3">
+              <FileText className="mt-0.5 h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm font-semibold">PDF enviado pelo WhatsApp</p>
+                <p className="text-xs text-muted-foreground">
+                  Use uma URL HTTPS pública e estável que o serviço WAHA consiga acessar.
+                </p>
+              </div>
+            </div>
+            <div className="grid gap-3 md:grid-cols-[1fr_2fr_auto] md:items-end">
+              <div className="space-y-2">
+                <Label htmlFor="course-pdf-title">Nome do arquivo</Label>
+                <Input
+                  id="course-pdf-title"
+                  value={pdfTitle}
+                  onChange={(event) => setPdfTitle(event.target.value)}
+                  placeholder="Material do curso.pdf"
+                  maxLength={180}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="course-pdf-url">URL do PDF</Label>
+                <Input
+                  id="course-pdf-url"
+                  type="url"
+                  value={pdfSourceUrl}
+                  onChange={(event) => setPdfSourceUrl(event.target.value)}
+                  placeholder="https://arquivos.exemplo.com/material.pdf"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void handleSavePdf()}
+                disabled={training.savePdf.isPending || !pdfSourceUrl.trim() || !pdfTitle.trim()}
+              >
+                {training.savePdf.isPending
+                  ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  : <Save className="mr-2 h-4 w-4" />}
+                Salvar PDF
+              </Button>
+            </div>
           </div>
           <Alert className="border-violet-500/20 bg-violet-500/5">
             <MessageSquareText className="h-4 w-4 text-violet-600" />

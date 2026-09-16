@@ -570,7 +570,8 @@ export class SdrRepository {
     const deactivateResult = await this.client
       .from("sdr_knowledge_documents")
       .update({ is_active: false })
-      .eq("robot_config_id", configId);
+      .eq("robot_config_id", configId)
+      .neq("document_type", "pdf");
     if (deactivateResult.error) {
       throw new Error(
         `Falha ao desativar versões antigas do treinamento: ${deactivateResult.error.message}`,
@@ -644,6 +645,41 @@ export class SdrRepository {
       .eq("id", configId);
     if (configResult.error) {
       throw new Error(`Falha ao versionar script comercial: ${configResult.error.message}`);
+    }
+    return this.getTrainingConfiguration(wahaSession);
+  }
+
+  async saveCoursePdf(
+    wahaSession: string,
+    sourceUrl: string,
+    title: string,
+  ): Promise<TrainingConfiguration> {
+    const configId = await this.ensureRobotConfig(wahaSession);
+    const existing = await this.client
+      .from("sdr_knowledge_documents")
+      .select("id")
+      .eq("robot_config_id", configId)
+      .eq("document_type", "pdf")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existing.error) {
+      throw new Error(`Falha ao carregar PDF comercial: ${existing.error.message}`);
+    }
+    const payload = {
+      robot_config_id: configId,
+      document_type: "pdf",
+      title,
+      content: "PDF comercial enviado ao lead quando solicitado.",
+      source_url: sourceUrl,
+      is_active: true,
+      metadata: { mimetype: "application/pdf", purpose: "whatsapp_attachment" },
+    };
+    const result = existing.data
+      ? await this.client.from("sdr_knowledge_documents").update(payload).eq("id", existing.data.id)
+      : await this.client.from("sdr_knowledge_documents").insert(payload);
+    if (result.error) {
+      throw new Error(`Falha ao salvar PDF comercial: ${result.error.message}`);
     }
     return this.getTrainingConfiguration(wahaSession);
   }

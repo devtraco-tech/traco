@@ -87,4 +87,36 @@ describe("WahaClient", () => {
       "http://localhost:3000/api/default/lids/120000000000000%40lid",
     );
   });
+
+  it("envia um PDF como documento a partir de uma URL", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({ id: { _serialized: "waha-document-1" } }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new WahaClient("http://localhost:3000", "secret", "default");
+
+    await expect(client.sendFile(
+      "556299999999@c.us",
+      {
+        url: "https://files.example.com/course.pdf",
+        filename: "curso.pdf",
+        mimetype: "application/pdf",
+      },
+      "Material do curso",
+    )).resolves.toEqual({ providerMessageId: "waha-document-1" });
+
+    expect(fetchMock.mock.calls[0]?.[0].toString()).toBe(
+      "http://localhost:3000/api/sendFile",
+    );
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      session: "default",
+      chatId: "556299999999@c.us",
+      caption: "Material do curso",
+      file: {
+        url: "https://files.example.com/course.pdf",
+        filename: "curso.pdf",
+        mimetype: "application/pdf",
+      },
+    });
+  });
 });
