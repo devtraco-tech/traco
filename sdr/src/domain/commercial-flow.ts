@@ -200,6 +200,59 @@ function prosthodonticsInvestmentResponse(language: SupportedLanguage): string {
   return "O investimento da Especialização em Prótese Dentária é de *25 parcelas de R$ 2.800,00*. O material institucional também informa *5% de desconto no pagamento integral do semestre*. Para negociar condições diferentes, posso acionar uma pessoa do nosso time.";
 }
 
+function prosthodonticsInvestmentPresentation(language: SupportedLanguage): string {
+  if (language === "en") {
+    return "Now I’ll share the investment with you:\n\nTo secure your place, the first installment is R$ 2,800.00.\n💰 Investment: 25 installments of R$ 2,800.00\n💸 Discount: 5% when the semester is paid in full\n📅 Start date: 03/03\n💳 Payment method: bank slip\n🔒 Your place is confirmed after payment of the first installment at enrollment.\n\nCan we secure your place in the class?";
+  }
+  if (language === "es") {
+    return "Ahora compartiré contigo la inversión:\n\nPara asegurar tu plaza, la primera cuota es de R$ 2.800,00.\n💰 Inversión: 25 cuotas de R$ 2.800,00\n💸 Descuento: 5% por el pago total del semestre\n📅 Fecha de inicio: 03/03\n💳 Forma de pago: boleto bancario\n🔒 La plaza se confirma mediante el pago de la primera cuota al realizar la matrícula.\n\n¿Podemos asegurar tu plaza en el grupo?";
+  }
+  return "Agora vou compartilhar com você o investimento:\n\n*Para garantir a sua vaga na turma, agora você fará o investimento de R$ 2.800,00, que será o seu único investimento neste momento.*\n\n*💰 Investimento:* 25x R$ 2.800,00\n*💸 Desconto:* 5% no pagamento integral do semestre\n*📅 Data de início:* 03/03\n*💳 Forma de pagamento:* boleto.\n\n🔒 A vaga é confirmada mediante o pagamento da primeira parcela, que precisa ser feito no momento da matrícula.\n\n*Podemos garantir a sua vaga na turma?*";
+}
+
+const PROSTHODONTICS_ENROLLMENT_FIELDS = [
+  "full_name",
+  "whatsapp_phone",
+  "passport_number",
+  "birth_date",
+  "marital_status",
+  "nationality",
+  "birthplace",
+  "email",
+  "address",
+  "district",
+  "postal_code",
+] as const;
+
+type ProsthodonticsEnrollmentField = (typeof PROSTHODONTICS_ENROLLMENT_FIELDS)[number];
+
+const PROSTHODONTICS_FIELD_LABELS: Record<ProsthodonticsEnrollmentField, string> = {
+  full_name: "Nome completo",
+  whatsapp_phone: "WhatsApp",
+  passport_number: "Número do passaporte (se aplicável)",
+  birth_date: "Data de nascimento",
+  marital_status: "Estado civil",
+  nationality: "Nacionalidade",
+  birthplace: "Naturalidade",
+  email: "E-mail",
+  address: "Endereço completo",
+  district: "Bairro",
+  postal_code: "CEP",
+};
+
+function prosthodonticsEnrollmentForm(language: SupportedLanguage): string {
+  if (language !== "pt") return enrollmentForm(language);
+  return [
+    "Perfeito, Dr.! 😊 Para darmos andamento à sua matrícula, preciso dos seguintes dados. Pode me enviar por aqui mesmo:",
+    "",
+    ...PROSTHODONTICS_ENROLLMENT_FIELDS.map(
+      (field, index) => `${index + 1}. ${PROSTHODONTICS_FIELD_LABELS[field]}:`,
+    ),
+    "",
+    "Assim que você me enviar essas informações, já dou andamento à sua matrícula e, em seguida, explico os próximos passos. 🤝",
+  ].join("\n");
+}
+
 const FIELD_LABELS: Record<SupportedLanguage, Record<EnrollmentField, string>> = {
   pt: {
   full_name: "Nome completo",
@@ -578,10 +631,17 @@ function requestsEnrollment(text: string): boolean {
   );
 }
 
-function enrollmentDecision(language: SupportedLanguage): CommercialFlowDecision {
+function enrollmentDecision(
+  language: SupportedLanguage,
+  prosthodontics = false,
+): CommercialFlowDecision {
   return {
     handled: true,
-    messages: [enrollmentForm(language)],
+    messages: [
+      prosthodontics
+        ? prosthodonticsEnrollmentForm(language)
+        : enrollmentForm(language),
+    ],
     patch: {
       flowStage: "enrollment",
       interestConfirmed: true,
@@ -672,7 +732,10 @@ function requestsCommercialTerms(text: string): boolean {
   return /\b(parcela|parcelamento|desconto|pagamento|boleto|contrato|matricula|installment|discount|payment|contract|enrollment|cuota|descuento|pago|contrato|matricula)\b/u.test(value);
 }
 
-function parseInlineNumberedValues(text: string): Map<number, string> {
+function parseInlineNumberedValues(
+  text: string,
+  expectedCount: number = ENROLLMENT_FIELDS.length,
+): Map<number, string> {
   const markerPattern = /(?<!\S)(\d{1,2})(?:[.)-]\s*|\s+)/gu;
   const markers: Array<{ itemNumber: number; start: number; valueStart: number }> = [];
   let match: RegExpExecArray | null;
@@ -686,7 +749,7 @@ function parseInlineNumberedValues(text: string): Map<number, string> {
 
   const sequence: typeof markers = [];
   let searchFrom = 0;
-  for (let expected = 1; expected <= ENROLLMENT_FIELDS.length; expected += 1) {
+  for (let expected = 1; expected <= expectedCount; expected += 1) {
     const markerIndex = markers.findIndex(
       (marker, index) => index >= searchFrom && marker.itemNumber === expected,
     );
@@ -791,6 +854,65 @@ function validateEnrollmentForm(text: string, language: SupportedLanguage): {
   return { data, errors };
 }
 
+function validateProsthodonticsEnrollmentForm(text: string): {
+  data: EnrollmentData;
+  errors: string[];
+} {
+  const values = parseInlineNumberedValues(
+    text,
+    PROSTHODONTICS_ENROLLMENT_FIELDS.length,
+  );
+  const lines = text
+    .split(/\r?\n|\s*;\s*/u)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  for (const line of lines) {
+    const numbered = line.match(/^(\d{1,2})(?:\s*[.)-]\s*|\s+)(.+)$/u);
+    if (numbered?.[1] && numbered[2]) {
+      const itemNumber = Number(numbered[1]);
+      if (itemNumber >= 1 && itemNumber <= PROSTHODONTICS_ENROLLMENT_FIELDS.length) {
+        values.set(itemNumber, numbered[2].trim());
+      }
+      continue;
+    }
+
+    const labeled = line.match(/^(.+?)(?:\s*[:=]\s*|\s+-\s+)(.+)$/u);
+    if (!labeled?.[1] || !labeled[2]) continue;
+    const label = normalize(labeled[1]).replace(/\([^)]*\)/gu, "").trim();
+    const index = PROSTHODONTICS_ENROLLMENT_FIELDS.findIndex(
+      (field) => normalize(PROSTHODONTICS_FIELD_LABELS[field])
+        .replace(/\([^)]*\)/gu, "")
+        .trim() === label,
+    );
+    if (index >= 0) values.set(index + 1, labeled[2].trim());
+  }
+
+  const data: EnrollmentData = {};
+  const errors: string[] = [];
+  PROSTHODONTICS_ENROLLMENT_FIELDS.forEach((field, index) => {
+    const rawValue = values.get(index + 1)?.trim();
+    if (!rawValue) {
+      if (field !== "passport_number") {
+        errors.push(`${PROSTHODONTICS_FIELD_LABELS[field]}: não informado.`);
+      }
+      return;
+    }
+    if (field === "passport_number") {
+      data.passport_number = rawValue;
+      return;
+    }
+    const validation = validateEnrollmentValue(field, rawValue, "pt");
+    if (!validation.valid) {
+      errors.push(`${PROSTHODONTICS_FIELD_LABELS[field]}: ${validation.error ?? "valor inválido"}`);
+      return;
+    }
+    data[field] = validation.value;
+  });
+
+  return { data, errors };
+}
+
 export function decideCommercialFlow(
   context: ConversationContext,
   currentText: string,
@@ -881,7 +1003,7 @@ export function decideCommercialFlow(
     && isProsthodonticsCourse(course)
     && requestsEnrollment(currentText)
   ) {
-    const decision = enrollmentDecision(language);
+    const decision = enrollmentDecision(language, true);
     decision.notifyEnrollment = !context.enrollmentNotificationSent;
     return decision;
   }
@@ -1013,7 +1135,7 @@ export function decideCommercialFlow(
       return {
         handled: true,
         messages: [
-          prosthodonticsInvestmentResponse(language),
+          prosthodonticsInvestmentPresentation(language),
           prosthodonticsClosingQuestion(language),
         ],
         patch: { flowStage: "closing", interestConfirmed: true },
@@ -1032,7 +1154,7 @@ export function decideCommercialFlow(
         patch: { interestConfirmed: false },
       };
     }
-    const decision = enrollmentDecision(language);
+    const decision = enrollmentDecision(language, true);
     decision.notifyEnrollment = !context.enrollmentNotificationSent;
     return decision;
   }
@@ -1056,7 +1178,10 @@ export function decideCommercialFlow(
   }
 
   if (context.flowStage === "enrollment") {
-    const validation = validateEnrollmentForm(currentText, language);
+    const prosthodontics = isProsthodonticsCourse(course);
+    const validation = prosthodontics
+      ? validateProsthodonticsEnrollmentForm(currentText)
+      : validateEnrollmentForm(currentText, language);
     const handoffDetails = validation.errors.length > 0
       ? `Dados de matrícula recebidos com pendências para conferência humana: ${validation.errors.join(" | ")}`
       : "Dados de matrícula concluídos; contrato e pagamento exigem atendimento humano.";
@@ -1065,7 +1190,9 @@ export function decideCommercialFlow(
       messages: [COPY[language].finalMessage],
       patch: {
         flowStage: "completed",
-        enrollmentStep: ENROLLMENT_FIELDS.length,
+        enrollmentStep: prosthodontics
+          ? PROSTHODONTICS_ENROLLMENT_FIELDS.length
+          : ENROLLMENT_FIELDS.length,
       },
       enrollmentData: validation.data,
       handoffAfterFlow: {

@@ -137,6 +137,7 @@ export class ClintClient {
     const {
       full_name: _fullName,
       whatsapp_phone: _whatsappPhone,
+      passport_number: _passportNumber,
       email,
       ...customEnrollmentData
     } = enrollmentData;

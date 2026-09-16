@@ -195,7 +195,11 @@ describe("decideCommercialFlow", () => {
       "Não tenho dúvidas",
       prosthodonticsCourse,
     );
-    expect(closing.messages[0]).toContain("25 parcelas de R$ 2.800,00");
+    expect(closing.messages[0]).toContain("25x R$ 2.800,00");
+    expect(closing.messages[0]).toContain("Agora vou compartilhar com você o investimento");
+    expect(closing.messages[0]).toContain("*📅 Data de início:* 03/03");
+    expect(closing.messages[0]).toContain("*💳 Forma de pagamento:* boleto");
+    expect(closing.messages[0]).toContain("*Podemos garantir a sua vaga na turma?*");
     expect(closing.messages[1]).toContain("garantirmos sua vaga");
     expect(closing.patch?.flowStage).toBe("closing");
     expect(closing.handoffAfterFlow).toBeUndefined();
@@ -206,6 +210,9 @@ describe("decideCommercialFlow", () => {
       prosthodonticsCourse,
     );
     expect(closingAccepted.messages[0]).toContain("Nome completo:");
+    expect(closingAccepted.messages[0]).toContain("Número do passaporte (se aplicável):");
+    expect(closingAccepted.messages[0]).not.toContain("CPF:");
+    expect(closingAccepted.messages[0]).not.toContain("CRO:");
     expect(closingAccepted.patch?.flowStage).toBe("enrollment");
     expect(closingAccepted.notifyEnrollment).toBe(true);
     expect(closingAccepted.handoffAfterFlow).toBeUndefined();
@@ -259,6 +266,41 @@ describe("decideCommercialFlow", () => {
       prosthodonticsCourse,
     );
     expect(paymentQuestion.handoffAfterFlow?.reason).toBe("commercial_high_intent");
+  });
+
+  it("aceita a ficha específica de matrícula de Prótese sem CPF e CRO", () => {
+    const decision = decideCommercialFlow(
+      context("enrollment", { enrollmentStep: 0, interestConfirmed: true }),
+      [
+        "1. João Victor Senne",
+        "2. 62999998888",
+        "3. AB123456",
+        "4. 01/02/1990",
+        "5. Solteiro",
+        "6. Brasileiro",
+        "7. Goiânia - GO",
+        "8. joao@example.com",
+        "9. Rua 1, número 20",
+        "10. Centro",
+        "11. 74000000",
+      ].join("\n"),
+      prosthodonticsCourse,
+    );
+
+    expect(decision.enrollmentData).toMatchObject({
+      full_name: "João Victor Senne",
+      whatsapp_phone: "62999998888",
+      passport_number: "AB123456",
+      birth_date: "01/02/1990",
+      email: "joao@example.com",
+      postal_code: "74000000",
+    });
+    expect(decision.enrollmentData?.cpf).toBeUndefined();
+    expect(decision.enrollmentData?.cro).toBeUndefined();
+    expect(decision.patch).toMatchObject({ flowStage: "completed", enrollmentStep: 11 });
+    expect(decision.handoffAfterFlow?.details).toBe(
+      "Dados de matrícula concluídos; contrato e pagamento exigem atendimento humano.",
+    );
   });
 
   it("oferece a imersão em Endodontia quando o lead de Prótese não é formado", () => {

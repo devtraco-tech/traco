@@ -1,6 +1,6 @@
 import type { OfficialTrainingDocument } from "./official-training.js";
 
-export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v11-2026-09-16";
+export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v12-2026-09-16";
 
 export const PROSTHODONTICS_COMMERCIAL_SCRIPT = `# Script Comercial — Especialização em Prótese Dentária
 
@@ -45,7 +45,9 @@ Depois dessa apresentação institucional, não envie informações sobre coorde
 
 Se o lead responder sim, envie: "Perfeito, [Nome]! Tem alguma dúvida pontual em que eu possa contribuir?"
 
-Se o lead disser que não possui dúvidas, não transfira nem interrompa o bot. Continue o fluxo normal do SDR: apresente o investimento institucional confirmado, pergunte se faz sentido garantir a vaga e, em caso positivo, inicie a coleta dos dados de matrícula com notificação interna do responsável.
+Se o lead disser que não possui dúvidas, não transfira nem interrompa o bot. Continue o fluxo normal do SDR. Informe que a primeira parcela é de R$ 2.800,00, o investimento é de 25x R$ 2.800,00, há 5% de desconto no pagamento integral do semestre, o início informado é 03/03, o pagamento é por boleto e a vaga é confirmada pelo pagamento da primeira parcela no momento da matrícula. Pergunte se podemos garantir a vaga. Em uma mensagem separada, pergunte se faz sentido aproveitar a oportunidade e garantir a vaga.
+
+Se o lead responder sim, notifique o responsável internamente e solicite exatamente: nome completo, WhatsApp, número do passaporte se aplicável, data de nascimento, estado civil, nacionalidade, naturalidade, e-mail, endereço completo, bairro e CEP. Não solicite CPF nem CRO neste fluxo.
 
 ## Estrutura confirmada
 Carga horária total: 856 horas. Duração: 25 módulos, com encontros mensais durante mais de 2 anos. Horários documentados: quarta, quinta e sexta, das 08:00 às 12:00 e das 14:00 às 20:00; sábado, das 08:00 às 12:00.
@@ -101,7 +103,7 @@ Sim. O coordenador encaminhará no início da especialização a lista para as a
 O investimento da Especialização em Prótese Dentária é de 25 parcelas de R$ 2.800,00. O material institucional também informa 5% de desconto no pagamento integral do semestre. Para negociar condições diferentes, o pré-atendimento pode acionar uma pessoa do time sem encerrar automaticamente a conversa.
 
 12. Quando começa e quantas vagas existem?
-Os documentos recebidos não trazem ano de início, prazo de inscrição nem quantidade de vagas confirmados. Encaminhe a confirmação desses dados ao atendimento humano.
+O início comercial informado é 03/03, sem ano indicado no material. A turma possui 15 vagas.
 
 13. Como funcionam contrato, negociação e pagamento?
 Essas etapas são tratadas pelo atendimento humano depois da coleta dos dados de matrícula.`;

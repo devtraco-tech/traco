@@ -157,7 +157,7 @@ export class SdrRepository {
     const enrollmentResult = await this.client
       .from("sdr_enrollment_profiles")
       .select(
-        "full_name, whatsapp_phone, cpf, birth_date, marital_status, nationality, birthplace, cro, email, address, district, postal_code",
+        "full_name, whatsapp_phone, passport_number, cpf, birth_date, marital_status, nationality, birthplace, cro, email, address, district, postal_code",
       )
       .eq("conversation_id", conversationId)
       .maybeSingle();

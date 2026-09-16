@@ -84,7 +84,9 @@ export const ENROLLMENT_FIELDS = [
 ] as const;
 
 export type EnrollmentField = (typeof ENROLLMENT_FIELDS)[number];
-export type EnrollmentData = Partial<Record<EnrollmentField, string>>;
+export type EnrollmentData = Partial<Record<EnrollmentField, string>> & {
+  passport_number?: string;
+};
 
 export type HandoffReason =
   | "explicit_request"
