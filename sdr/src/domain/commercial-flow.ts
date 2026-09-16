@@ -153,19 +153,12 @@ function prosthodonticsInstitutionPresentation(
       knowsAbo
         ? "Great that you already know ABO. The program combines supervised practice, clinical development, and an experienced faculty."
         : "ABO has been active for more than 70 years and has trained and certified over 55,000 students. It offers equipped clinics, practical laboratories, and classrooms prepared for theoretical teaching.",
-      "The program has 856 hours across 25 modules. Classes are Wednesday through Friday, from 8 a.m. to noon and 2 p.m. to 8 p.m., and Saturday from 8 a.m. to noon. It is coordinated by Prof. Sicknan Soares, PhD in Oral Rehabilitation and professor at UFG.",
-      "Based on everything I shared, does this specialization make sense for your current career moment?",
     ];
   }
   const connection = knowsAbo
     ? "Que ótimo que já conhece! Então tenho certeza que fez a escolha ideal em iniciar a especialização, pois será um divisor de águas em sua carreira profissional, trazendo uma segurança maior e preparo para colocar em prática."
     : `Aproveitando a oportunidade${name ? `, ${name}` : ""}, a ABO está presente no mercado há mais de 70 anos e já são mais de 55 mil alunos formados e certificados. Nossa instituição conta com uma estrutura completa para o ensino, com clínicas equipadas para atendimento supervisionado, laboratórios para treinamento prático e salas de aula modernas e preparadas para o ensino teórico. Esse ambiente permite que você vivencie na prática a sua rotina clínica.\n\nInclusive, vou deixar para você as nossas redes sociais para conhecer a nossa equipe e estrutura.\n\nAcompanhe a ABO Goiás nas redes sociais e fique por dentro de:\n🦷 Novos cursos e especializações\n🎓 Abertura de novas turmas\n👨‍⚕️ Professores e especialistas\n📚 Conteúdos da área odontológica\n📅 Eventos, imersões e novidades\n\n🌐 Site: abogoias.org.br\n📸 Instagram: https://www.instagram.com/abogoias?igsi=Ync2dzg3NTBpZGJ3`;
-  return [
-    connection,
-    "O nosso coordenador será o Prof. Sicknan Soares, doutor em Reabilitação Oral, professor da Universidade Federal de Goiás e autor do livro Reabilitação oral/Prótese sobre implante - fluxos analógico e digital.",
-    "A nossa formação tem carga horária total de 856h, dividida em 25 módulos.\n\n4ª feira: 08:00 às 12:00 | 14:00 às 20:00\n5ª feira: 08:00 às 12:00 | 14:00 às 20:00\n6ª feira: 08:00 às 12:00 | 14:00 às 20:00\nSábado: 08:00 às 12:00",
-    "Diante de tudo o que compartilhei com você, nossa especialização faz sentido para o seu atual momento de carreira?",
-  ];
+  return [connection];
 }
 
 function prosthodonticsSpecificQuestion(

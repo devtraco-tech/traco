@@ -174,8 +174,10 @@ describe("decideCommercialFlow", () => {
       prosthodonticsCourse,
     );
     expect(institution.messages.join(" ")).toContain("mais de 70 anos");
-    expect(institution.messages.join(" ")).toContain("Sicknan Soares");
-    expect(institution.messages.join(" ")).toContain("856h");
+    expect(institution.messages).toHaveLength(1);
+    expect(institution.messages.join(" ")).not.toContain("Sicknan Soares");
+    expect(institution.messages.join(" ")).not.toContain("856h");
+    expect(institution.messages.join(" ")).not.toContain("faz sentido para o seu atual momento");
     expect(institution.patch?.flowStage).toBe("final_match");
 
     const questions = decideCommercialFlow(
@@ -287,6 +289,10 @@ describe("decideCommercialFlow", () => {
     expect(content).toContain("📅 Eventos, imersões e novidades");
     expect(content).toContain("https://www.instagram.com/abogoias");
     expect(content).not.toContain("[https://");
+    expect(decision.messages).toHaveLength(1);
+    expect(content).not.toContain("Sicknan Soares");
+    expect(content).not.toContain("856h");
+    expect(content).not.toContain("faz sentido para o seu atual momento");
     expect(decision.patch?.flowStage).toBe("final_match");
   });
 

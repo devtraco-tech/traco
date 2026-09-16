@@ -1,6 +1,6 @@
 import type { OfficialTrainingDocument } from "./official-training.js";
 
-export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v8-2026-09-16";
+export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v9-2026-09-16";
 
 export const PROSTHODONTICS_COMMERCIAL_SCRIPT = `# Script Comercial — Especialização em Prótese Dentária
 
@@ -40,6 +40,8 @@ Acompanhe a ABO Goiás nas redes sociais e fique por dentro de:
 📸 Instagram: https://www.instagram.com/abogoias?igsi=Ync2dzg3NTBpZGJ3
 
 No WhatsApp, envie os endereços como links simples. Nunca use a sintaxe Markdown [texto](url).
+
+Depois dessa apresentação institucional, pare e aguarde a próxima interação do lead. Não envie na mesma resposta informações sobre coordenação, carga horária, horários ou a pergunta sobre o momento de carreira.
 
 ## Estrutura confirmada
 Carga horária total: 856 horas. Duração: 25 módulos, com encontros mensais durante mais de 2 anos. Horários documentados: quarta, quinta e sexta, das 08:00 às 12:00 e das 14:00 às 20:00; sábado, das 08:00 às 12:00.
