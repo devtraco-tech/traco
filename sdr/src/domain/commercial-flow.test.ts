@@ -195,6 +195,24 @@ describe("decideCommercialFlow", () => {
     expect(handoff.notifyEnrollment).toBe(true);
     expect(handoff.handoffAfterFlow?.reason).toBe("commercial_high_intent");
 
+    const enrollment = decideCommercialFlow(
+      context("questions", {
+        leadQualification: "graduated",
+        audienceProfile: "experienced",
+        interestConfirmed: true,
+      }),
+      "Quero iniciar a minha matrícula",
+      prosthodonticsCourse,
+    );
+    expect(enrollment.messages[0]).toContain("Nome completo:");
+    expect(enrollment.patch).toMatchObject({
+      flowStage: "enrollment",
+      enrollmentNotificationSent: true,
+    });
+    expect(enrollment.notifyEnrollment).toBe(true);
+    expect(enrollment.handoffAfterFlow).toBeUndefined();
+    expect(enrollment.messages.join(" ")).not.toContain("encaminhar sua conversa");
+
     const investmentQuestion = decideCommercialFlow(
       context("questions", {
         leadQualification: "graduated",

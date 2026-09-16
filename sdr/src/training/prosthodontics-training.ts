@@ -1,6 +1,6 @@
 import type { OfficialTrainingDocument } from "./official-training.js";
 
-export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v6-2026-09-16";
+export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v7-2026-09-16";
 
 export const PROSTHODONTICS_COMMERCIAL_SCRIPT = `# Script Comercial — Especialização em Prótese Dentária
 
@@ -38,7 +38,9 @@ Para iniciantes, destaque fundamentos, supervisão, prática clínica e desenvol
 Finalize perguntando se a especialização faz sentido para o momento profissional do lead. Se a resposta for positiva, pergunte separadamente se existe alguma dúvida pontual. Se não houver dúvidas, encerre o pré-atendimento para o consultor continuar com negociação, matrícula e pagamento.
 
 ## Transferência
-Quando o pré-atendimento estiver concluído, notifique o responsável na Clint sem enviar ao lead uma mensagem genérica de transferência. Não transfira o atendimento apenas porque o lead perguntou o preço. O consultor continuará com condições diferentes, negociação, dados de matrícula, comprovante e confirmação da matrícula.`;
+Quando o pré-atendimento estiver concluído, notifique o responsável na Clint sem enviar ao lead uma mensagem genérica de transferência. Não transfira o atendimento apenas porque o lead perguntou o preço.
+
+Se o lead disser que quer iniciar, fazer ou garantir a matrícula, notifique o responsável internamente e continue imediatamente o fluxo normal de matrícula, solicitando os dados necessários. Não diga ao lead que a conversa será encaminhada e não interrompa o bot nessa situação. Condições diferentes, negociação, comprovante e confirmação do pagamento permanecem com o consultor humano.`;
 
 export const PROSTHODONTICS_FAQ = `# FAQ — Especialização em Prótese Dentária
 

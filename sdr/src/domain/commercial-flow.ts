@@ -159,7 +159,7 @@ function prosthodonticsInstitutionPresentation(
   }
   const connection = knowsAbo
     ? "Que ótimo que já conhece! Então tenho certeza que fez a escolha ideal em iniciar a especialização, pois será um divisor de águas em sua carreira profissional, trazendo uma segurança maior e preparo para colocar em prática."
-    : `Aproveitando a oportunidade${name ? `, ${name}` : ""}, a ABO está presente no mercado há mais de 70 anos e já são mais de 55 mil alunos formados e certificados. Nossa instituição conta com clínicas equipadas para atendimento supervisionado, laboratórios para treinamento prático e salas preparadas para o ensino teórico.\n\n🌐 Site: abogoias.org.br\n📸 Instagram: https://www.instagram.com/abogoias?igsi=Ync2dzg3NTBpZGJ3`;
+    : `Aproveitando a oportunidade${name ? `, ${name}` : ""}, a ABO está presente no mercado há mais de 70 anos e já são mais de 55 mil alunos formados e certificados. Nossa instituição conta com clínicas equipadas para atendimento supervisionado, laboratórios para treinamento prático e salas modernas preparadas para o ensino teórico.\n\nAcompanhe a ABO Goiás nas redes sociais e fique por dentro de:\n🦷 Novos cursos e especializações\n🎓 Abertura de novas turmas\n👨‍⚕️ Professores e especialistas\n📚 Conteúdos da área odontológica\n📅 Eventos, imersões e novidades\n\n🌐 Site: abogoias.org.br\n📸 Instagram: https://www.instagram.com/abogoias?igsi=Ync2dzg3NTBpZGJ3`;
   return [
     connection,
     "O nosso coordenador será o Prof. Sicknan Soares, doutor em Reabilitação Oral, professor da Universidade Federal de Goiás e autor do livro Reabilitação oral/Prótese sobre implante - fluxos analógico e digital.",
@@ -366,8 +366,8 @@ function coursePresentation(
       "Por todo lo que compartí, ¿esta especialización tiene sentido para tu momento profesional actual?",
     ];
     return [
-      `A *${course.title}* da ABO Goiás vai capacitar você para atuar com reabilitação oral, integrando função, estética, diagnóstico e planejamento clínico. A formação inclui prática laboratorial, atendimento clínico supervisionado e aplicação dos fluxos digitais mais recentes.`,
-      "Você contará com estrutura completa e uma equipe multidisciplinar de protesistas, implantodontistas e periodontistas, formada por especialistas, mestres e doutores. Entre os diferenciais estão a ampla disponibilidade de pacientes e o enfoque nas reabilitações implantossuportadas.",
+      `A *${course.title}* da ABO Goiás vai capacitar você para atuar com reabilitação oral, integrando função, estética e planejamento clínico. O curso promove uma formação integral, com envolvimento multidisciplinar no diagnóstico, planejamento e resolução de casos com diferentes níveis de complexidade.`,
+      "Há aplicação clínica dos avanços tecnológicos mais recentes, incluindo fluxos digitais nas reabilitações estéticas e funcionais de pacientes parcial e totalmente desdentados, com ênfase nas próteses implantossuportadas. Você contará com estrutura completa e uma equipe multidisciplinar de protesistas, implantodontistas e periodontistas, formada por especialistas, mestres e doutores, além de ampla disponibilidade de pacientes.",
       "A ABO atua há mais de 70 anos e já formou e certificou mais de 55 mil alunos. A instituição conta com clínicas equipadas, laboratórios para treinamento prático e salas preparadas para o ensino teórico.\n\n🌐 Site: abogoias.org.br\n📸 Instagram: instagram.com/abogoias",
       "⏳ Carga horária: 856h em 25 módulos mensais\n📚 Horários: quarta, quinta e sexta, das 08h às 12h e das 14h às 20h; sábado, das 08h às 12h\n👨‍🏫 Coordenação: Prof. Sicknan Soares, doutor em Reabilitação Oral e professor da UFG",
       "Diante de tudo o que compartilhei, a nossa especialização faz sentido para o seu atual momento de carreira?",
@@ -819,6 +819,16 @@ export function decideCommercialFlow(
       messages: coursePresentation(course, language),
       patch: { flowStage: "profile", leadQualification: qualification },
     };
+  }
+
+  if (
+    context.flowStage === "questions"
+    && isProsthodonticsCourse(course)
+    && requestsEnrollment(currentText)
+  ) {
+    const decision = enrollmentDecision(language);
+    decision.notifyEnrollment = !context.enrollmentNotificationSent;
+    return decision;
   }
 
   if (
