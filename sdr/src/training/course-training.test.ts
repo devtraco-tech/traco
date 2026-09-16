@@ -17,7 +17,7 @@ describe("getCourseTraining", () => {
     expect(training.documents.map((document) => document.content).join("\n"))
       .not.toContain("Getúlio");
     expect(training.documents.map((document) => document.content).join("\n"))
-      .toContain("25 parcelas de R$ 2.800,00");
+      .toContain("25 parcelas de R$ 2.500,00");
   });
 
   it("preserva o treinamento oficial existente para os demais cursos", () => {

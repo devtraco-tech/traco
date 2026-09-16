@@ -178,12 +178,6 @@ function prosthodonticsSpecificQuestion(
   return `Perfeito${name ? `, ${name}` : ""}! Tem alguma dúvida pontual em que eu possa contribuir?`;
 }
 
-function prosthodonticsClosingQuestion(language: SupportedLanguage): string {
-  if (language === "en") return "Based on everything we discussed, does it make sense to secure your place in the class?";
-  if (language === "es") return "Considerando todo lo que conversamos, ¿tiene sentido asegurar tu plaza en el grupo?";
-  return "Diante de tudo o que conversamos, faz sentido para você aproveitarmos esta oportunidade e garantirmos sua vaga na turma?";
-}
-
 function saysNoSpecificQuestions(text: string): boolean {
   const value = normalize(text);
   return /^(nao|nenhuma|nao tenho|por enquanto nao|no|none|no questions|ninguna|no tengo)\b/u.test(value)
@@ -192,22 +186,22 @@ function saysNoSpecificQuestions(text: string): boolean {
 
 function prosthodonticsInvestmentResponse(language: SupportedLanguage): string {
   if (language === "en") {
-    return "The investment for the Prosthodontics Specialization is 25 installments of R$ 2,800.00. The institutional material also offers a 5% discount when the semester is paid in full. For different terms, I can contact a member of our team.";
+    return "The investment for the Prosthodontics Specialization is 25 installments of R$ 2,500.00.";
   }
   if (language === "es") {
-    return "La inversión de la Especialización en Prótesis Dental es de 25 cuotas de R$ 2.800,00. El material institucional también informa un 5% de descuento por el pago total del semestre. Para negociar condiciones diferentes, puedo contactar a una persona de nuestro equipo.";
+    return "La inversión de la Especialización en Prótesis Dental es de 25 cuotas de R$ 2.500,00.";
   }
-  return "O investimento da Especialização em Prótese Dentária é de *25 parcelas de R$ 2.800,00*. O material institucional também informa *5% de desconto no pagamento integral do semestre*. Para negociar condições diferentes, posso acionar uma pessoa do nosso time.";
+  return "O investimento da Especialização em Prótese Dentária é de *25 parcelas de R$ 2.500,00*.";
 }
 
 function prosthodonticsInvestmentPresentation(language: SupportedLanguage): string {
   if (language === "en") {
-    return "Now I’ll share the investment with you:\n\nTo secure your place, the first installment is R$ 2,800.00.\n💰 Investment: 25 installments of R$ 2,800.00\n💸 Discount: 5% when the semester is paid in full\n📅 Start date: 03/03\n💳 Payment method: bank slip\n🔒 Your place is confirmed after payment of the first installment at enrollment.\n\nCan we secure your place in the class?";
+    return "Now I’ll share the investment with you:\n\nTo secure your place, the first installment is R$ 2,500.00.\n💰 Investment: 25 installments of R$ 2,500.00\n📅 Start date: 03/03\n💳 Payment method: bank slip\n🔒 Your place is confirmed after payment of the first installment at enrollment.\n\nCan we secure your place in the class?";
   }
   if (language === "es") {
-    return "Ahora compartiré contigo la inversión:\n\nPara asegurar tu plaza, la primera cuota es de R$ 2.800,00.\n💰 Inversión: 25 cuotas de R$ 2.800,00\n💸 Descuento: 5% por el pago total del semestre\n📅 Fecha de inicio: 03/03\n💳 Forma de pago: boleto bancario\n🔒 La plaza se confirma mediante el pago de la primera cuota al realizar la matrícula.\n\n¿Podemos asegurar tu plaza en el grupo?";
+    return "Ahora compartiré contigo la inversión:\n\nPara asegurar tu plaza, la primera cuota es de R$ 2.500,00.\n💰 Inversión: 25 cuotas de R$ 2.500,00\n📅 Fecha de inicio: 03/03\n💳 Forma de pago: boleto bancario\n🔒 La plaza se confirma mediante el pago de la primera cuota al realizar la matrícula.\n\n¿Podemos asegurar tu plaza en el grupo?";
   }
-  return "Agora vou compartilhar com você o investimento:\n\n*Para garantir a sua vaga na turma, agora você fará o investimento de R$ 2.800,00, que será o seu único investimento neste momento.*\n\n*💰 Investimento:* 25x R$ 2.800,00\n*💸 Desconto:* 5% no pagamento integral do semestre\n*📅 Data de início:* 03/03\n*💳 Forma de pagamento:* boleto.\n\n🔒 A vaga é confirmada mediante o pagamento da primeira parcela, que precisa ser feito no momento da matrícula.\n\n*Podemos garantir a sua vaga na turma?*";
+  return "Agora vou compartilhar com você o investimento:\n*Para garantir a sua vaga na turma agora você fará o investimento de R$2.500 que\nserá a seu único investimento no momento*\n*💰 Investimento:* 25x R$2.500,00\n*📅 Data de início:* 03/03\n*💳 Forma de pagamento:* boleto.\n🔒 A vaga é confirmada mediante o pagamento da primeira parcela que precisa\nser feita no momento da matrícula\n*Podemos garantir a sua vaga na turma?*\nDiante de tudo o que conversamos, faz sentido para você aproveitarmos esta\noportunidade e garantirmos sua vaga na turma?";
 }
 
 const PROSTHODONTICS_ENROLLMENT_FIELDS = [
@@ -1134,10 +1128,7 @@ export function decideCommercialFlow(
     if (saysNoSpecificQuestions(currentText)) {
       return {
         handled: true,
-        messages: [
-          prosthodonticsInvestmentPresentation(language),
-          prosthodonticsClosingQuestion(language),
-        ],
+        messages: [prosthodonticsInvestmentPresentation(language)],
         patch: { flowStage: "closing", interestConfirmed: true },
       };
     }

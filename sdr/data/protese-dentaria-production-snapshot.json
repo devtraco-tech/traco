@@ -20,9 +20,9 @@
   "occupied_vacancies": 0,
   "available_vacancies": 15,
   "currency": "real",
-  "investment": 70000,
-  "investment_details": "25 parcelas de R$ 2.800,00. O material institucional informa 5% de desconto no pagamento integral do semestre. Condições facilitadas devem ser confirmadas com o atendimento humano.",
-  "installment_suggestion": "25x de R$ 2.800,00",
+  "investment": 62500,
+  "investment_details": "25 parcelas de R$ 2.500,00. A primeira parcela confirma a vaga e deve ser paga no momento da matrícula. Forma de pagamento: boleto.",
+  "installment_suggestion": "25x de R$ 2.500,00",
   "registration_deadline": null,
   "suggested_start_date": null,
   "effective_start_date": null,
@@ -43,7 +43,7 @@
     "commercial_flow": "Fluxo de Atendimento - Prótese.docx.pdf",
     "reference_only": "Fluxo de Atendimento - Build Up foi usado somente como referência estrutural e não como fonte factual deste curso.",
     "pending_confirmation": [
-      "O fluxo comercial informa 25x de R$ 2.500,00, mas o projeto institucional informa 25x de R$ 2.800,00; foi priorizado o projeto institucional.",
+      "O valor comercial definido pelo responsável é de 25x de R$ 2.500,00.",
       "O fluxo informa início em 03/03 sem ano; a data é apresentada no atendimento, mas não foi gravada em campo de data por falta do ano.",
       "Quantidade de vagas definida pelo responsável em 15 vagas."
     ]

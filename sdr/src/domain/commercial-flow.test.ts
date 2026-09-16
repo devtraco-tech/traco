@@ -39,9 +39,9 @@ const prosthodonticsCourse: CatalogItemSnapshot = {
   title: "Especialização em Prótese Dentária",
   slug: "especializacao-em-protese-dentaria",
   area: "Prótese Dentária",
-  investment: 70000,
-  investment_details: "25 parcelas de R$ 2.800,00",
-  installment_suggestion: "25x de R$ 2.800,00",
+  investment: 62500,
+  investment_details: "25 parcelas de R$ 2.500,00",
+  installment_suggestion: "25x de R$ 2.500,00",
   workload: 856,
   vacancies: 0,
   available_vacancies: 0,
@@ -195,12 +195,13 @@ describe("decideCommercialFlow", () => {
       "Não tenho dúvidas",
       prosthodonticsCourse,
     );
-    expect(closing.messages[0]).toContain("25x R$ 2.800,00");
+    expect(closing.messages).toEqual([
+      "Agora vou compartilhar com você o investimento:\n*Para garantir a sua vaga na turma agora você fará o investimento de R$2.500 que\nserá a seu único investimento no momento*\n*💰 Investimento:* 25x R$2.500,00\n*📅 Data de início:* 03/03\n*💳 Forma de pagamento:* boleto.\n🔒 A vaga é confirmada mediante o pagamento da primeira parcela que precisa\nser feita no momento da matrícula\n*Podemos garantir a sua vaga na turma?*\nDiante de tudo o que conversamos, faz sentido para você aproveitarmos esta\noportunidade e garantirmos sua vaga na turma?",
+    ]);
     expect(closing.messages[0]).toContain("Agora vou compartilhar com você o investimento");
     expect(closing.messages[0]).toContain("*📅 Data de início:* 03/03");
     expect(closing.messages[0]).toContain("*💳 Forma de pagamento:* boleto");
     expect(closing.messages[0]).toContain("*Podemos garantir a sua vaga na turma?*");
-    expect(closing.messages[1]).toContain("garantirmos sua vaga");
     expect(closing.patch?.flowStage).toBe("closing");
     expect(closing.handoffAfterFlow).toBeUndefined();
 
@@ -244,7 +245,7 @@ describe("decideCommercialFlow", () => {
       prosthodonticsCourse,
     );
     expect(investmentQuestion.messages).toEqual([
-      "O investimento da Especialização em Prótese Dentária é de *25 parcelas de R$ 2.800,00*. O material institucional também informa *5% de desconto no pagamento integral do semestre*. Para negociar condições diferentes, posso acionar uma pessoa do nosso time.",
+      "O investimento da Especialização em Prótese Dentária é de *25 parcelas de R$ 2.500,00*.",
     ]);
     expect(investmentQuestion.handoffAfterFlow).toBeUndefined();
     expect(investmentQuestion.patch).toBeUndefined();
@@ -254,7 +255,7 @@ describe("decideCommercialFlow", () => {
       "Qual o valor do curso?",
       prosthodonticsCourse,
     );
-    expect(earlyInvestmentQuestion.messages[0]).toContain("25 parcelas de R$ 2.800,00");
+    expect(earlyInvestmentQuestion.messages[0]).toContain("25 parcelas de R$ 2.500,00");
     expect(earlyInvestmentQuestion.handoffAfterFlow).toBeUndefined();
 
     const paymentQuestion = decideCommercialFlow(
