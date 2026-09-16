@@ -206,6 +206,24 @@ export class ConversationProcessor {
           `script:${typeof scriptVersion === "string" ? scriptVersion : "configured"}`,
         );
 
+        if (flowDecision.sendCoursePdf) {
+          const pdf = knowledge.find(
+            (document) => document.documentType === "pdf" && document.sourceUrl,
+          );
+          if (pdf?.sourceUrl) {
+            await this.sendPdf(context, pdf.sourceUrl, pdf.title, language);
+          } else {
+            await this.sendMessages(context, [PDF_COPY[language].unavailable], "pdf:unavailable");
+          }
+          if (flowDecision.messagesAfterCoursePdf?.length) {
+            await this.sendMessages(
+              context,
+              flowDecision.messagesAfterCoursePdf,
+              `script:${typeof scriptVersion === "string" ? scriptVersion : "configured"}`,
+            );
+          }
+        }
+
         if (flowDecision.enrollmentData) {
           await repository.markMessagesContainingPersonalData(claimedIds);
           await repository.saveEnrollmentData(

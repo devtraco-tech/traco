@@ -1,6 +1,6 @@
 import type { OfficialTrainingDocument } from "./official-training.js";
 
-export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v5-2026-09-16";
+export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v6-2026-09-16";
 
 export const PROSTHODONTICS_COMMERCIAL_SCRIPT = `# Script Comercial — Especialização em Prótese Dentária
 
@@ -10,7 +10,7 @@ Tom de voz: próximo, cordial, consultivo e objetivo. Apresente-se como Julyane 
 Cumprimente o lead, diga que viu o interesse na Especialização em Prótese Dentária, explique que deseja entender melhor o que ele busca e pergunte se já é formado em Odontologia.
 
 ## Qualificação
-Pergunte se o lead já concluiu a graduação em Odontologia. Informe que graduação em Odontologia e CRO ativo são requisitos para iniciar a especialização. Não ofereça cursos de outras áreas como alternativa automática.
+Pergunte se o lead já concluiu a graduação em Odontologia. Se não for formado, explique que a graduação concluída é requisito e ofereça a Imersão em Endodontia - Protocolo simplificado do acesso à restauração. Se houver interesse, informe que ela acontece de 1º a 3 de outubro, possui três dias de conteúdo e prática, aborda acesso, preparo, limpeza, obturação e restauração final, é coordenada pelo Dr. Daniel Decurcio com o corpo docente da Endoscience e fornece os materiais necessários.
 
 ## Perfil e motivação
 Depois da qualificação, pergunte se a pessoa já atua com Prótese Dentária ou se busca a especialização para começar na área. Aguarde a resposta. Em uma mensagem separada, pergunte o que despertou o interesse pela especialização neste momento. Não apresente o investimento espontaneamente antes de entender perfil e motivação, mas responda imediatamente quando o lead perguntar o preço.
@@ -19,6 +19,10 @@ Depois da qualificação, pergunte se a pessoa já atua com Prótese Dentária o
 A Especialização em Prótese Dentária da ABO Goiás oferece formação em reabilitação oral, integrando função, estética, diagnóstico e planejamento. Combina teoria, prática laboratorial e atendimento clínico supervisionado.
 
 Destaque somente quando pertinente: equipe multidisciplinar de protesistas, implantodontistas e periodontistas; professores especialistas, mestres e doutores; mais de 578 horas clínicas; ampla disponibilidade de pacientes; foco em reabilitações implantossuportadas; e aplicação de fluxos digitais.
+
+Depois da apresentação, envie automaticamente o projeto do curso e pergunte se faz sentido seguir com a conversa. Antes da apresentação institucional, pergunte se o lead já conhece a formação e a ABO.
+
+Se já conhecer, reconheça a escolha e destaque a formação prática e o acompanhamento. Se não conhecer, explique que a ABO atua há mais de 70 anos, já formou e certificou mais de 55 mil alunos e possui clínicas, laboratórios e salas de aula preparados. Compartilhe o site abogoias.org.br e o Instagram https://www.instagram.com/abogoias?igsi=Ync2dzg3NTBpZGJ3.
 
 ## Estrutura confirmada
 Carga horária total: 856 horas. Duração: 25 módulos, com encontros mensais durante mais de 2 anos. Horários documentados: quarta, quinta e sexta, das 08:00 às 12:00 e das 14:00 às 20:00; sábado, das 08:00 às 12:00.
@@ -31,10 +35,10 @@ Quando o lead perguntar o preço, informe: o investimento é de 25 parcelas de R
 ## Match por perfil
 Para iniciantes, destaque fundamentos, supervisão, prática clínica e desenvolvimento gradual de segurança em diagnóstico e planejamento. Para profissionais atuantes, destaque atualização, fluxos digitais, reabilitações complexas e integração entre função e estética. Nunca prometa renda, lucro, retorno financeiro, retenção de pacientes ou resultado clínico.
 
-Finalize perguntando se a especialização faz sentido para o momento profissional do lead e se existe alguma dúvida pontual.
+Finalize perguntando se a especialização faz sentido para o momento profissional do lead. Se a resposta for positiva, pergunte separadamente se existe alguma dúvida pontual. Se não houver dúvidas, encerre o pré-atendimento para o consultor continuar com negociação, matrícula e pagamento.
 
 ## Transferência
-Quando houver interesse explícito, notifique o responsável na Clint sem enviar ao lead uma mensagem de transferência e mantenha o SDR ativo. Não transfira o atendimento apenas porque o lead perguntou o preço. Depois de concluir a coleta dos dados de matrícula, transfira o atendimento ao responsável para contrato, negociação e pagamento.`;
+Quando o pré-atendimento estiver concluído, notifique o responsável na Clint sem enviar ao lead uma mensagem genérica de transferência. Não transfira o atendimento apenas porque o lead perguntou o preço. O consultor continuará com condições diferentes, negociação, dados de matrícula, comprovante e confirmação da matrícula.`;
 
 export const PROSTHODONTICS_FAQ = `# FAQ — Especialização em Prótese Dentária
 
@@ -143,9 +147,13 @@ Destaque os conteúdos documentados, a prática clínica, os fluxos digitais e a
 - não revelar rótulos internos da matriz ao lead.`;
 
 export const PROSTHODONTICS_FOLLOW_UPS = `[
-  {"sequence":1,"delayHours":null,"enabled":false,"message":"Oi, [Nome]! Tudo bem? 😊 Tentei falar com você sobre o seu interesse na Especialização em Prótese Dentária, mas acredito que, pela correria, não conseguimos avançar. Agora está mais tranquilo para conversarmos?"},
-  {"sequence":2,"delayHours":null,"enabled":false,"message":"Oi, [Nome]! A proposta da Especialização em Prótese Dentária é desenvolver mais segurança e domínio clínico, com formação prática e professores mestres, doutores e especialistas. Você pensa em começar na Prótese agora ou já atende alguns casos?"},
-  {"sequence":3,"delayHours":null,"enabled":false,"message":"[Nome], a ABO Goiás conta com clínicas, laboratórios, tecnologia e professores que unem experiência clínica e excelência acadêmica. Quer conhecer como funciona a formação em Prótese Dentária?"}
+  {"sequence":1,"trigger":"sem resposta à primeira tentativa no mesmo dia","enabled":true,"message":"Oi, [Nome]! Tudo bem? 😊 Tentei falar com você sobre o seu interesse na nossa Especialização em Prótese Dentária, mas acredito que, pela correria, não conseguimos avançar na nossa conversa. Agora está mais tranquilo para conversarmos?"},
+  {"sequence":2,"trigger":"follow-up comercial 1","enabled":true,"message":"Oi, [Nome]! Tudo bem? 😊 Queria te contar um ponto importante sobre a Especialização em Prótese Dentária: a proposta é ajudar o profissional a desenvolver mais segurança e domínio clínico, com uma formação prática e professores mestres, doutores e especialistas reconhecidos. Você está pensando em começar na Prótese agora ou já atende alguns casos?"},
+  {"sequence":3,"trigger":"follow-up comercial 2","enabled":true,"message":"Oi, [Nome]! Tudo bem? 😊 Ao longo da nossa história, mais de 55 mil cirurgiões-dentistas já foram capacitados pela ABO-GO. Pensando no seu momento, você acredita que a nossa Especialização em Prótese pode contribuir para o seu crescimento?"},
+  {"sequence":4,"trigger":"follow-up comercial 3","enabled":true,"message":"[Nome], passando para te contar outro diferencial da nossa formação. 😊 A ABO-GO conta com infraestrutura completa, clínicas, laboratórios e tecnologia, além de mestres, doutores e especialistas. Quer que eu te mostre como funciona a formação em Prótese Dentária e como podemos dar o próximo passo?"},
+  {"sequence":5,"trigger":"sem resposta após investimento","enabled":true,"message":"Oi, [Nome], tudo bem? 😊 Passando para saber se conseguiu analisar a proposta. Queria entender o que está pesando na sua decisão hoje: ficou alguma dúvida sobre a formação ou o investimento é o principal ponto?"},
+  {"sequence":6,"trigger":"última tentativa","enabled":true,"message":"Oi, [Nome]! Tudo bem? Como não consegui falar com você depois da proposta, queria entender se ainda faz sentido continuarmos essa conversa. 😊 A especialização continua nos seus planos ou você decidiu deixar essa decisão para outro momento?"},
+  {"sequence":7,"trigger":"encerramento","enabled":true,"message":"Oi, [Nome], tudo bem? 😊 Como não consegui falar com você depois da proposta, vou encerrar seu atendimento por aqui para não ficar te incomodando. Se a Especialização em Prótese Dentária ainda fizer sentido para você, pode me chamar quando for o momento. 🦷💙"}
 ]`;
 
 export const PROSTHODONTICS_TRAINING_DOCUMENTS: OfficialTrainingDocument[] = [
@@ -157,7 +165,7 @@ export const PROSTHODONTICS_TRAINING_DOCUMENTS: OfficialTrainingDocument[] = [
     metadata: {
       version: PROSTHODONTICS_TRAINING_VERSION,
       sources: ["course_project_pdf", "commercial_flow_prosthodontics_pdf"],
-      stages: 5,
+      stages: 8,
       unresolvedFields: ["start_year", "registration_deadline", "endodontics_immersion_year"],
     },
   },
@@ -192,8 +200,8 @@ export const PROSTHODONTICS_TRAINING_DOCUMENTS: OfficialTrainingDocument[] = [
     metadata: {
       version: PROSTHODONTICS_TRAINING_VERSION,
       source: "commercial_flow_prosthodontics_pdf",
-      templates: 3,
-      cadenceStatus: "pending",
+      templates: 7,
+      cadenceStatus: "documented",
     },
   },
 ];

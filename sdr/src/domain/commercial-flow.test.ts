@@ -113,8 +113,8 @@ describe("decideCommercialFlow", () => {
 
     const content = decision.messages.join("\n");
     expect(content).toContain("Especialização em Prótese Dentária");
-    expect(content).toContain("856h");
-    expect(content).toContain("Sicknan Soares");
+    expect(decision.sendCoursePdf).toBe(true);
+    expect(decision.messagesAfterCoursePdf?.[0]).toContain("faz sentido seguirmos");
     expect(content).not.toContain("R$ 2.800");
     expect(content).not.toContain("Getúlio");
     expect(content).not.toContain("10x de R$ 1.700");
@@ -142,7 +142,7 @@ describe("decideCommercialFlow", () => {
     expect(objection.messages[0]).not.toContain("protocolos simplificados");
   });
 
-  it("apresenta Julyane, notifica o responsável e continua a matrícula", () => {
+  it("apresenta Julyane e percorre conexão, dúvidas e transferência ao consultor", () => {
     const opening = decideCommercialFlow(
       context("presentation", { displayName: "Victor Silva" }),
       "Olá",
@@ -151,7 +151,7 @@ describe("decideCommercialFlow", () => {
     expect(opening.messages[0]).toContain("Olá, Victor!");
     expect(opening.messages[0]).toContain("Sou a Julyane Consultora Comercial da ABO-GO");
 
-    const enrollment = decideCommercialFlow(
+    const connection = decideCommercialFlow(
       context("match", {
         leadQualification: "graduated",
         audienceProfile: "experienced",
@@ -159,31 +159,44 @@ describe("decideCommercialFlow", () => {
       "Sim, faz sentido para mim",
       prosthodonticsCourse,
     );
-    expect(enrollment.messages[0]).toContain("Nome completo:");
-    expect(enrollment.messages[0]).toContain("CEP:");
-    expect(enrollment.patch).toMatchObject({
-      flowStage: "enrollment",
+    expect(connection.messages[0]).toContain("já conhece a nossa formação e a ABO");
+    expect(connection.patch).toMatchObject({
+      flowStage: "abo_connection",
       interestConfirmed: true,
-      enrollmentNotificationSent: true,
     });
-    expect(enrollment.notifyEnrollment).toBe(true);
-    expect(enrollment.handoffAfterFlow).toBeUndefined();
 
-    const directEnrollment = decideCommercialFlow(
-      context("profile", {
+    const institution = decideCommercialFlow(
+      context("abo_connection", {
         leadQualification: "graduated",
         audienceProfile: "experienced",
       }),
-      "Quero me matricular",
+      "Não conheço",
       prosthodonticsCourse,
     );
-    expect(directEnrollment.messages).toHaveLength(1);
-    expect(directEnrollment.messages[0]).toContain("Nome completo:");
-    expect(directEnrollment.notifyEnrollment).toBe(true);
-    expect(directEnrollment.handoffAfterFlow).toBeUndefined();
+    expect(institution.messages.join(" ")).toContain("mais de 70 anos");
+    expect(institution.messages.join(" ")).toContain("Sicknan Soares");
+    expect(institution.messages.join(" ")).toContain("856h");
+    expect(institution.patch?.flowStage).toBe("final_match");
+
+    const questions = decideCommercialFlow(
+      context("final_match", { leadQualification: "graduated" }),
+      "Sim, faz sentido",
+      prosthodonticsCourse,
+    );
+    expect(questions.messages[0]).toContain("dúvida pontual");
+    expect(questions.patch?.flowStage).toBe("questions");
+
+    const handoff = decideCommercialFlow(
+      context("questions", { leadQualification: "graduated", interestConfirmed: true }),
+      "Não tenho dúvidas",
+      prosthodonticsCourse,
+    );
+    expect(handoff.messages).toEqual([]);
+    expect(handoff.notifyEnrollment).toBe(true);
+    expect(handoff.handoffAfterFlow?.reason).toBe("commercial_high_intent");
 
     const investmentQuestion = decideCommercialFlow(
-      context("match", {
+      context("questions", {
         leadQualification: "graduated",
         audienceProfile: "experienced",
       }),
@@ -205,7 +218,7 @@ describe("decideCommercialFlow", () => {
     expect(earlyInvestmentQuestion.handoffAfterFlow).toBeUndefined();
 
     const paymentQuestion = decideCommercialFlow(
-      context("match", {
+      context("questions", {
         leadQualification: "graduated",
         audienceProfile: "experienced",
       }),
@@ -213,6 +226,25 @@ describe("decideCommercialFlow", () => {
       prosthodonticsCourse,
     );
     expect(paymentQuestion.handoffAfterFlow?.reason).toBe("commercial_high_intent");
+  });
+
+  it("oferece a imersão em Endodontia quando o lead de Prótese não é formado", () => {
+    const offer = decideCommercialFlow(
+      context("qualification"),
+      "Ainda não sou formado",
+      prosthodonticsCourse,
+    );
+    expect(offer.messages[0]).toContain("Imersão em Endodontia");
+    expect(offer.patch?.flowStage).toBe("alternative_offer");
+
+    const details = decideCommercialFlow(
+      context("alternative_offer", { leadQualification: "not_graduated" }),
+      "Sim, tenho interesse",
+      prosthodonticsCourse,
+    );
+    expect(details.messages[0]).toContain("1º a 3 de outubro");
+    expect(details.messages[0]).toContain("Dr. Daniel Decurcio");
+    expect(details.patch?.flowStage).toBe("alternative_details");
   });
 
   it("conduz a apresentação e a qualificação em inglês", () => {

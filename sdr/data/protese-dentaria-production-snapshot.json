@@ -5,8 +5,8 @@
   "area": "Prótese Dentária",
   "modality": "presencial",
   "target_audience": "cirurgioes_dentistas",
-  "status": "draft",
-  "display_status": null,
+  "status": "in_progress",
+  "display_status": "open",
   "description": "Especialização voltada à reabilitação oral, integrando função, estética, diagnóstico, planejamento clínico, fluxos digitais, prática laboratorial e atendimento clínico supervisionado.",
   "prerequisites": "Graduação em Odontologia e CRO ativo.",
   "differentials": "Equipe multidisciplinar de protesistas, implantodontistas e periodontistas; mais de 578 horas de prática clínica; ampla disponibilidade de pacientes; foco em reabilitações implantossuportadas; aplicação de fluxos digitais; professores especialistas, mestres e doutores.",
@@ -16,9 +16,9 @@
   "duration": "25 módulos, com duração superior a 2 anos",
   "periodicity": "Encontros mensais, de quarta-feira a sábado",
   "schedule": "Quarta, quinta e sexta: 08:00 às 12:00 e 14:00 às 20:00. Sábado: 08:00 às 12:00.",
-  "vacancies": 0,
+  "vacancies": 15,
   "occupied_vacancies": 0,
-  "available_vacancies": 0,
+  "available_vacancies": 15,
   "currency": "real",
   "investment": 70000,
   "investment_details": "25 parcelas de R$ 2.800,00. O material institucional informa 5% de desconto no pagamento integral do semestre. Condições facilitadas devem ser confirmadas com o atendimento humano.",
@@ -45,7 +45,7 @@
     "pending_confirmation": [
       "O fluxo comercial informa 25x de R$ 2.500,00, mas o projeto institucional informa 25x de R$ 2.800,00; foi priorizado o projeto institucional.",
       "O fluxo informa início em 03/03 sem ano; nenhuma data foi cadastrada.",
-      "Quantidade de vagas não consta nos documentos; o cadastro permanece em rascunho com zero vagas."
+      "Quantidade de vagas definida pelo responsável em 15 vagas."
     ]
   }
 }

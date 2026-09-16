@@ -54,6 +54,11 @@ export type FlowStage =
   | "qualification"
   | "profile"
   | "match"
+  | "abo_connection"
+  | "final_match"
+  | "questions"
+  | "alternative_offer"
+  | "alternative_details"
   | "enrollment"
   | "completed"
   | "disqualified";

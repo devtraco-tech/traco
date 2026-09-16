@@ -35,12 +35,17 @@ const conversation: ConversationContext = {
   }],
 };
 
-function setup(pdfUrl: string | null) {
+function setup(
+  pdfUrl: string | null,
+  contextOverrides: Partial<ConversationContext> = {},
+  snapshot: Record<string, unknown> = { id: "course-1", title: "Curso" },
+) {
+  const testConversation = { ...conversation, ...contextOverrides };
   const repository = {
     claimQueuedMessages: vi.fn().mockResolvedValue(["in-1"]),
-    loadConversation: vi.fn().mockResolvedValue(conversation),
+    loadConversation: vi.fn().mockResolvedValue(testConversation),
     getCatalogBinding: vi.fn().mockResolvedValue({
-      itemId: "course-1", slug: "curso", snapshot: { id: "course-1", title: "Curso" },
+      itemId: "course-1", slug: "curso", snapshot,
       syncedAt: "2026-09-15T12:00:00.000Z",
     }),
     listActiveKnowledge: vi.fn().mockResolvedValue([
@@ -54,6 +59,7 @@ function setup(pdfUrl: string | null) {
     markOutboundSent: vi.fn().mockResolvedValue(undefined),
     markOutboundFailed: vi.fn().mockResolvedValue(undefined),
     markMessages: vi.fn().mockResolvedValue(undefined),
+    updateFlowState: vi.fn().mockResolvedValue(undefined),
   };
   const waha = {
     sendFile: vi.fn().mockResolvedValue({ providerMessageId: "waha-pdf-1" }),
@@ -67,7 +73,7 @@ function setup(pdfUrl: string | null) {
     model: "test-model",
     contextMessageLimit: 20,
     developmentAllowedPhoneNumbers: null,
-    crm: {} as CrmSyncService,
+    crm: { syncFlow: vi.fn().mockResolvedValue(undefined) } as unknown as CrmSyncService,
     crmRetryQueue: {} as CrmRetryQueue,
     conversationQueue: {} as ConversationQueue,
     enrollmentFollowUpIntervalMs: 14_400_000,
@@ -112,5 +118,41 @@ describe("envio do PDF do curso", () => {
 
     expect(waha.sendFile).not.toHaveBeenCalled();
     expect(waha.sendText).toHaveBeenCalledOnce();
+  });
+
+  it("envia automaticamente o projeto entre a apresentação e a pergunta de continuidade", async () => {
+    const messages: ConversationContext["messages"] = [{
+      id: "in-1",
+      direction: "inbound",
+      role: "user",
+      content: "Quero desenvolver mais segurança clínica",
+      status: "processing",
+      createdAt: "2026-09-15T12:00:00.000Z",
+    }];
+    const { processor, repository, waha } = setup(
+      "https://files.example.com/protese.pdf",
+      { flowStage: "profile", audienceProfile: "beginner", messages },
+      {
+        id: "course-1",
+        title: "Especialização em Prótese Dentária",
+        slug: "especializacao-em-protese-dentaria",
+        area: "Prótese Dentária",
+      },
+    );
+
+    await processor.process("conversation-1");
+
+    expect(waha.sendText).toHaveBeenCalledTimes(3);
+    expect(waha.sendFile).toHaveBeenCalledOnce();
+    const firstTextOrder = waha.sendText.mock.invocationCallOrder[0]!;
+    const pdfOrder = waha.sendFile.mock.invocationCallOrder[0]!;
+    const finalTextOrder = waha.sendText.mock.invocationCallOrder[2]!;
+    expect(firstTextOrder).toBeLessThan(pdfOrder);
+    expect(pdfOrder).toBeLessThan(finalTextOrder);
+    expect(waha.sendText.mock.calls[2]?.[1]).toContain("faz sentido seguirmos");
+    expect(repository.updateFlowState).toHaveBeenCalledWith(
+      "conversation-1",
+      { flowStage: "match" },
+    );
   });
 });
