@@ -265,6 +265,31 @@ describe("decideCommercialFlow", () => {
     expect(details.patch?.flowStage).toBe("alternative_details");
   });
 
+  it("envia a apresentação institucional completa mesmo quando a pergunta da ABO veio do modelo", () => {
+    const decision = decideCommercialFlow(
+      context("match", {
+        messages: [{
+          id: "out-abo",
+          direction: "outbound",
+          role: "assistant",
+          content: "Você já conhece a formação e a ABO Goiás?",
+          status: "sent",
+          createdAt: "2026-09-16T17:51:00.000Z",
+        }],
+      }),
+      "Não",
+      prosthodonticsCourse,
+    );
+
+    const content = decision.messages.join("\n");
+    expect(content).toContain("Aproveitando a oportunidade, Victor");
+    expect(content).toContain("🦷 Novos cursos e especializações");
+    expect(content).toContain("📅 Eventos, imersões e novidades");
+    expect(content).toContain("https://www.instagram.com/abogoias");
+    expect(content).not.toContain("[https://");
+    expect(decision.patch?.flowStage).toBe("final_match");
+  });
+
   it("conduz a apresentação e a qualificação em inglês", () => {
     const presentation = decideCommercialFlow(
       context("presentation"),

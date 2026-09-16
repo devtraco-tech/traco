@@ -159,7 +159,7 @@ function prosthodonticsInstitutionPresentation(
   }
   const connection = knowsAbo
     ? "Que ótimo que já conhece! Então tenho certeza que fez a escolha ideal em iniciar a especialização, pois será um divisor de águas em sua carreira profissional, trazendo uma segurança maior e preparo para colocar em prática."
-    : `Aproveitando a oportunidade${name ? `, ${name}` : ""}, a ABO está presente no mercado há mais de 70 anos e já são mais de 55 mil alunos formados e certificados. Nossa instituição conta com clínicas equipadas para atendimento supervisionado, laboratórios para treinamento prático e salas modernas preparadas para o ensino teórico.\n\nAcompanhe a ABO Goiás nas redes sociais e fique por dentro de:\n🦷 Novos cursos e especializações\n🎓 Abertura de novas turmas\n👨‍⚕️ Professores e especialistas\n📚 Conteúdos da área odontológica\n📅 Eventos, imersões e novidades\n\n🌐 Site: abogoias.org.br\n📸 Instagram: https://www.instagram.com/abogoias?igsi=Ync2dzg3NTBpZGJ3`;
+    : `Aproveitando a oportunidade${name ? `, ${name}` : ""}, a ABO está presente no mercado há mais de 70 anos e já são mais de 55 mil alunos formados e certificados. Nossa instituição conta com uma estrutura completa para o ensino, com clínicas equipadas para atendimento supervisionado, laboratórios para treinamento prático e salas de aula modernas e preparadas para o ensino teórico. Esse ambiente permite que você vivencie na prática a sua rotina clínica.\n\nInclusive, vou deixar para você as nossas redes sociais para conhecer a nossa equipe e estrutura.\n\nAcompanhe a ABO Goiás nas redes sociais e fique por dentro de:\n🦷 Novos cursos e especializações\n🎓 Abertura de novas turmas\n👨‍⚕️ Professores e especialistas\n📚 Conteúdos da área odontológica\n📅 Eventos, imersões e novidades\n\n🌐 Site: abogoias.org.br\n📸 Instagram: https://www.instagram.com/abogoias?igsi=Ync2dzg3NTBpZGJ3`;
   return [
     connection,
     "O nosso coordenador será o Prof. Sicknan Soares, doutor em Reabilitação Oral, professor da Universidade Federal de Goiás e autor do livro Reabilitação oral/Prótese sobre implante - fluxos analógico e digital.",
@@ -540,6 +540,16 @@ function followsMatchConfirmationPrompt(context: ConversationContext): boolean {
   );
 }
 
+function followsAboKnowledgeQuestion(context: ConversationContext): boolean {
+  const lastAssistantMessage = [...context.messages]
+    .reverse()
+    .find((message) => message.role === "assistant");
+  if (!lastAssistantMessage) return false;
+
+  const value = normalize(lastAssistantMessage.content);
+  return /\b(voce ja conhece (a (nossa )?formacao e )?a abo|do you already know (our program and )?abo|ya conoces (nuestra formacion y )?a abo)\b/u.test(value);
+}
+
 function requestsEnrollment(text: string): boolean {
   const value = normalize(text);
   return (
@@ -776,6 +786,17 @@ export function decideCommercialFlow(
       handled: true,
       messages: [prosthodonticsInvestmentResponse(language)],
     };
+  }
+
+  if (isProsthodonticsCourse(course) && followsAboKnowledgeQuestion(context)) {
+    const knowsAbo = confirmsInterest(currentText);
+    if (knowsAbo !== null) {
+      return {
+        handled: true,
+        messages: prosthodonticsInstitutionPresentation(context.displayName, knowsAbo, language),
+        patch: { flowStage: "final_match" },
+      };
+    }
   }
 
   if (context.flowStage === "presentation") {

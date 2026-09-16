@@ -1,6 +1,6 @@
 import type { OfficialTrainingDocument } from "./official-training.js";
 
-export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v7-2026-09-16";
+export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v8-2026-09-16";
 
 export const PROSTHODONTICS_COMMERCIAL_SCRIPT = `# Script Comercial — Especialização em Prótese Dentária
 
@@ -22,7 +22,24 @@ Destaque somente quando pertinente: equipe multidisciplinar de protesistas, impl
 
 Depois da apresentação, envie automaticamente o projeto do curso e pergunte se faz sentido seguir com a conversa. Antes da apresentação institucional, pergunte se o lead já conhece a formação e a ABO.
 
-Se já conhecer, reconheça a escolha e destaque a formação prática e o acompanhamento. Se não conhecer, explique que a ABO atua há mais de 70 anos, já formou e certificou mais de 55 mil alunos e possui clínicas, laboratórios e salas de aula preparados. Compartilhe o site abogoias.org.br e o Instagram https://www.instagram.com/abogoias?igsi=Ync2dzg3NTBpZGJ3.
+Se já conhecer, reconheça a escolha e destaque a formação prática e o acompanhamento.
+
+Se responder que não conhece, não resuma nem reescreva. Envie integralmente:
+
+Aproveitando a oportunidade, [Nome], a ABO está presente no mercado há mais de 70 anos e já são mais de 55 mil alunos formados e certificados. Nossa instituição conta com uma estrutura completa para o ensino, com clínicas equipadas para atendimento supervisionado, laboratórios para treinamento prático e salas de aula modernas e preparadas para o ensino teórico. Esse ambiente permite que você vivencie na prática a sua rotina clínica.
+
+Inclusive, vou deixar para você as nossas redes sociais para conhecer a nossa equipe e estrutura.
+
+Acompanhe a ABO Goiás nas redes sociais e fique por dentro de:
+🦷 Novos cursos e especializações
+🎓 Abertura de novas turmas
+👨‍⚕️ Professores e especialistas
+📚 Conteúdos da área odontológica
+📅 Eventos, imersões e novidades
+🌐 Site: abogoias.org.br
+📸 Instagram: https://www.instagram.com/abogoias?igsi=Ync2dzg3NTBpZGJ3
+
+No WhatsApp, envie os endereços como links simples. Nunca use a sintaxe Markdown [texto](url).
 
 ## Estrutura confirmada
 Carga horária total: 856 horas. Duração: 25 módulos, com encontros mensais durante mais de 2 anos. Horários documentados: quarta, quinta e sexta, das 08:00 às 12:00 e das 14:00 às 20:00; sábado, das 08:00 às 12:00.
