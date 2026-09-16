@@ -765,7 +765,9 @@ export function decideCommercialFlow(
   if (context.flowStage === "profile") {
     if (isProsthodonticsCourse(course)) {
       if (requestsEnrollment(currentText)) {
-        return prosthodonticsHandoffDecision(context, language);
+        const decision = enrollmentDecision(language);
+        decision.notifyEnrollment = !context.enrollmentNotificationSent;
+        return decision;
       }
       if (context.audienceProfile === "unknown") {
         const profile = profileFrom(currentText);
@@ -813,9 +815,6 @@ export function decideCommercialFlow(
         ],
         patch: { interestConfirmed: false },
       };
-    }
-    if (isProsthodonticsCourse(course)) {
-      return prosthodonticsHandoffDecision(context, language);
     }
     const decision = enrollmentDecision(language);
     decision.notifyEnrollment = !context.enrollmentNotificationSent;

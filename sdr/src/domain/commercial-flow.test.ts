@@ -142,7 +142,7 @@ describe("decideCommercialFlow", () => {
     expect(objection.messages[0]).not.toContain("protocolos simplificados");
   });
 
-  it("apresenta Julyane e transfere Prótese antes de investimento e matrícula", () => {
+  it("apresenta Julyane, notifica o responsável e continua a matrícula", () => {
     const opening = decideCommercialFlow(
       context("presentation", { displayName: "Victor Silva" }),
       "Olá",
@@ -151,7 +151,7 @@ describe("decideCommercialFlow", () => {
     expect(opening.messages[0]).toContain("Olá, Victor!");
     expect(opening.messages[0]).toContain("Sou a Julyane, Consultora Comercial da ABO Goiás");
 
-    const handoff = decideCommercialFlow(
+    const enrollment = decideCommercialFlow(
       context("match", {
         leadQualification: "graduated",
         audienceProfile: "experienced",
@@ -159,11 +159,28 @@ describe("decideCommercialFlow", () => {
       "Sim, faz sentido para mim",
       prosthodonticsCourse,
     );
-    expect(handoff.messages[0]).toContain("Nosso consultor dará continuidade");
-    expect(handoff.messages.join(" ")).not.toContain("Nome completo:");
-    expect(handoff.patch).toEqual({ interestConfirmed: true });
-    expect(handoff.notifyEnrollment).toBe(true);
-    expect(handoff.handoffAfterFlow?.reason).toBe("commercial_high_intent");
+    expect(enrollment.messages[0]).toContain("Nome completo:");
+    expect(enrollment.messages[0]).toContain("CEP:");
+    expect(enrollment.patch).toMatchObject({
+      flowStage: "enrollment",
+      interestConfirmed: true,
+      enrollmentNotificationSent: true,
+    });
+    expect(enrollment.notifyEnrollment).toBe(true);
+    expect(enrollment.handoffAfterFlow).toBeUndefined();
+
+    const directEnrollment = decideCommercialFlow(
+      context("profile", {
+        leadQualification: "graduated",
+        audienceProfile: "experienced",
+      }),
+      "Quero me matricular",
+      prosthodonticsCourse,
+    );
+    expect(directEnrollment.messages).toHaveLength(1);
+    expect(directEnrollment.messages[0]).toContain("Nome completo:");
+    expect(directEnrollment.notifyEnrollment).toBe(true);
+    expect(directEnrollment.handoffAfterFlow).toBeUndefined();
 
     const investmentQuestion = decideCommercialFlow(
       context("match", {

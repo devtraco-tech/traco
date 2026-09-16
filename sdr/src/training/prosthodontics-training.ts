@@ -1,6 +1,6 @@
 import type { OfficialTrainingDocument } from "./official-training.js";
 
-export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v2-2026-09-16";
+export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v3-2026-09-16";
 
 export const PROSTHODONTICS_COMMERCIAL_SCRIPT = `# Script Comercial — Especialização em Prótese Dentária
 
@@ -26,7 +26,7 @@ Carga horária total: 856 horas. Duração: 25 módulos, com encontros mensais d
 Local: ABO Goiás, Avenida Itália, nº 1047, Jardim Europa, Goiânia/GO, CEP 74325-110.
 
 ## Limite do pré-atendimento
-Não apresente investimento, condição de pagamento, matrícula, contrato, vagas ou data de início. O novo fluxo traz valores divergentes dos materiais anteriores e uma data sem ano confirmado. Depois de apresentar o curso e confirmar que ele faz sentido para o momento profissional, pergunte se há alguma dúvida pontual e transfira o atendimento para o consultor humano. O consultor é responsável por proposta, investimento, negociação, matrícula, cobrança e confirmação de pagamento.
+Não apresente investimento, condição de pagamento, contrato, vagas ou data de início. O novo fluxo traz valores divergentes dos materiais anteriores e uma data sem ano confirmado. Depois de apresentar o curso e confirmar que ele faz sentido para o momento profissional, notifique silenciosamente o responsável na Clint e continue o fluxo normal de matrícula, coletando os dados necessários. Proposta, investimento, negociação, cobrança e confirmação de pagamento permanecem com o consultor humano.
 
 ## Match por perfil
 Para iniciantes, destaque fundamentos, supervisão, prática clínica e desenvolvimento gradual de segurança em diagnóstico e planejamento. Para profissionais atuantes, destaque atualização, fluxos digitais, reabilitações complexas e integração entre função e estética. Nunca prometa renda, lucro, retorno financeiro, retenção de pacientes ou resultado clínico.
@@ -34,7 +34,7 @@ Para iniciantes, destaque fundamentos, supervisão, prática clínica e desenvol
 Finalize perguntando se a especialização faz sentido para o momento profissional do lead e se existe alguma dúvida pontual.
 
 ## Transferência
-Quando houver interesse explícito, notifique e atribua o responsável na Clint, mova o negócio para a etapa de atendimento humano e interrompa a automação. Não colete dados pessoais de matrícula nesse pré-atendimento.`;
+Quando houver interesse explícito, notifique o responsável na Clint sem enviar ao lead uma mensagem de transferência e mantenha o SDR ativo. Depois de concluir a coleta dos dados de matrícula, transfira o atendimento ao responsável para contrato, negociação e pagamento.`;
 
 export const PROSTHODONTICS_FAQ = `# FAQ — Especialização em Prótese Dentária
 
