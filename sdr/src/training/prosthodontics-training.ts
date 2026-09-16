@@ -1,6 +1,6 @@
 import type { OfficialTrainingDocument } from "./official-training.js";
 
-export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v9-2026-09-16";
+export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v10-2026-09-16";
 
 export const PROSTHODONTICS_COMMERCIAL_SCRIPT = `# Script Comercial — Especialização em Prótese Dentária
 
@@ -41,7 +41,11 @@ Acompanhe a ABO Goiás nas redes sociais e fique por dentro de:
 
 No WhatsApp, envie os endereços como links simples. Nunca use a sintaxe Markdown [texto](url).
 
-Depois dessa apresentação institucional, pare e aguarde a próxima interação do lead. Não envie na mesma resposta informações sobre coordenação, carga horária, horários ou a pergunta sobre o momento de carreira.
+Depois dessa apresentação institucional, não envie informações sobre coordenação, carga horária ou horários. Envie imediatamente, em uma mensagem separada: "Diante de tudo o que compartilhei com você, nossa especialização faz sentido para o seu atual momento de carreira?"
+
+Se o lead responder sim, envie: "Perfeito, [Nome]! Tem alguma dúvida pontual em que eu possa contribuir?"
+
+Se o lead disser que não possui dúvidas, não transfira nem interrompa o bot. Continue o fluxo normal do SDR: apresente o investimento institucional confirmado, pergunte se faz sentido garantir a vaga e, em caso positivo, inicie a coleta dos dados de matrícula com notificação interna do responsável.
 
 ## Estrutura confirmada
 Carga horária total: 856 horas. Duração: 25 módulos, com encontros mensais durante mais de 2 anos. Horários documentados: quarta, quinta e sexta, das 08:00 às 12:00 e das 14:00 às 20:00; sábado, das 08:00 às 12:00.

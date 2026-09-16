@@ -149,16 +149,23 @@ function prosthodonticsInstitutionPresentation(
 ): string[] {
   const name = displayName?.trim().split(/\s+/u)[0];
   if (language !== "pt") {
+    const matchQuestion = language === "es"
+      ? "Frente a todo lo que compartí, ¿nuestra especialización tiene sentido para tu momento profesional actual?"
+      : "Based on everything I shared, does our specialization make sense for your current career moment?";
     return [
       knowsAbo
         ? "Great that you already know ABO. The program combines supervised practice, clinical development, and an experienced faculty."
         : "ABO has been active for more than 70 years and has trained and certified over 55,000 students. It offers equipped clinics, practical laboratories, and classrooms prepared for theoretical teaching.",
+      matchQuestion,
     ];
   }
   const connection = knowsAbo
     ? "Que ótimo que já conhece! Então tenho certeza que fez a escolha ideal em iniciar a especialização, pois será um divisor de águas em sua carreira profissional, trazendo uma segurança maior e preparo para colocar em prática."
     : `Aproveitando a oportunidade${name ? `, ${name}` : ""}, a ABO está presente no mercado há mais de 70 anos e já são mais de 55 mil alunos formados e certificados. Nossa instituição conta com uma estrutura completa para o ensino, com clínicas equipadas para atendimento supervisionado, laboratórios para treinamento prático e salas de aula modernas e preparadas para o ensino teórico. Esse ambiente permite que você vivencie na prática a sua rotina clínica.\n\nInclusive, vou deixar para você as nossas redes sociais para conhecer a nossa equipe e estrutura.\n\nAcompanhe a ABO Goiás nas redes sociais e fique por dentro de:\n🦷 Novos cursos e especializações\n🎓 Abertura de novas turmas\n👨‍⚕️ Professores e especialistas\n📚 Conteúdos da área odontológica\n📅 Eventos, imersões e novidades\n\n🌐 Site: abogoias.org.br\n📸 Instagram: https://www.instagram.com/abogoias?igsi=Ync2dzg3NTBpZGJ3`;
-  return [connection];
+  return [
+    connection,
+    "Diante de tudo o que compartilhei com você, nossa especialização faz sentido para o seu atual momento de carreira?",
+  ];
 }
 
 function prosthodonticsSpecificQuestion(
@@ -169,6 +176,12 @@ function prosthodonticsSpecificQuestion(
   if (language === "en") return `Perfect${name ? `, ${name}` : ""}! Is there any specific question I can help you with?`;
   if (language === "es") return `¡Perfecto${name ? `, ${name}` : ""}! ¿Hay alguna duda puntual en la que pueda ayudarte?`;
   return `Perfeito${name ? `, ${name}` : ""}! Tem alguma dúvida pontual em que eu possa contribuir?`;
+}
+
+function prosthodonticsClosingQuestion(language: SupportedLanguage): string {
+  if (language === "en") return "Based on everything we discussed, does it make sense to secure your place in the class?";
+  if (language === "es") return "Considerando todo lo que conversamos, ¿tiene sentido asegurar tu plaza en el grupo?";
+  return "Diante de tudo o que conversamos, faz sentido para você aproveitarmos esta oportunidade e garantirmos sua vaga na turma?";
 }
 
 function saysNoSpecificQuestions(text: string): boolean {
@@ -969,9 +982,31 @@ export function decideCommercialFlow(
 
   if (context.flowStage === "questions" && isProsthodonticsCourse(course)) {
     if (saysNoSpecificQuestions(currentText)) {
-      return prosthodonticsHandoffDecision(context);
+      return {
+        handled: true,
+        messages: [
+          prosthodonticsInvestmentResponse(language),
+          prosthodonticsClosingQuestion(language),
+        ],
+        patch: { flowStage: "closing", interestConfirmed: true },
+      };
     }
     return { handled: false, messages: [] };
+  }
+
+  if (context.flowStage === "closing" && isProsthodonticsCourse(course)) {
+    const interest = confirmsInterest(currentText);
+    if (interest === null) return { handled: false, messages: [] };
+    if (!interest) {
+      return {
+        handled: true,
+        messages: [COPY[language].noInterest],
+        patch: { interestConfirmed: false },
+      };
+    }
+    const decision = enrollmentDecision(language);
+    decision.notifyEnrollment = !context.enrollmentNotificationSent;
+    return decision;
   }
 
   if (context.flowStage === "alternative_offer" && isProsthodonticsCourse(course)) {

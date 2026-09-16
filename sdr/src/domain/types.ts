@@ -57,6 +57,7 @@ export type FlowStage =
   | "abo_connection"
   | "final_match"
   | "questions"
+  | "closing"
   | "alternative_offer"
   | "alternative_details"
   | "enrollment"

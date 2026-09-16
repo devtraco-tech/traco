@@ -174,10 +174,12 @@ describe("decideCommercialFlow", () => {
       prosthodonticsCourse,
     );
     expect(institution.messages.join(" ")).toContain("mais de 70 anos");
-    expect(institution.messages).toHaveLength(1);
+    expect(institution.messages).toHaveLength(2);
     expect(institution.messages.join(" ")).not.toContain("Sicknan Soares");
     expect(institution.messages.join(" ")).not.toContain("856h");
-    expect(institution.messages.join(" ")).not.toContain("faz sentido para o seu atual momento");
+    expect(institution.messages[1]).toBe(
+      "Diante de tudo o que compartilhei com você, nossa especialização faz sentido para o seu atual momento de carreira?",
+    );
     expect(institution.patch?.flowStage).toBe("final_match");
 
     const questions = decideCommercialFlow(
@@ -188,14 +190,25 @@ describe("decideCommercialFlow", () => {
     expect(questions.messages[0]).toContain("dúvida pontual");
     expect(questions.patch?.flowStage).toBe("questions");
 
-    const handoff = decideCommercialFlow(
+    const closing = decideCommercialFlow(
       context("questions", { leadQualification: "graduated", interestConfirmed: true }),
       "Não tenho dúvidas",
       prosthodonticsCourse,
     );
-    expect(handoff.messages).toEqual([]);
-    expect(handoff.notifyEnrollment).toBe(true);
-    expect(handoff.handoffAfterFlow?.reason).toBe("commercial_high_intent");
+    expect(closing.messages[0]).toContain("25 parcelas de R$ 2.800,00");
+    expect(closing.messages[1]).toContain("garantirmos sua vaga");
+    expect(closing.patch?.flowStage).toBe("closing");
+    expect(closing.handoffAfterFlow).toBeUndefined();
+
+    const closingAccepted = decideCommercialFlow(
+      context("closing", { leadQualification: "graduated", interestConfirmed: true }),
+      "Sim, quero garantir minha vaga",
+      prosthodonticsCourse,
+    );
+    expect(closingAccepted.messages[0]).toContain("Nome completo:");
+    expect(closingAccepted.patch?.flowStage).toBe("enrollment");
+    expect(closingAccepted.notifyEnrollment).toBe(true);
+    expect(closingAccepted.handoffAfterFlow).toBeUndefined();
 
     const enrollment = decideCommercialFlow(
       context("questions", {
@@ -289,10 +302,10 @@ describe("decideCommercialFlow", () => {
     expect(content).toContain("📅 Eventos, imersões e novidades");
     expect(content).toContain("https://www.instagram.com/abogoias");
     expect(content).not.toContain("[https://");
-    expect(decision.messages).toHaveLength(1);
+    expect(decision.messages).toHaveLength(2);
     expect(content).not.toContain("Sicknan Soares");
     expect(content).not.toContain("856h");
-    expect(content).not.toContain("faz sentido para o seu atual momento");
+    expect(decision.messages[1]).toContain("faz sentido para o seu atual momento");
     expect(decision.patch?.flowStage).toBe("final_match");
   });
 
