@@ -18,6 +18,12 @@ const wahaMessageSchema = z.object({
         .object({
           notifyName: z.string().optional(),
           pushname: z.string().optional(),
+          Info: z
+            .object({
+              PushName: z.string().optional(),
+            })
+            .passthrough()
+            .optional(),
         })
         .passthrough()
         .optional(),
@@ -79,6 +85,7 @@ export function parseWahaInboundMessage(
     phoneE164: `+${digits}`,
     displayName:
       payload.pushName ??
+      payload._data?.Info?.PushName ??
       payload._data?.notifyName ??
       payload._data?.pushname ??
       null,

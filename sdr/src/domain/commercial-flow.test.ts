@@ -149,7 +149,7 @@ describe("decideCommercialFlow", () => {
       prosthodonticsCourse,
     );
     expect(opening.messages[0]).toContain("Olá, Victor!");
-    expect(opening.messages[0]).toContain("Sou a Julyane, Consultora Comercial da ABO Goiás");
+    expect(opening.messages[0]).toContain("Sou a Julyane Consultora Comercial da ABO-GO");
 
     const enrollment = decideCommercialFlow(
       context("match", {
@@ -187,11 +187,32 @@ describe("decideCommercialFlow", () => {
         leadQualification: "graduated",
         audienceProfile: "experienced",
       }),
-      "Qual é o valor e a forma de pagamento?",
+      "Quanto custa?",
       prosthodonticsCourse,
     );
-    expect(investmentQuestion.handoffAfterFlow?.reason).toBe("commercial_high_intent");
-    expect(investmentQuestion.messages.join(" ")).not.toMatch(/R\$|2\.800|2\.500/u);
+    expect(investmentQuestion.messages).toEqual([
+      "O investimento da Especialização em Prótese Dentária é de *25 parcelas de R$ 2.800,00*. O material institucional também informa *5% de desconto no pagamento integral do semestre*. Para negociar condições diferentes, posso acionar uma pessoa do nosso time.",
+    ]);
+    expect(investmentQuestion.handoffAfterFlow).toBeUndefined();
+    expect(investmentQuestion.patch).toBeUndefined();
+
+    const earlyInvestmentQuestion = decideCommercialFlow(
+      context("qualification"),
+      "Qual o valor do curso?",
+      prosthodonticsCourse,
+    );
+    expect(earlyInvestmentQuestion.messages[0]).toContain("25 parcelas de R$ 2.800,00");
+    expect(earlyInvestmentQuestion.handoffAfterFlow).toBeUndefined();
+
+    const paymentQuestion = decideCommercialFlow(
+      context("match", {
+        leadQualification: "graduated",
+        audienceProfile: "experienced",
+      }),
+      "Quais são as formas de pagamento?",
+      prosthodonticsCourse,
+    );
+    expect(paymentQuestion.handoffAfterFlow?.reason).toBe("commercial_high_intent");
   });
 
   it("conduz a apresentação e a qualificação em inglês", () => {

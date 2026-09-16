@@ -55,6 +55,15 @@ describe("parseWahaInboundMessage", () => {
     });
   });
 
+  it("captura o nome no formato atual do payload do WAHA", () => {
+    const result = parseWahaInboundMessage(event({
+      pushName: undefined,
+      _data: { Info: { PushName: "Dinho" } },
+    }));
+
+    expect(result?.displayName).toBe("Dinho");
+  });
+
   it("não inventa telefone quando o WAHA não consegue resolver um LID", () => {
     expect(
       parseWahaInboundMessage(event({ from: "120000000000000@lid" })),

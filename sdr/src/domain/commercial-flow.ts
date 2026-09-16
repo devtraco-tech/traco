@@ -72,7 +72,7 @@ function prosthodonticsOpening(
   if (language === "es") {
     return `¡Hola${name ? `, ${name}` : ""}! ¿Todo bien? 😊\n\nSoy Julyane, Consultora Comercial de ABO Goiás. Vi que te interesó nuestra Especialización en Prótesis Dental y quisiera entender un poco mejor lo que estás buscando.\n\n¿Ya te graduaste en Odontología?`;
   }
-  return `Olá${name ? `, ${name}` : ""}! Tudo bem? 😊\n\nSou a Julyane, Consultora Comercial da ABO Goiás. Vi que você demonstrou interesse em nossa Especialização em Prótese Dentária e gostaria de entender um pouquinho melhor o que você está buscando.\n\nVocê já é formado(a) em Odontologia?`;
+  return `Olá${name ? `, ${name}` : ""}! Tudo bem? 😊\n\nSou a Julyane Consultora Comercial da ABO-GO e vi que você demonstrou interesse em nossa Especialização em Prótese Dentária e gostaria de entender um pouquinho melhor o que você está buscando.\n\nVocê já é formado(a) em Odontologia?`;
 }
 
 function prosthodonticsProfileQuestion(
@@ -127,6 +127,16 @@ function prosthodonticsHandoffDecision(
       details: "Pré-atendimento de Prótese concluído. O consultor deve apresentar o investimento, negociar e conduzir matrícula e pagamento.",
     },
   };
+}
+
+function prosthodonticsInvestmentResponse(language: SupportedLanguage): string {
+  if (language === "en") {
+    return "The investment for the Prosthodontics Specialization is 25 installments of R$ 2,800.00. The institutional material also offers a 5% discount when the semester is paid in full. For different terms, I can contact a member of our team.";
+  }
+  if (language === "es") {
+    return "La inversión de la Especialización en Prótesis Dental es de 25 cuotas de R$ 2.800,00. El material institucional también informa un 5% de descuento por el pago total del semestre. Para negociar condiciones diferentes, puedo contactar a una persona de nuestro equipo.";
+  }
+  return "O investimento da Especialização em Prótese Dentária é de *25 parcelas de R$ 2.800,00*. O material institucional também informa *5% de desconto no pagamento integral do semestre*. Para negociar condições diferentes, posso acionar uma pessoa do nosso time.";
 }
 
 const FIELD_LABELS: Record<SupportedLanguage, Record<EnrollmentField, string>> = {
@@ -570,9 +580,15 @@ function fieldFromLabel(label: string): EnrollmentField | null {
   return null;
 }
 
+function requestsCoursePrice(text: string): boolean {
+  const value = normalize(text).trim();
+  return /\b(quanto (custa|fica)|qual (e )?(o )?(preco|valor|investimento)|preco (do|da|desse|dessa) (curso|especializacao)|valor (do|da|desse|dessa) (curso|especializacao)|investimento (do|da|desse|dessa) (curso|especializacao)|custo (do|da|desse|dessa) (curso|especializacao)|me (passa|informa|diz) (o )?(preco|valor|investimento))\b/u.test(value)
+    || /^(preco|valor|investimento|custo)$/u.test(value);
+}
+
 function requestsCommercialTerms(text: string): boolean {
   const value = normalize(text);
-  return /\b(preco|valor|investimento|parcela|parcelamento|desconto|pagamento|boleto|contrato|matricula|price|cost|investment|installment|discount|payment|contract|enrollment|precio|valor|inversion|cuota|descuento|pago|contrato|matricula)\b/u.test(value);
+  return /\b(parcela|parcelamento|desconto|pagamento|boleto|contrato|matricula|installment|discount|payment|contract|enrollment|cuota|descuento|pago|contrato|matricula)\b/u.test(value);
 }
 
 function parseInlineNumberedValues(text: string): Map<number, string> {
@@ -700,6 +716,13 @@ export function decideCommercialFlow(
   course?: CatalogItemSnapshot,
   language: SupportedLanguage = "pt",
 ): CommercialFlowDecision {
+  if (isProsthodonticsCourse(course) && requestsCoursePrice(currentText)) {
+    return {
+      handled: true,
+      messages: [prosthodonticsInvestmentResponse(language)],
+    };
+  }
+
   if (context.flowStage === "presentation") {
     return {
       handled: true,
