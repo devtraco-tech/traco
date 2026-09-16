@@ -556,6 +556,16 @@ function followsAboKnowledgeQuestion(context: ConversationContext): boolean {
   return /\b(voce ja conhece (a (nossa )?formacao e )?a abo|do you already know (our program and )?abo|ya conoces (nuestra formacion y )?a abo)\b/u.test(value);
 }
 
+function followsCareerMatchQuestion(context: ConversationContext): boolean {
+  const lastAssistantMessage = [...context.messages]
+    .reverse()
+    .find((message) => message.role === "assistant");
+  if (!lastAssistantMessage) return false;
+
+  const value = normalize(lastAssistantMessage.content);
+  return /\b(especializacao faz sentido para o seu atual momento de carreira|specialization make sense for your current career moment|especializacion tiene sentido para tu momento profesional actual)\b/u.test(value);
+}
+
 function requestsEnrollment(text: string): boolean {
   const value = normalize(text);
   return (
@@ -801,6 +811,24 @@ export function decideCommercialFlow(
         handled: true,
         messages: prosthodonticsInstitutionPresentation(context.displayName, knowsAbo, language),
         patch: { flowStage: "final_match" },
+      };
+    }
+  }
+
+  if (isProsthodonticsCourse(course) && followsCareerMatchQuestion(context)) {
+    const interest = confirmsInterest(currentText);
+    if (interest !== null) {
+      if (!interest) {
+        return {
+          handled: true,
+          messages: [COPY[language].noInterest],
+          patch: { interestConfirmed: false },
+        };
+      }
+      return {
+        handled: true,
+        messages: [prosthodonticsSpecificQuestion(context.displayName, language)],
+        patch: { flowStage: "questions", interestConfirmed: true },
       };
     }
   }

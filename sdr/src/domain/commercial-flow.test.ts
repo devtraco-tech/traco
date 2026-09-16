@@ -309,6 +309,32 @@ describe("decideCommercialFlow", () => {
     expect(decision.patch?.flowStage).toBe("final_match");
   });
 
+  it("continua após a pergunta de aderência mesmo quando o estado anterior não foi persistido", () => {
+    const decision = decideCommercialFlow(
+      context("match", {
+        displayName: "Joao Victor",
+        messages: [{
+          id: "out-match",
+          direction: "outbound",
+          role: "assistant",
+          content: "Diante de tudo o que compartilhei com você, nossa especialização faz sentido para o seu atual momento de carreira?",
+          status: "sent",
+          createdAt: "2026-09-16T18:29:00.000Z",
+        }],
+      }),
+      "Sim",
+      prosthodonticsCourse,
+    );
+
+    expect(decision.messages).toEqual([
+      "Perfeito, Joao! Tem alguma dúvida pontual em que eu possa contribuir?",
+    ]);
+    expect(decision.patch).toMatchObject({
+      flowStage: "questions",
+      interestConfirmed: true,
+    });
+  });
+
   it("conduz a apresentação e a qualificação em inglês", () => {
     const presentation = decideCommercialFlow(
       context("presentation"),

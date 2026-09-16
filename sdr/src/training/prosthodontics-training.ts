@@ -1,6 +1,6 @@
 import type { OfficialTrainingDocument } from "./official-training.js";
 
-export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v10-2026-09-16";
+export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v11-2026-09-16";
 
 export const PROSTHODONTICS_COMMERCIAL_SCRIPT = `# Script Comercial — Especialização em Prótese Dentária
 
