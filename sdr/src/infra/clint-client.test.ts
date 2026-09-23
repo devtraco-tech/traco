@@ -191,6 +191,17 @@ describe("ClintClient", () => {
     await expect(client.updateDealStage(ids.deal, ids.user)).rejects.toThrow(/não pertence/u);
   });
 
+  it("atribui um responsável ao negócio", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(json({ data: { id: ids.deal } }));
+    const client = new ClintClient("token", stages, fetcher);
+
+    await client.assignDealOwner(ids.deal, ids.user);
+
+    expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toEqual({
+      user_id: ids.user,
+    });
+  });
+
   it("atualiza campos de matrícula e atribui o responsável", async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(json({ data: { id: ids.deal } }));
     const client = new ClintClient("token", stages, fetcher);

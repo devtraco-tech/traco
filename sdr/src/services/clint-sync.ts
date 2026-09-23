@@ -98,6 +98,10 @@ export class ClintSyncService {
       if (context.clintStageId !== targetStageId) {
         await this.client.updateDealStage(context.clintDealId, targetStageId);
       }
+      await this.client.assignDealOwner(
+        context.clintDealId,
+        this.configuration.handoff.responsibleUserId,
+      );
       await this.repository.saveClintSync(context.conversationId, {
         dealId: context.clintDealId,
         contactId,
@@ -113,6 +117,10 @@ export class ClintSyncService {
       stageId: targetStageId,
     });
     if (result.merged) await this.client.updateDealStage(result.dealId, targetStageId);
+    await this.client.assignDealOwner(
+      result.dealId,
+      this.configuration.handoff.responsibleUserId,
+    );
     await this.repository.saveClintSync(context.conversationId, {
       dealId: result.dealId,
       contactId: result.contactId,

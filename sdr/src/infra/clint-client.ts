@@ -128,6 +128,15 @@ export class ClintClient {
     });
   }
 
+  async assignDealOwner(dealId: string, userId: string): Promise<void> {
+    this.validateUuid(dealId, "Negócio Clint");
+    this.validateUuid(userId, "Responsável Clint");
+    await this.request(`/deals/${dealId}`, {
+      method: "POST",
+      body: JSON.stringify({ user_id: userId }),
+    });
+  }
+
   async updateEnrollmentFields(
     dealId: string,
     enrollmentData: EnrollmentData,

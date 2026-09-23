@@ -242,6 +242,13 @@ Credenciais e UUIDs pertencem somente ao backend e nunca devem usar o prefixo
 `VITE_`. Configure todas as variáveis `CLINT_*` de `.env.example`. Para
 consultar origens, usuários e campos sem alterar dados, execute
 `npm run clint:inspect`.
+
+Todo negócio sincronizado recebe `CLINT_RESPONSIBLE_USER_ID` como responsável.
+As notificações de novo negócio e mudança de etapa devem ser habilitadas em
+Clint > origem > Configurações > Geral > Notificações. A API de Negócios cria
+cards no funil, mas não replica a conversa do WAHA no módulo de Atendimento;
+essa caixa de entrada exige um canal de WhatsApp compatível conectado à Clint.
+
 ## Segurança
 
 - Nunca use `SUPABASE_SERVICE_ROLE_KEY` no frontend.

@@ -56,6 +56,7 @@ describe("ClintSyncService", () => {
     const client = {
       ensureDeal: vi.fn().mockResolvedValue({ dealId: id(3, 1), contactId: id(4, 1), merged: false }),
       updateDealStage: vi.fn(),
+      assignDealOwner: vi.fn(),
       updateEnrollmentFields: vi.fn(),
       prepareHumanHandoff: vi.fn(),
     };
@@ -74,6 +75,10 @@ describe("ClintSyncService", () => {
       contactId: id(4, 1),
       stageId: stages.qualifiedStageId,
     });
+    expect(client.assignDealOwner).toHaveBeenCalledWith(
+      id(3, 1),
+      runtime.handoff.responsibleUserId,
+    );
   });
 
   it("move um negócio existente para handoff e atribui responsável", async () => {
@@ -82,6 +87,7 @@ describe("ClintSyncService", () => {
       ensureDeal: vi.fn(),
       syncContactName: vi.fn().mockResolvedValue(id(4, 1)),
       updateDealStage: vi.fn(),
+      assignDealOwner: vi.fn(),
       prepareHumanHandoff: vi.fn(),
     };
     const repository = { saveClintSync: vi.fn() };

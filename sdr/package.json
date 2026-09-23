@@ -20,6 +20,7 @@
     "diagnose:conversation:dev": "tsx scripts/diagnose-development-conversation.ts",
     "conversation:repair-handoff:dev": "tsx scripts/repair-development-handoff-answer.ts --confirm-development-repair",
     "clint:inspect": "tsx scripts/inspect-clint.ts",
+    "clint:assign-owner": "tsx scripts/assign-clint-deal-owner.ts",
     "alerts:test-email": "tsx scripts/test-critical-email.ts",
     "build": "tsc -p tsconfig.json",
     "start": "npm run start:api",
