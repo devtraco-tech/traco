@@ -304,23 +304,85 @@ describe("decideCommercialFlow", () => {
     );
   });
 
-  it("oferece a imersão em Endodontia quando o lead de Prótese não é formado", () => {
-    const offer = decideCommercialFlow(
+  it("informa somente o requisito de Prótese quando o lead não é formado", () => {
+    const decision = decideCommercialFlow(
       context("qualification"),
       "Ainda não sou formado",
       prosthodonticsCourse,
     );
-    expect(offer.messages[0]).toContain("Imersão em Endodontia");
-    expect(offer.patch?.flowStage).toBe("alternative_offer");
+    const content = decision.messages.join(" ");
 
-    const details = decideCommercialFlow(
-      context("alternative_offer", { leadQualification: "not_graduated" }),
-      "Sim, tenho interesse",
+    expect(content).toContain("Especialização em Prótese Dentária");
+    expect(content).not.toMatch(/imersão|endodontia|Daniel Decurcio/iu);
+    expect(decision.patch).toMatchObject({
+      flowStage: "disqualified",
+      leadQualification: "not_graduated",
+    });
+  });
+
+  it("interpreta não isolado como não graduado após pergunta de qualificação", () => {
+    const decision = decideCommercialFlow(
+      context("qualification", {
+        messages: [{
+          id: "graduation-question",
+          direction: "outbound",
+          role: "assistant",
+          content: "Você já é formado(a) em Odontologia?",
+          status: "sent",
+          createdAt: "2026-09-28T09:15:00.000Z",
+        }],
+      }),
+      "Não",
       prosthodonticsCourse,
     );
-    expect(details.messages[0]).toContain("1º a 3 de outubro");
-    expect(details.messages[0]).toContain("Dr. Daniel Decurcio");
-    expect(details.patch?.flowStage).toBe("alternative_details");
+
+    expect(decision.patch).toMatchObject({
+      flowStage: "disqualified",
+      leadQualification: "not_graduated",
+    });
+    expect(decision.messages.join(" ")).not.toMatch(/imersão|endodontia/iu);
+  });
+
+  it("não confunde aceitação do preço com resposta negativa à graduação", () => {
+    const conversation = context("qualification", {
+      messages: [
+        {
+          id: "graduation-question",
+          direction: "outbound",
+          role: "assistant",
+          content: "Você já é formado(a) em Odontologia?",
+          status: "sent",
+          createdAt: "2026-09-28T09:15:00.000Z",
+        },
+        {
+          id: "price-answer",
+          direction: "outbound",
+          role: "assistant",
+          content: "O investimento é de 25 parcelas de R$ 2.500,00.",
+          status: "sent",
+          createdAt: "2026-09-28T09:17:00.000Z",
+        },
+      ],
+    });
+
+    const priceAcceptance = decideCommercialFlow(
+      conversation,
+      "Uai, não está caro não",
+      prosthodonticsCourse,
+    );
+    expect(priceAcceptance.handled).toBe(false);
+    expect(priceAcceptance.patch).toBeUndefined();
+
+    const startDate = decideCommercialFlow(
+      conversation,
+      "Uai, não está caro não\nComeça quando?",
+      prosthodonticsCourse,
+    );
+    expect(startDate.handled).toBe(true);
+    expect(startDate.messages[0]).toContain("03/03");
+    expect(startDate.messages[0]).toContain("já concluiu a graduação");
+    expect(startDate.messages.join(" ")).not.toMatch(/imersão|endodontia/iu);
+    expect(startDate.patch).toBeUndefined();
   });
 
   it("envia a apresentação institucional completa mesmo quando a pergunta da ABO veio do modelo", () => {

@@ -12,7 +12,8 @@ const TOKENS: Record<SupportedLanguage, Set<string>> = {
   pt: new Set([
     "oi", "ola", "gostaria", "quero", "nao", "sim", "sou", "tenho", "voce",
     "voces", "falar", "pessoa", "pagamento", "matricula", "dentista", "obrigado",
-    "obrigada", "saber", "curso", "formado", "formada",
+    "obrigada", "saber", "curso", "formado", "formada", "quando", "fazer", "esse",
+    "essa", "onde", "qual", "vai", "vao", "vcs", "em",
   ]),
   en: new Set([
     "hello", "hi", "would", "want", "yes", "not", "no", "am", "have", "you",
@@ -22,9 +23,25 @@ const TOKENS: Record<SupportedLanguage, Set<string>> = {
   es: new Set([
     "hola", "quisiera", "quiero", "si", "no", "soy", "tengo", "usted", "ustedes",
     "hablar", "persona", "pago", "inscripcion", "inscribirme", "dentista", "gracias",
-    "saber", "curso", "graduado", "graduada", "interesado", "interesada",
+    "saber", "curso", "graduado", "graduada", "interesado", "interesada", "cuando",
+    "donde", "hacer", "este", "esta", "en", "el",
   ]),
 };
+
+const DISCRIMINATIVE_TOKENS: Record<SupportedLanguage, Set<string>> = {
+  pt: new Set(),
+  en: new Set(),
+  es: new Set(),
+};
+
+for (const language of Object.keys(TOKENS) as SupportedLanguage[]) {
+  for (const token of TOKENS[language]) {
+    const languageCount = (Object.keys(TOKENS) as SupportedLanguage[])
+      .filter((candidate) => TOKENS[candidate].has(token))
+      .length;
+    if (languageCount === 1) DISCRIMINATIVE_TOKENS[language].add(token);
+  }
+}
 
 function normalizedWords(text: string): string[] {
   return text
@@ -48,8 +65,8 @@ export function detectMessageLanguage(text: string): SupportedLanguage | null {
 
   const scores: Record<SupportedLanguage, number> = { pt: 0, en: 0, es: 0 };
   for (const word of normalizedWords(text)) {
-    for (const language of Object.keys(TOKENS) as SupportedLanguage[]) {
-      if (TOKENS[language].has(word)) scores[language] += 1;
+    for (const language of Object.keys(DISCRIMINATIVE_TOKENS) as SupportedLanguage[]) {
+      if (DISCRIMINATIVE_TOKENS[language].has(word)) scores[language] += 1;
     }
   }
   const ranked = (Object.entries(scores) as Array<[SupportedLanguage, number]>)

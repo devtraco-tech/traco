@@ -116,24 +116,23 @@ function prosthodonticsHandoffDecision(
   };
 }
 
-function prosthodonticsAlternativeOffer(
-  displayName: string | null,
-  language: SupportedLanguage,
-): string {
-  const name = displayName?.trim().split(/\s+/u)[0];
-  if (language === "en") return "To begin this specialization, you must first complete your Dentistry degree. Would you like to learn about our Endodontics immersion program, from simplified access protocol through restoration?";
-  if (language === "es") return "Para iniciar esta especialización, primero debes concluir la carrera de Odontología. ¿Te gustaría conocer nuestra inmersión en Endodoncia, desde el protocolo simplificado de acceso hasta la restauración?";
-  return `Entendo${name ? `, ${name}` : ""}! Para iniciar a nossa especialização, você precisa ter concluído a graduação em Odontologia. Temos a Imersão em Endodontia - Protocolo simplificado do acesso à restauração. Você tem interesse em conhecer a nossa imersão?`;
+function prosthodonticsNotGraduated(language: SupportedLanguage): string {
+  if (language === "en") return "To enroll in the Prosthodontics specialization, you must first complete your Dentistry degree. When you finish your degree, our team will be available to guide you about this specialization.";
+  if (language === "es") return "Para ingresar a la Especialización en Prótesis Dental, primero debes concluir la carrera de Odontología. Cuando termines tu formación, nuestro equipo estará disponible para orientarte sobre esta especialización.";
+  return "Para ingressar na Especialização em Prótese Dentária, é necessário ter concluído a graduação em Odontologia. Quando concluir sua formação, nossa equipe estará à disposição para orientar você sobre esta especialização.";
 }
 
-function prosthodonticsAlternativeDetails(
-  displayName: string | null,
+function prosthodonticsStartDateResponse(
   language: SupportedLanguage,
+  askQualification: boolean,
 ): string {
-  const name = displayName?.trim().split(/\s+/u)[0];
-  if (language === "en") return "The immersion takes place from October 1 to 3, with three intensive days of content and practice. It covers conventional and complex cases, including access, preparation, cleaning, obturation, and final restoration. It is coordinated by Dr. Daniel Decurcio with the Endoscience faculty, and all required materials are provided. Does this immersion make sense for your professional moment?";
-  if (language === "es") return "La inmersión será del 1 al 3 de octubre, con tres días intensivos de contenido y práctica. Incluye casos convencionales y complejos: acceso, preparación, limpieza, obturación y restauración final. La coordinación estará a cargo del Dr. Daniel Decurcio junto con el equipo de Endoscience, y todos los materiales serán proporcionados. ¿Esta inmersión tiene sentido para tu momento profesional?";
-  return `${name ? `${name}, a` : "A"} imersão acontecerá de 1º a 3 de outubro. Serão 3 dias intensivos de conteúdo e prática, com acompanhamento direto dos professores. Vamos trabalhar casos convencionais e complexos, acompanhando o passo a passo do tratamento: acesso, preparo, limpeza, obturação e restauração final.\n\nA coordenação será do Dr. Daniel Decurcio junto ao corpo docente da Endoscience. Todos os materiais necessários para a imersão serão fornecidos por nós. Pelo que conversamos até aqui e considerando o que você busca para o seu momento profissional, essa imersão faz sentido para você?`;
+  if (language === "en") {
+    return `The stated start date for the Prosthodontics specialization is March 3.${askQualification ? " To continue, have you completed your Dentistry degree?" : ""}`;
+  }
+  if (language === "es") {
+    return `La fecha de inicio informada para la Especialización en Prótesis Dental es el 3 de marzo.${askQualification ? " Para continuar, ¿ya concluiste la carrera de Odontología?" : ""}`;
+  }
+  return `A data de início informada para a Especialização em Prótese Dentária é 03/03.${askQualification ? " Para continuar, você já concluiu a graduação em Odontologia?" : ""}`;
 }
 
 function prosthodonticsAboQuestion(language: SupportedLanguage): string {
@@ -503,14 +502,23 @@ function profileMatch(
   return "Excelente! Então, nesse caso, o curso vai funcionar como uma atualização, pra dominar os protocolos simplificados, guia cirúrgica e o fluxo digital, além do planejamento e prática em paciente real.\n\nFaz sentido pra você?";
 }
 
-function qualificationFrom(text: string): LeadQualification {
+function qualificationFrom(
+  text: string,
+  acceptsBareAnswer = false,
+): LeadQualification {
   const value = normalize(text);
   if (
-    /\b(nao sou|nao|ainda nao|estudante|academico|academica|cursando|not yet|not graduated|student|studying|no soy|todavia no|aun no|estudiante|cursando)\b/u.test(value)
+    /\b(nao sou (formado|formada|graduado|graduada|dentista)|ainda nao (sou )?(formado|formada|graduado|graduada)|nao (conclui|terminei) (a )?(graduacao|faculdade)|estudante|academico|academica|cursando|not graduated|i am not (a )?(graduate|dentist)|have not (graduated|completed my degree)|student|studying|no soy (graduado|graduada|dentista)|todavia no (soy )?(graduado|graduada)|aun no (soy )?(graduado|graduada)|no (termine|complete) (la )?carrera|estudiante|cursando)\b/u.test(value)
   ) {
     return "not_graduated";
   }
-  if (/\b(sim|sou dentista|dentista|formado|formada|graduado|graduada|yes|i am a dentist|dentist|graduated|si|soy dentista|odontologo|odontologa)\b/u.test(value)) {
+  if (acceptsBareAnswer && /^(nao|not yet|no)[.!?]*$/u.test(value)) {
+    return "not_graduated";
+  }
+  if (/\b(sou dentista|sou (formado|formada|graduado|graduada)|dentista (formado|formada|graduado|graduada)|i am (a )?(graduated )?dentist|i am graduated|i have graduated|soy dentista|soy (graduado|graduada)|odontologo|odontologa)\b/u.test(value)) {
+    return "graduated";
+  }
+  if (acceptsBareAnswer && /^(sim|yes|si)[.!?]*$/u.test(value)) {
     return "graduated";
   }
   return "unknown";
@@ -611,6 +619,16 @@ function followsCareerMatchQuestion(context: ConversationContext): boolean {
 
   const value = normalize(lastAssistantMessage.content);
   return /\b(especializacao faz sentido para o seu atual momento de carreira|specialization make sense for your current career moment|especializacion tiene sentido para tu momento profesional actual)\b/u.test(value);
+}
+
+function followsQualificationQuestion(context: ConversationContext): boolean {
+  const lastAssistantMessage = [...context.messages]
+    .reverse()
+    .find((message) => message.role === "assistant");
+  if (!lastAssistantMessage) return false;
+
+  const value = normalize(lastAssistantMessage.content);
+  return /\b(ja (e|esta) formad[oa]|ja concluiu a graduacao|have you (already )?(graduated|completed your dentistry degree)|are you (already )?a graduated dentist|ya (te )?graduaste|ya concluiste la carrera)\b/u.test(value);
 }
 
 function requestsEnrollment(text: string): boolean {
@@ -719,6 +737,11 @@ function requestsCoursePrice(text: string): boolean {
   const value = normalize(text).trim();
   return /\b(quanto (custa|fica)|qual (e )?(o )?(preco|valor|investimento)|preco (do|da|desse|dessa) (curso|especializacao)|valor (do|da|desse|dessa) (curso|especializacao)|investimento (do|da|desse|dessa) (curso|especializacao)|custo (do|da|desse|dessa) (curso|especializacao)|me (passa|informa|diz) (o )?(preco|valor|investimento))\b/u.test(value)
     || /^(preco|valor|investimento|custo)$/u.test(value);
+}
+
+function requestsCourseStartDate(text: string): boolean {
+  const value = normalize(text);
+  return /\b(quando (comeca|inicia)|comeca quando|inicia quando|qual (e )?(a )?data (de )?inicio|data (de )?inicio|when does (it|the course) start|what is the start date|start date|cuando (comienza|inicia)|fecha de inicio)\b/u.test(value);
 }
 
 function requestsCommercialTerms(text: string): boolean {
@@ -913,10 +936,37 @@ export function decideCommercialFlow(
   course?: CatalogItemSnapshot,
   language: SupportedLanguage = "pt",
 ): CommercialFlowDecision {
-  if (isProsthodonticsCourse(course) && requestsCoursePrice(currentText)) {
+  const prosthodontics = isProsthodonticsCourse(course);
+  const legacyAlternativeStage = context.flowStage === "alternative_offer"
+    || context.flowStage === "alternative_details";
+
+  if (prosthodontics && requestsCoursePrice(currentText)) {
     return {
       handled: true,
       messages: [prosthodonticsInvestmentResponse(language)],
+    };
+  }
+
+  if (prosthodontics && requestsCourseStartDate(currentText)) {
+    const askQualification = context.flowStage === "qualification" || legacyAlternativeStage;
+    return {
+      handled: true,
+      messages: [prosthodonticsStartDateResponse(language, askQualification)],
+      ...(legacyAlternativeStage
+        ? { patch: { flowStage: "qualification" as const, leadQualification: "unknown" as const } }
+        : {}),
+    };
+  }
+
+  if (prosthodontics && legacyAlternativeStage) {
+    return {
+      handled: true,
+      messages: [language === "en"
+        ? "To continue discussing the Prosthodontics specialization, have you completed your Dentistry degree?"
+        : language === "es"
+          ? "Para continuar hablando sobre la Especialización en Prótesis Dental, ¿ya concluiste la carrera de Odontología?"
+          : "Para continuarmos falando sobre a Especialização em Prótese Dentária, você já concluiu a graduação em Odontologia?"],
+      patch: { flowStage: "qualification", leadQualification: "unknown" },
     };
   }
 
@@ -962,14 +1012,17 @@ export function decideCommercialFlow(
   }
 
   if (context.flowStage === "qualification") {
-    const qualification = qualificationFrom(currentText);
+    const qualification = qualificationFrom(
+      currentText,
+      followsQualificationQuestion(context),
+    );
     if (qualification === "unknown") return { handled: false, messages: [] };
     if (qualification === "not_graduated") {
-      if (isProsthodonticsCourse(course)) {
+      if (prosthodontics) {
         return {
           handled: true,
-          messages: [prosthodonticsAlternativeOffer(context.displayName, language)],
-          patch: { flowStage: "alternative_offer", leadQualification: qualification },
+          messages: [prosthodonticsNotGraduated(language)],
+          patch: { flowStage: "disqualified", leadQualification: qualification },
         };
       }
       return {
@@ -1148,24 +1201,6 @@ export function decideCommercialFlow(
     const decision = enrollmentDecision(language, true);
     decision.notifyEnrollment = !context.enrollmentNotificationSent;
     return decision;
-  }
-
-  if (context.flowStage === "alternative_offer" && isProsthodonticsCourse(course)) {
-    const interest = confirmsInterest(currentText);
-    if (interest === null) return { handled: false, messages: [] };
-    if (!interest) return { handled: true, messages: [COPY[language].noInterest] };
-    return {
-      handled: true,
-      messages: [prosthodonticsAlternativeDetails(context.displayName, language)],
-      patch: { flowStage: "alternative_details", interestConfirmed: true },
-    };
-  }
-
-  if (context.flowStage === "alternative_details" && isProsthodonticsCourse(course)) {
-    const interest = confirmsInterest(currentText);
-    if (interest === null) return { handled: false, messages: [] };
-    if (!interest) return { handled: true, messages: [COPY[language].noInterest] };
-    return prosthodonticsHandoffDecision(context);
   }
 
   if (context.flowStage === "enrollment") {

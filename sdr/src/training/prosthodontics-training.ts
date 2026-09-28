@@ -1,6 +1,6 @@
 import type { OfficialTrainingDocument } from "./official-training.js";
 
-export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v13-2026-09-16";
+export const PROSTHODONTICS_TRAINING_VERSION = "protese-dentaria-v14-2026-09-28";
 
 export const PROSTHODONTICS_COMMERCIAL_SCRIPT = `# Script Comercial — Especialização em Prótese Dentária
 
@@ -10,7 +10,7 @@ Tom de voz: próximo, cordial, consultivo e objetivo. Apresente-se como Julyane 
 Cumprimente o lead, diga que viu o interesse na Especialização em Prótese Dentária, explique que deseja entender melhor o que ele busca e pergunte se já é formado em Odontologia.
 
 ## Qualificação
-Pergunte se o lead já concluiu a graduação em Odontologia. Se não for formado, explique que a graduação concluída é requisito e ofereça a Imersão em Endodontia - Protocolo simplificado do acesso à restauração. Se houver interesse, informe que ela acontece de 1º a 3 de outubro, possui três dias de conteúdo e prática, aborda acesso, preparo, limpeza, obturação e restauração final, é coordenada pelo Dr. Daniel Decurcio com o corpo docente da Endoscience e fornece os materiais necessários.
+Pergunte se o lead já concluiu a graduação em Odontologia. Considere "sim" ou "não" isolados como resposta à qualificação somente quando a pergunta anterior tiver sido sobre a graduação. Se não for formado, explique apenas que a graduação concluída é requisito para a Especialização em Prótese Dentária. Não ofereça cursos, imersões ou formações diferentes do item vinculado.
 
 ## Perfil e motivação
 Depois da qualificação, pergunte se a pessoa já atua com Prótese Dentária ou se busca a especialização para começar na área. Aguarde a resposta. Em uma mensagem separada, pergunte o que despertou o interesse pela especialização neste momento. Não apresente o investimento espontaneamente antes de entender perfil e motivação, mas responda imediatamente quando o lead perguntar o preço.
@@ -204,8 +204,8 @@ export const PROSTHODONTICS_TRAINING_DOCUMENTS: OfficialTrainingDocument[] = [
     metadata: {
       version: PROSTHODONTICS_TRAINING_VERSION,
       sources: ["course_project_pdf", "commercial_flow_prosthodontics_pdf"],
-      stages: 8,
-      unresolvedFields: ["start_year", "registration_deadline", "endodontics_immersion_year"],
+      stages: 6,
+      unresolvedFields: ["start_year", "registration_deadline"],
     },
   },
   {

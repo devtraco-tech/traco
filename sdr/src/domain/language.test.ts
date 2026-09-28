@@ -11,6 +11,20 @@ describe("message language", () => {
     expect(detectMessageLanguage(text)).toBe(language);
   });
 
+  it("mantÃ©m em portuguÃªs a pergunta sobre curso no Tocantins", () => {
+    const text = "Quando vcs vÃ£o fazer esse curso no estado do Tocantins?\nEm Palmas to";
+
+    expect(detectMessageLanguage(text)).toBe("pt");
+    expect(resolveConversationLanguage(text, [])).toBe("pt");
+  });
+
+  it.each(["no", "curso", "saber", "dentista", "no curso"])(
+    "nÃ£o decide o idioma usando apenas termos compartilhados: %s",
+    (text) => {
+      expect(detectMessageLanguage(text)).toBeNull();
+    },
+  );
+
   it("usa o idioma anterior quando a resposta atual é ambígua", () => {
     const messages: ConversationMessage[] = [{
       id: "1",

@@ -14,10 +14,11 @@ describe("getCourseTraining", () => {
       "audience_matrix",
       "follow_up",
     ]);
-    expect(training.documents.map((document) => document.content).join("\n"))
-      .not.toContain("Getúlio");
-    expect(training.documents.map((document) => document.content).join("\n"))
-      .toContain("25 parcelas de R$ 2.500,00");
+    const content = training.documents.map((document) => document.content).join("\n");
+    expect(content).not.toContain("Getúlio");
+    expect(content).toContain("25 parcelas de R$ 2.500,00");
+    expect(content).not.toContain("Imersão em Endodontia");
+    expect(content).not.toContain("Daniel Decurcio");
   });
 
   it("preserva o treinamento oficial existente para os demais cursos", () => {
