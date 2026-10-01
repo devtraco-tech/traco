@@ -98,7 +98,7 @@ function prosthodonticsMotivationQuestion(language: SupportedLanguage): string {
   if (language === "es") {
     return "¡Entiendo! 😊 ¿Qué despertó tu interés en la Especialización en Prótesis Dental en este momento de tu carrera?";
   }
-  return "Entendi! 😊 E o que despertou seu interesse pela Especialização em Prótese Dentária neste momento?";
+  return "Perfeito! 😊 Mas deixa eu entender melhor: você está buscando a especialização para se aperfeiçoar ou buscando uma possibilidade de atuar na área?";
 }
 
 function prosthodonticsHandoffDecision(
@@ -138,7 +138,7 @@ function prosthodonticsStartDateResponse(
 function prosthodonticsAboQuestion(language: SupportedLanguage): string {
   if (language === "en") return "Before we continue, do you already know our program and ABO?";
   if (language === "es") return "Antes de continuar, ¿ya conoces nuestra formación y a ABO?";
-  return "Ótimo! Mas antes de seguirmos a nossa conversa, me conta: você já conhece a nossa formação e a ABO?";
+  return "Ótimo! Hoje você já conhece a ABO?";
 }
 
 function prosthodonticsInstitutionPresentation(
@@ -201,6 +201,39 @@ function prosthodonticsInvestmentPresentation(language: SupportedLanguage): stri
     return "Ahora compartiré contigo la inversión:\n\nPara asegurar tu plaza, la primera cuota es de R$ 2.500,00.\n💰 Inversión: 25 cuotas de R$ 2.500,00\n📅 Fecha de inicio: 03/03\n💳 Forma de pago: boleto bancario\n🔒 La plaza se confirma mediante el pago de la primera cuota al realizar la matrícula.\n\n¿Podemos asegurar tu plaza en el grupo?";
   }
   return "Agora vou compartilhar com você o investimento:\n*Para garantir a sua vaga na turma agora você fará o investimento de R$2.500 que\nserá a seu único investimento no momento*\n*💰 Investimento:* 25x R$2.500,00\n*📅 Data de início:* 03/03\n*💳 Forma de pagamento:* boleto.\n🔒 A vaga é confirmada mediante o pagamento da primeira parcela que precisa\nser feita no momento da matrícula\n*Podemos garantir a sua vaga na turma?*\nDiante de tudo o que conversamos, faz sentido para você aproveitarmos esta\noportunidade e garantirmos sua vaga na turma?";
+}
+
+function prosthodonticsFormat(language: SupportedLanguage): string {
+  if (language === "en") return "The program has 856 hours across 25 modules. Wednesday, Thursday and Friday: 08:00–12:00 and 14:00–20:00. Saturday: 08:00–12:00. Does this schedule work for you?";
+  if (language === "es") return "La formación tiene 856 horas en 25 módulos. Miércoles, jueves y viernes: 08:00–12:00 y 14:00–20:00. Sábado: 08:00–12:00. ¿Este formato te sirve?";
+  return "A nossa formação tem a carga horária total de 856h dividida em 25 módulos e os nossos encontros acontecem nos dias e horários abaixo:\n\n4ª feira: 08:00 às 12:00 | 14:00 às 20:00\n5ª feira: 08:00 às 12:00 | 14:00 às 20:00\n6ª feira: 08:00 às 12:00 | 14:00 às 20:00\nSábado: 08:00 às 12:00h\n\nNesse formato hoje te atende?";
+}
+
+function prosthodonticsObjection(text: string): string | null {
+  const value = normalize(text);
+  if (/\b(esta caro|muito caro|investimento (e |esta )?(alto|muito alto)|valor alto|sem dinheiro)\b/u.test(value)) return "Entendo. É um investimento que realmente precisa ser planejado. Vale olhar também para o que a formação entrega: prática clínica e laboratorial supervisionada, equipe multidisciplinar, pacientes e forte enfoque em reabilitações implantossuportadas. O que mais pesa para você hoje: o valor ou entender melhor a contribuição da especialização para sua atuação?";
+  if (/\b(carga horaria|856 horas)\b.*\b(extensa|longa|muito|demais)\b/u.test(value)) return "Entendo. A formação exige esse compromisso pela proposta prática e pela carga horária de 856 horas, para desenvolver domínio técnico e visão clínica ao longo da formação. O que mais preocupa você hoje é conciliar os horários com sua rotina?";
+  if (/\b(vou pensar|preciso falar com|conjuge|meu marido|minha esposa|meus pais)\b/u.test(value)) return "Claro. É importante analisar com calma. As vagas são limitadas pela estrutura presencial. Posso combinar de falar com você amanhã e verificar se ainda conseguimos garantir sua vaga?";
+  if (/\b(sem tempo|rotina (esta )?corrida|agenda cheia)\b/u.test(value)) return "Imagino. A rotina clínica realmente pode ser corrida. A especialização tem uma proposta prática para aplicar o conhecimento na sua rotina profissional, com acompanhamento de professores. Hoje o principal desafio seria conciliar os encontros com sua agenda?";
+  if (/\b(nao (sei|tenho certeza) se (e|este e) o momento|preciso pensar)\b/u.test(value)) return "Claro. Antes de decidir, posso entender o que está fazendo você ter essa dúvida? Assim consigo explicar se a proposta faz sentido para o seu momento profissional.";
+  return null;
+}
+
+function resumeProsthodontics(context: ConversationContext, course: CatalogItemSnapshot, language: SupportedLanguage): CommercialFlowDecision {
+  if (context.leadQualification !== "graduated") return {
+    handled: true, messages: [prosthodonticsOpening(context.displayName, language)],
+    patch: { flowStage: "qualification" },
+  };
+  if (context.audienceProfile === "unknown") return {
+    handled: true, messages: [prosthodonticsProfileQuestion(context.displayName, language)],
+    patch: { flowStage: "profile" },
+  };
+  return {
+    handled: true, messages: coursePresentation(course, language).slice(0, 2),
+    sendCoursePdf: true,
+    messagesAfterCoursePdf: [language === "pt" ? "Diante de tudo o que compartilhei com você, faz sentido seguirmos com a nossa conversa?" : language === "es" ? "¿Tiene sentido seguir conversando?" : "Does it make sense to continue our conversation?"],
+    patch: { flowStage: "match" },
+  };
 }
 
 const PROSTHODONTICS_ENROLLMENT_FIELDS = [
@@ -372,7 +405,7 @@ function formatCurrency(
   }
 }
 
-function isProsthodonticsCourse(course: CatalogItemSnapshot | undefined): boolean {
+export function isProsthodonticsCourse(course: CatalogItemSnapshot | undefined): boolean {
   if (!course) return false;
   return normalize(`${course.slug ?? ""} ${course.title} ${course.area ?? ""}`)
     .includes("protese dentaria");
@@ -940,7 +973,28 @@ export function decideCommercialFlow(
   const legacyAlternativeStage = context.flowStage === "alternative_offer"
     || context.flowStage === "alternative_details";
 
-  if (prosthodontics && requestsCoursePrice(currentText)) {
+  if (prosthodontics && language === "pt" && !["presentation", "qualification", "enrollment", "completed", "disqualified", "alternative_offer", "alternative_details", "price_permission", "price_match"].includes(context.flowStage)) {
+    const objection = prosthodonticsObjection(currentText);
+    if (objection) return { handled: true, messages: [objection] };
+  }
+
+  if (prosthodontics && course && (context.flowStage === "price_permission" || context.flowStage === "price_match")) {
+    const interest = confirmsInterest(currentText);
+    if (context.flowStage === "price_permission" && (interest === false || requestsCoursePrice(currentText))) return {
+      handled: true,
+      messages: [prosthodonticsInvestmentResponse(language), language === "pt" ? "Diante do valor da nossa especialização, faz sentido para você conhecer a nossa proposta e como ela pode contribuir para o seu desenvolvimento profissional?" : language === "es" ? "¿Te gustaría conocer la propuesta para tu desarrollo profesional?" : "Would you like to learn about the program and how it can support your professional development?"],
+      patch: { flowStage: "price_match" },
+    };
+    if (interest === true) return resumeProsthodontics(context, course, language);
+    if (interest === false) return { handled: true, messages: [COPY[language].noInterest], patch: { interestConfirmed: false } };
+  }
+
+  if (prosthodontics && requestsCoursePrice(currentText) && !legacyAlternativeStage) {
+    if (["presentation", "qualification", "profile"].includes(context.flowStage)) return {
+      handled: true,
+      messages: [language === "pt" ? "Sei que o investimento é muito importante para você, mas antes posso te apresentar a proposta da nossa Especialização para que você possa analisar com calma se está dentro do que está buscando para o seu momento atual de carreira?" : language === "es" ? "Sé que la inversión es importante. ¿Puedo presentarte primero la propuesta de la especialización?" : "I understand the investment is important. May I first introduce the specialization proposal?"],
+      patch: { flowStage: "price_permission" },
+    };
     return {
       handled: true,
       messages: [prosthodonticsInvestmentResponse(language)],
@@ -956,6 +1010,21 @@ export function decideCommercialFlow(
         ? { patch: { flowStage: "qualification" as const, leadQualification: "unknown" as const } }
         : {}),
     };
+  }
+
+  if (prosthodontics && legacyAlternativeStage && language === "pt") {
+    const interest = confirmsInterest(currentText);
+    if (context.flowStage === "alternative_offer" && interest === true) return {
+      handled: true,
+      messages: ["A imersão em Endodontia — Protocolo simplificado do acesso à restauração acontecerá de 1º a 3 de outubro. Serão 3 dias intensivos de conteúdo e prática, com acompanhamento direto dos professores, trabalhando casos convencionais e complexos: acesso, preparo, limpeza, obturação e restauração final.\n\nA coordenação será do Dr. Daniel Decurcio, junto ao corpo docente da Endoscience. Todos os materiais necessários para a imersão serão fornecidos por nós. Pelo que conversamos e considerando o que você busca para o seu momento profissional, essa imersão faz sentido para você?"],
+      patch: { flowStage: "alternative_details" },
+    };
+    if (interest === false) return { handled: true, messages: [COPY.pt.noInterest], patch: { flowStage: "disqualified" } };
+    if (context.flowStage === "alternative_details" && interest === true) return {
+      handled: true, messages: ["Perfeito! Nossa equipe vai confirmar a turma e orientar você sobre os próximos passos da imersão."],
+      handoffAfterFlow: { reason: "commercial_high_intent", details: "Lead não graduado interessado na imersão em Endodontia. Confirmar ano, disponibilidade e matrícula da imersão; não matricular na especialização em Prótese." },
+    };
+    return { handled: false, messages: [] };
   }
 
   if (prosthodontics && legacyAlternativeStage) {
@@ -1012,6 +1081,16 @@ export function decideCommercialFlow(
   }
 
   if (context.flowStage === "qualification") {
+    if (prosthodontics && language === "pt" && /\b(me formando|vou me formar|me formo|me formarei|ultimo semestre|aguardando (a )?colacao|colacao (de grau )?(prevista|marcada))\b/u.test(normalize(currentText))) {
+      return {
+        handled: true,
+        messages: ["Para garantir a sua vaga, depende um pouco da sua colação de grau. Já tem uma data prevista?"],
+      };
+    }
+    const lastAssistant = context.messages.filter((message) => message.role === "assistant").at(-1);
+    if (prosthodontics && lastAssistant?.content.includes("Agora está mais tranquilo para conversarmos?") && confirmsInterest(currentText) === true) {
+      return { handled: true, messages: ["Perfeito! Você já é formado(a) em Odontologia?"] };
+    }
     const qualification = qualificationFrom(
       currentText,
       followsQualificationQuestion(context),
@@ -1021,8 +1100,8 @@ export function decideCommercialFlow(
       if (prosthodontics) {
         return {
           handled: true,
-          messages: [prosthodonticsNotGraduated(language)],
-          patch: { flowStage: "disqualified", leadQualification: qualification },
+          messages: [language === "pt" ? "Entendo! Para iniciar a nossa especialização você precisa ter concluído a graduação em Odontologia, mas temos o curso de imersão em Endodontia — Protocolo simplificado do acesso à restauração que você pode iniciar. Você tem interesse em conhecer a nossa imersão?" : prosthodonticsNotGraduated(language)],
+          patch: { flowStage: language === "pt" ? "alternative_offer" : "disqualified", leadQualification: qualification },
         };
       }
       return {
@@ -1084,8 +1163,13 @@ export function decideCommercialFlow(
   if (context.flowStage === "profile") {
     if (isProsthodonticsCourse(course)) {
       if (context.audienceProfile === "unknown") {
-        const profile = profileFrom(currentText);
+        const profile = /^(sim|yes|si)[.!]*$/u.test(normalize(currentText)) ? "experienced" : profileFrom(currentText);
         if (profile === "unknown") return { handled: false, messages: [] };
+        if (!/^(sim|yes|si)[.!]*$/u.test(normalize(currentText))) {
+          const decision = resumeProsthodontics({ ...context, audienceProfile: profile }, course!, language);
+          decision.patch = { ...decision.patch, audienceProfile: profile };
+          return decision;
+        }
         return {
           handled: true,
           messages: [prosthodonticsMotivationQuestion(language)],
@@ -1105,7 +1189,7 @@ export function decideCommercialFlow(
               ? "Frente a todo lo que compartí, ¿tiene sentido que sigamos conversando?"
               : "Based on everything I shared, does it make sense to continue our conversation?",
         ],
-        patch: { flowStage: "match" },
+        patch: { flowStage: "match", ...(profileFrom(currentText) !== "unknown" ? { audienceProfile: profileFrom(currentText) } : {}) },
       };
     }
     if (
@@ -1181,11 +1265,20 @@ export function decideCommercialFlow(
     if (saysNoSpecificQuestions(currentText)) {
       return {
         handled: true,
-        messages: [prosthodonticsInvestmentPresentation(language)],
-        patch: { flowStage: "closing", interestConfirmed: true },
+        messages: [prosthodonticsFormat(language)],
+        patch: { flowStage: "format_confirmation", interestConfirmed: true },
       };
     }
     return { handled: false, messages: [] };
+  }
+
+  if (context.flowStage === "format_confirmation" && prosthodontics) {
+    const interest = confirmsInterest(currentText);
+    if (interest === null) return { handled: false, messages: [] };
+    return interest ? {
+      handled: true, messages: [prosthodonticsInvestmentPresentation(language)],
+      patch: { flowStage: "closing" },
+    } : { handled: true, messages: ["Entendo. O que mais preocupa você ao conciliar esses encontros com sua rotina?"], patch: { interestConfirmed: false } };
   }
 
   if (context.flowStage === "closing" && isProsthodonticsCourse(course)) {
@@ -1213,7 +1306,7 @@ export function decideCommercialFlow(
       : "Dados de matrícula concluídos; contrato e pagamento exigem atendimento humano.";
     return {
       handled: true,
-      messages: [COPY[language].finalMessage],
+      messages: [prosthodontics && language === "pt" ? "Muito obrigada pelos dados, Dr.! Vou dar andamento à sua matrícula. Assim que finalizar o pagamento da primeira parcela, envie o comprovante, por gentileza, para conferência e baixa pela nossa equipe.\n\nAlém disso, precisamos dos documentos para efetivar sua matrícula:\nIdentidade\nCópia do Diploma de Graduação\nComprovante de Endereço\nComprovante de CPF\nCarteira de Registro Profissional – CRO\nCartão de Vacina Atualizado" : COPY[language].finalMessage],
       patch: {
         flowStage: "completed",
         enrollmentStep: prosthodontics

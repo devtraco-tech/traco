@@ -1,6 +1,7 @@
 import { evaluateHandoff, shouldInterruptCurrentFlow } from "../domain/handoff.js";
 import {
   decideCommercialFlow,
+  isProsthodonticsCourse,
   type CommercialFlowDecision,
 } from "../domain/commercial-flow.js";
 import type { HandoffReason } from "../domain/types.js";
@@ -12,6 +13,7 @@ import type { CrmRetryQueue } from "../infra/queue.js";
 import type { ConversationQueue } from "../infra/queue.js";
 import { isPhoneAllowed } from "../domain/phone-allowlist.js";
 import type { CatalogItemSnapshot } from "../domain/catalog.js";
+import { preAttendanceReminder, type PreAttendanceFollowUpKind } from "../domain/pre-attendance-follow-up.js";
 import type { CrmSyncService } from "./crm-sync.js";
 import {
   resolveConversationLanguage,
@@ -237,6 +239,20 @@ export class ConversationProcessor {
           await repository.updateFlowState(conversationId, flowDecision.patch);
         }
 
+        if (isProsthodonticsCourse(courseBinding.snapshot) && language === "pt") {
+          const reminder = context.flowStage === "presentation" && flowDecision.patch?.flowStage === "qualification"
+            ? "first_contact"
+            : flowDecision.patch?.flowStage === "price_match" ? "after_price" : null;
+          const baseline = context.messages.filter((message) => message.direction === "inbound").at(-1)?.createdAt;
+          if (reminder && baseline) {
+            try {
+              await this.dependencies.conversationQueue.schedulePreAttendanceFollowUp(conversationId, (reminder === "first_contact" ? 40 : 60) * 60_000, reminder, baseline);
+            } catch (error) {
+              console.error(JSON.stringify({ event: "pre_attendance_follow_up_schedule_failed", conversationId, error: String(error) }));
+            }
+          }
+        }
+
         if (!notifyCrmBeforeEnrollment) {
           await this.syncCrmFlowSafely(
             context,
@@ -333,6 +349,22 @@ export class ConversationProcessor {
       await repository.markMessages(claimedIds, "failed", message);
       await this.handoff(context, "ai_unavailable", message, false, courseBinding.snapshot, language);
     }
+  }
+
+  async sendPreAttendanceFollowUp(conversationId: string, reminder: PreAttendanceFollowUpKind, baselineInboundAt: string): Promise<void> {
+    const context = await this.dependencies.repository.loadConversation(conversationId, this.dependencies.contextMessageLimit);
+    if (!context.botEnabled || context.status !== "bot_active") return;
+    if (this.dependencies.developmentAllowedPhoneNumbers && !isPhoneAllowed(context.phoneE164, this.dependencies.developmentAllowedPhoneNumbers)) return;
+    if (context.flowStage !== (reminder === "first_contact" ? "qualification" : "price_match")) return;
+    const inbound = context.messages.filter((message) => message.direction === "inbound").at(-1);
+    if (!inbound || inbound.createdAt !== baselineInboundAt || hasInboundAfterLastOutbound(context.messages)) return;
+    const binding = await this.dependencies.repository.getCatalogBinding(context.wahaSession);
+    if (!isProsthodonticsCourse(binding?.snapshot)) return;
+    if (reminder === "first_contact") {
+      const localDate = (date: Date) => date.toLocaleDateString("en-CA", { timeZone: this.dependencies.timeZone });
+      if (localDate(new Date()) !== localDate(new Date(baselineInboundAt))) return;
+    }
+    await this.sendMessages(context, [preAttendanceReminder(context, reminder)], "pre-attendance-follow-up");
   }
 
   async sendEnrollmentFollowUp(

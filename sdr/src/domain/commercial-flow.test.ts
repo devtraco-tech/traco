@@ -84,7 +84,7 @@ function context(
 }
 
 describe("decideCommercialFlow", () => {
-  it("segue qualificação, perfil e motivação antes de apresentar Prótese", () => {
+  it("esclarece um sim no perfil e apresenta Prótese após entender o objetivo", () => {
     const qualification = decideCommercialFlow(
       context("qualification"),
       "Sim, sou dentista formado",
@@ -95,12 +95,12 @@ describe("decideCommercialFlow", () => {
 
     const profile = decideCommercialFlow(
       context("profile", { leadQualification: "graduated" }),
-      "Ainda não atuo com prótese",
+      "Sim",
       prosthodonticsCourse,
     );
-    expect(profile.patch?.audienceProfile).toBe("beginner");
+    expect(profile.patch?.audienceProfile).toBe("experienced");
     expect(profile.patch?.flowStage).toBeUndefined();
-    expect(profile.messages[0]).toContain("o que despertou seu interesse");
+    expect(profile.messages[0]).toContain("para se aperfeiçoar");
 
     const decision = decideCommercialFlow(
       context("profile", {
@@ -129,7 +129,8 @@ describe("decideCommercialFlow", () => {
       prosthodonticsCourse,
     );
     expect(beginner.patch?.audienceProfile).toBe("beginner");
-    expect(beginner.messages.join(" ")).toContain("o que despertou seu interesse");
+    expect(beginner.patch?.flowStage).toBe("match");
+    expect(beginner.sendCoursePdf).toBe(true);
     expect(beginner.messages.join(" ")).not.toContain("guia cirúrgica");
 
     const objection = decideCommercialFlow(
@@ -159,7 +160,7 @@ describe("decideCommercialFlow", () => {
       "Sim, faz sentido para mim",
       prosthodonticsCourse,
     );
-    expect(connection.messages[0]).toContain("já conhece a nossa formação e a ABO");
+    expect(connection.messages[0]).toContain("já conhece a ABO");
     expect(connection.patch).toMatchObject({
       flowStage: "abo_connection",
       interestConfirmed: true,
@@ -190,9 +191,17 @@ describe("decideCommercialFlow", () => {
     expect(questions.messages[0]).toContain("dúvida pontual");
     expect(questions.patch?.flowStage).toBe("questions");
 
-    const closing = decideCommercialFlow(
+    const format = decideCommercialFlow(
       context("questions", { leadQualification: "graduated", interestConfirmed: true }),
       "Não tenho dúvidas",
+      prosthodonticsCourse,
+    );
+    expect(format.patch?.flowStage).toBe("format_confirmation");
+    expect(format.messages[0]).toContain("856h");
+    expect(format.messages[0]).toContain("Nesse formato hoje te atende?");
+    const closing = decideCommercialFlow(
+      context("format_confirmation", { leadQualification: "graduated", interestConfirmed: true }),
+      "Sim",
       prosthodonticsCourse,
     );
     expect(closing.messages).toEqual([
@@ -255,7 +264,8 @@ describe("decideCommercialFlow", () => {
       "Qual o valor do curso?",
       prosthodonticsCourse,
     );
-    expect(earlyInvestmentQuestion.messages[0]).toContain("25 parcelas de R$ 2.500,00");
+    expect(earlyInvestmentQuestion.messages[0]).toContain("antes posso te apresentar");
+    expect(earlyInvestmentQuestion.patch?.flowStage).toBe("price_permission");
     expect(earlyInvestmentQuestion.handoffAfterFlow).toBeUndefined();
 
     const paymentQuestion = decideCommercialFlow(
@@ -304,7 +314,51 @@ describe("decideCommercialFlow", () => {
     );
   });
 
-  it("informa somente o requisito de Prótese quando o lead não é formado", () => {
+  it("informa o preço após recusa e retoma a proposta com PDF", () => {
+    const refusal = decideCommercialFlow(context("price_permission"), "Não, quero apenas saber o valor", prosthodonticsCourse);
+    expect(refusal.messages[0]).toContain("25 parcelas de R$ 2.500,00");
+    expect(refusal.patch?.flowStage).toBe("price_match");
+    const acceptance = decideCommercialFlow(context("price_match", { leadQualification: "graduated", audienceProfile: "experienced" }), "Sim", prosthodonticsCourse);
+    expect(acceptance.sendCoursePdf).toBe(true);
+    expect(acceptance.patch?.flowStage).toBe("match");
+    const qualification = decideCommercialFlow(context("price_permission"), "Sim", prosthodonticsCourse);
+    expect(qualification.patch?.flowStage).toBe("qualification");
+    expect(qualification.patch?.leadQualification).toBeUndefined();
+  });
+
+  it("apresenta imersão somente após aceite e encaminha sem ficha de Prótese", () => {
+    const details = decideCommercialFlow(context("alternative_offer", { leadQualification: "not_graduated" }), "Sim", prosthodonticsCourse);
+    expect(details.messages[0]).toContain("Daniel Decurcio");
+    expect(details.messages[0]).toContain("1º a 3 de outubro");
+    expect(details.patch?.flowStage).toBe("alternative_details");
+    const accepted = decideCommercialFlow(context("alternative_details", { leadQualification: "not_graduated" }), "Sim", prosthodonticsCourse);
+    expect(accepted.handoffAfterFlow?.details).toContain("não matricular na especialização");
+    expect(accepted.messages.join(" ")).not.toContain("Nome completo");
+    const refused = decideCommercialFlow(context("alternative_offer"), "Não", prosthodonticsCourse);
+    expect(refused.patch?.flowStage).toBe("disqualified");
+  });
+
+  it("mantém a etapa quando os horários não atendem e trata objeção antes do fechamento", () => {
+    const format = decideCommercialFlow(context("format_confirmation"), "Não", prosthodonticsCourse);
+    expect(format.patch?.flowStage).toBeUndefined();
+    expect(format.messages[0]).toContain("conciliar");
+    const objection = decideCommercialFlow(context("closing"), "Está caro", prosthodonticsCourse);
+    expect(objection.patch).toBeUndefined();
+    expect(objection.messages[0]).toContain("prática clínica");
+  });
+
+  it("consulta a colação prevista antes de oferecer alternativa a quem está se formando", () => {
+    const decision = decideCommercialFlow(
+      context("qualification"),
+      "Ainda não sou formado, estou me formando no final do semestre. Já posso iniciar?",
+      prosthodonticsCourse,
+    );
+    expect(decision.messages).toEqual(["Para garantir a sua vaga, depende um pouco da sua colação de grau. Já tem uma data prevista?"]);
+    expect(decision.patch).toBeUndefined();
+    expect(decision.notifyEnrollment).toBeUndefined();
+  });
+
+  it("oferece a imersão quando o lead não é formado", () => {
     const decision = decideCommercialFlow(
       context("qualification"),
       "Ainda não sou formado",
@@ -312,10 +366,11 @@ describe("decideCommercialFlow", () => {
     );
     const content = decision.messages.join(" ");
 
-    expect(content).toContain("Especialização em Prótese Dentária");
-    expect(content).not.toMatch(/imersão|endodontia|Daniel Decurcio/iu);
+    expect(content).toContain("graduação em Odontologia");
+    expect(content).toContain("imersão em Endodontia");
+    expect(content).not.toContain("Daniel Decurcio");
     expect(decision.patch).toMatchObject({
-      flowStage: "disqualified",
+      flowStage: "alternative_offer",
       leadQualification: "not_graduated",
     });
   });
@@ -337,10 +392,10 @@ describe("decideCommercialFlow", () => {
     );
 
     expect(decision.patch).toMatchObject({
-      flowStage: "disqualified",
+      flowStage: "alternative_offer",
       leadQualification: "not_graduated",
     });
-    expect(decision.messages.join(" ")).not.toMatch(/imersão|endodontia/iu);
+    expect(decision.messages.join(" ")).toContain("imersão em Endodontia");
   });
 
   it("não confunde aceitação do preço com resposta negativa à graduação", () => {

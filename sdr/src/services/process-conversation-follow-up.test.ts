@@ -42,6 +42,7 @@ function processorWith(conversation: ConversationContext) {
     createOutboundMessage: vi.fn().mockResolvedValue("outbound-1"),
     markOutboundSent: vi.fn().mockResolvedValue(undefined),
     recordEvent: vi.fn().mockResolvedValue(undefined),
+    getCatalogBinding: vi.fn().mockResolvedValue({ snapshot: { title: "Especialização em Prótese Dentária", area: "Prótese Dentária" } }),
   };
   const queue = {
     cancelEnrollmentFollowUps: vi.fn().mockResolvedValue(0),
@@ -69,6 +70,51 @@ function processorWith(conversation: ConversationContext) {
 }
 
 describe("ConversationProcessor enrollment follow-up", () => {
+  it("envia o lembrete de uma hora após o preço sem nova resposta", async () => {
+    const conversation = context([
+      { id: "in-1", direction: "inbound", role: "user", content: "Quero só o valor", status: "sent", createdAt: baseline },
+      { id: "out-1", direction: "outbound", role: "assistant", content: "25 parcelas. Faz sentido conhecer a proposta?", status: "sent", createdAt: "2026-08-18T12:01:00.000Z" },
+    ]);
+    conversation.flowStage = "price_match";
+    const setup = processorWith(conversation);
+    await setup.processor.sendPreAttendanceFollowUp("conversation-1", "after_price", baseline);
+    expect(setup.waha.sendText).toHaveBeenCalledWith(conversation.whatsappId, expect.stringContaining("Ainda é uma prioridade"));
+  });
+
+  it("cancela o envio comercial se o lead respondeu ou o bot foi interrompido", async () => {
+    const conversation = context([
+      { id: "out-1", direction: "outbound", role: "assistant", content: "Proposta", status: "sent", createdAt: baseline },
+      { id: "in-2", direction: "inbound", role: "user", content: "Sim", status: "sent", createdAt: "2026-08-18T12:02:00.000Z" },
+    ]);
+    conversation.flowStage = "price_match";
+    const setup = processorWith(conversation);
+    await setup.processor.sendPreAttendanceFollowUp("conversation-1", "after_price", baseline);
+    expect(setup.waha.sendText).not.toHaveBeenCalled();
+    conversation.botEnabled = false;
+    await setup.processor.sendPreAttendanceFollowUp("conversation-1", "after_price", "2026-08-18T12:02:00.000Z");
+    expect(setup.waha.sendText).not.toHaveBeenCalled();
+  });
+
+  it("envia a tentativa inicial somente no mesmo dia", async () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2026-08-18T12:40:00.000Z"));
+      const conversation = context([
+        { id: "in-1", direction: "inbound", role: "user", content: "Olá", status: "sent", createdAt: baseline },
+        { id: "out-1", direction: "outbound", role: "assistant", content: "Você já é formado?", status: "sent", createdAt: "2026-08-18T12:01:00.000Z" },
+      ]);
+      conversation.flowStage = "qualification";
+      const setup = processorWith(conversation);
+      await setup.processor.sendPreAttendanceFollowUp("conversation-1", "first_contact", baseline);
+      expect(setup.waha.sendText).toHaveBeenCalledOnce();
+      setup.waha.sendText.mockClear();
+      vi.setSystemTime(new Date("2026-08-19T12:40:00.000Z"));
+      await setup.processor.sendPreAttendanceFollowUp("conversation-1", "first_contact", baseline);
+      expect(setup.waha.sendText).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it("envia o lembrete e agenda a próxima tentativa", async () => {
     const setup = processorWith(context([
       { id: "in-1", direction: "inbound", role: "user", content: "Quero me matricular", status: "sent", createdAt: baseline },

@@ -3,12 +3,14 @@ import { Redis } from "ioredis";
 import type { FlowPatch } from "../domain/commercial-flow.js";
 import type { EnrollmentData, HandoffReason } from "../domain/types.js";
 import type { SupportedLanguage } from "../domain/language.js";
+import type { PreAttendanceFollowUpKind } from "../domain/pre-attendance-follow-up.js";
 
 export const SDR_QUEUE_NAME = "sdr-conversations";
 export const CRM_RETRY_QUEUE_NAME = "sdr-clint-retry";
 
 export type ConversationJob =
   | { kind?: "process"; conversationId: string }
+  | { kind: "pre_attendance_follow_up"; conversationId: string; reminder: PreAttendanceFollowUpKind; baselineInboundAt: string }
   | {
       kind: "enrollment_follow_up";
       conversationId: string;
@@ -107,6 +109,15 @@ export class ConversationQueue {
         backoff: { type: "exponential", delay: 2_000 },
       },
     );
+  }
+
+  async schedulePreAttendanceFollowUp(conversationId: string, delay: number, reminder: PreAttendanceFollowUpKind, baselineInboundAt: string): Promise<void> {
+    await this.queue.add("pre-attendance-follow-up", {
+      kind: "pre_attendance_follow_up", conversationId, reminder, baselineInboundAt,
+    }, {
+      jobId: `pre-attendance-${conversationId}-${reminder}-${Date.now()}`,
+      delay, attempts: 3, backoff: { type: "exponential", delay: 2_000 },
+    });
   }
 
   async cancelEnrollmentFollowUps(conversationId: string): Promise<number> {

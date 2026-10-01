@@ -100,6 +100,10 @@ const processor = new ConversationProcessor({
 });
 
 const runner = createConversationWorker(config.REDIS_URL, async (job) => {
+  if (job.data.kind === "pre_attendance_follow_up") {
+    await processor.sendPreAttendanceFollowUp(job.data.conversationId, job.data.reminder, job.data.baselineInboundAt);
+    return;
+  }
   if (job.data.kind === "enrollment_follow_up") {
     await processor.sendEnrollmentFollowUp(
       job.data.conversationId,
