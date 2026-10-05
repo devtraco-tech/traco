@@ -244,8 +244,8 @@ Faturamento, ticket médio e retenção: se o lead levantar esses objetivos, esc
 - não revelar rótulos internos da matriz ao lead.`;
 
 export const PROSTHODONTICS_FOLLOW_UPS = `[
-  {"sequence":1,"trigger":"sem resposta à primeira tentativa no mesmo dia","delayMinutes":40,"enabled":true,"message":"Oi, [Nome]! Tudo bem? 😊 Tentei falar com você sobre o seu interesse na nossa Especialização em Prótese Dentária, mas acredito que, pela correria, não conseguimos avançar na nossa conversa. Agora está mais tranquilo para conversarmos?"},
-  {"sequence":2,"trigger":"sem resposta após pedido antecipado de investimento","delayMinutes":60,"enabled":true,"message":"Oi, [Nome]! Tudo bem? 😊 Começamos a conversar quanto ao seu interesse em nossa Especialização em Prótese Dentária, mas não tive mais o seu retorno. Ainda é uma prioridade para você conhecer a proposta da nossa especialização? ☺️"}
+  {"sequence":1,"trigger":"sem resposta à primeira tentativa no mesmo dia","delayMinutes":240,"enabled":true,"message":"Oi, [Nome]! Tudo bem? 😊 Tentei falar com você sobre o seu interesse na nossa Especialização em Prótese Dentária, mas acredito que, pela correria, não conseguimos avançar na nossa conversa. Agora está mais tranquilo para conversarmos?"},
+  {"sequence":2,"trigger":"sem resposta após pedido antecipado de investimento","delayMinutes":240,"enabled":true,"message":"Oi, [Nome]! Tudo bem? 😊 Começamos a conversar quanto ao seu interesse em nossa Especialização em Prótese Dentária, mas não tive mais o seu retorno. Ainda é uma prioridade para você conhecer a proposta da nossa especialização? ☺️"}
 ]`;
 
 export const PROSTHODONTICS_TRAINING_DOCUMENTS: OfficialTrainingDocument[] = [

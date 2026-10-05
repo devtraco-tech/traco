@@ -10,7 +10,7 @@ O fluxo segue: abertura com Julyane → graduação em Odontologia → perfil pr
 - Não graduados: oferecer a imersão em Endodontia; após aceite apresentar datas, conteúdo, coordenação e materiais. O interesse na imersão vai ao humano para confirmar a turma e as condições. A ficha e os valores de Prótese não se aplicam à imersão.
 - Formato: 856h em 25 módulos; quarta, quinta e sexta, 08h–12h e 14h–20h; sábado, 08h–12h. Aguardar confirmação antes do fechamento.
 - Matrícula: coletar os 11 campos do roteiro, com passaporte opcional; depois solicitar os documentos e o comprovante quando houver pagamento. A equipe humana confere documentos e faz a baixa do pagamento.
-- Lembretes: 40 minutos após a primeira abordagem, no mesmo dia; 60 minutos após informar o valor antecipadamente sem retorno. O worker verifica etapa, última resposta, curso vinculado e bot ativo antes do envio. Não são repetidos automaticamente.
+- Lembretes: 4 horas após a primeira abordagem, no mesmo dia; 4 horas após informar o valor antecipadamente sem retorno. O worker verifica etapa, última resposta, curso vinculado e bot ativo antes do envio. Não são repetidos automaticamente.
 
 ## Aplicação no ambiente
 

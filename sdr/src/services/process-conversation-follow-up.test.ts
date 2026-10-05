@@ -70,7 +70,7 @@ function processorWith(conversation: ConversationContext) {
 }
 
 describe("ConversationProcessor enrollment follow-up", () => {
-  it("envia o lembrete de uma hora após o preço sem nova resposta", async () => {
+  it("envia o lembrete após o preço sem nova resposta", async () => {
     const conversation = context([
       { id: "in-1", direction: "inbound", role: "user", content: "Quero só o valor", status: "sent", createdAt: baseline },
       { id: "out-1", direction: "outbound", role: "assistant", content: "25 parcelas. Faz sentido conhecer a proposta?", status: "sent", createdAt: "2026-08-18T12:01:00.000Z" },
@@ -98,7 +98,7 @@ describe("ConversationProcessor enrollment follow-up", () => {
   it("envia a tentativa inicial somente no mesmo dia", async () => {
     vi.useFakeTimers();
     try {
-      vi.setSystemTime(new Date("2026-08-18T12:40:00.000Z"));
+      vi.setSystemTime(new Date("2026-08-18T16:01:00.000Z"));
       const conversation = context([
         { id: "in-1", direction: "inbound", role: "user", content: "Olá", status: "sent", createdAt: baseline },
         { id: "out-1", direction: "outbound", role: "assistant", content: "Você já é formado?", status: "sent", createdAt: "2026-08-18T12:01:00.000Z" },
@@ -108,7 +108,7 @@ describe("ConversationProcessor enrollment follow-up", () => {
       await setup.processor.sendPreAttendanceFollowUp("conversation-1", "first_contact", baseline);
       expect(setup.waha.sendText).toHaveBeenCalledOnce();
       setup.waha.sendText.mockClear();
-      vi.setSystemTime(new Date("2026-08-19T12:40:00.000Z"));
+      vi.setSystemTime(new Date("2026-08-19T16:01:00.000Z"));
       await setup.processor.sendPreAttendanceFollowUp("conversation-1", "first_contact", baseline);
       expect(setup.waha.sendText).not.toHaveBeenCalled();
     } finally {

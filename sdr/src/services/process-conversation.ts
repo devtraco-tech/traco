@@ -246,7 +246,12 @@ export class ConversationProcessor {
           const baseline = context.messages.filter((message) => message.direction === "inbound").at(-1)?.createdAt;
           if (reminder && baseline) {
             try {
-              await this.dependencies.conversationQueue.schedulePreAttendanceFollowUp(conversationId, (reminder === "first_contact" ? 40 : 60) * 60_000, reminder, baseline);
+              await this.dependencies.conversationQueue.schedulePreAttendanceFollowUp(
+                conversationId,
+                4 * 3_600_000,
+                reminder,
+                baseline,
+              );
             } catch (error) {
               console.error(JSON.stringify({ event: "pre_attendance_follow_up_schedule_failed", conversationId, error: String(error) }));
             }
