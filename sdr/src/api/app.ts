@@ -7,6 +7,7 @@ import type { AppConfig } from "../config.js";
 import {
   getWahaInboundSenderId,
   parseWahaInboundMessage,
+  parseWahaManualMessage,
 } from "../domain/waha-event.js";
 import { conversationRestartReason } from "../domain/conversation-restart.js";
 import type { AdminAuthorizerLike } from "../infra/admin-authorizer.js";
@@ -295,6 +296,25 @@ export function buildApp(
       return reply.code(401).send({ error: "Assinatura inválida" });
     }
 
+    const eventSession = (body.parsed as { session?: string } | null)?.session;
+    if (eventSession && eventSession !== config.WAHA_SESSION) {
+      return reply.code(202).send({ accepted: true, ignored: true });
+    }
+    const manual = parseWahaManualMessage(body.parsed);
+    if (manual) {
+      const recipient = manual.recipientId.endsWith("@lid")
+        ? await dependencies.waha.resolveLid(manual.recipientId) : manual.recipientId;
+      if (!recipient) return reply.code(503).send({ error: "Não foi possível resolver o destinatário manual" });
+      if (config.NODE_ENV === "development" && !isPhoneAllowed(`+${recipient.replace(/\D/g, "")}`, config.SDR_TEST_ALLOWED_PHONE_NUMBERS)) {
+        return reply.code(202).send({ accepted: true, ignored: true });
+      }
+      const conversationId = await dependencies.repository.takeOverManually(recipient, config.WAHA_SESSION, manual);
+      if (conversationId) {
+        try { await dependencies.queue.cancelFollowUps(conversationId); }
+        catch (error) { request.log.error({ err: error, conversationId }, "Falha ao limpar lembretes do atendimento manual"); }
+      }
+      return reply.code(202).send({ accepted: true, humanActive: Boolean(conversationId) });
+    }
     const senderId = getWahaInboundSenderId(body.parsed);
     const resolvedWhatsappId = senderId?.endsWith("@lid")
       ? await dependencies.waha.resolveLid(senderId)

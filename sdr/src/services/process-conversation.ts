@@ -1,4 +1,5 @@
 import { evaluateHandoff, shouldInterruptCurrentFlow } from "../domain/handoff.js";
+import { endsConversation } from "../domain/conversation-ending.js";
 import {
   decideCommercialFlow,
   isProsthodonticsCourse,
@@ -46,6 +47,8 @@ const HANDOFF_ACK: Record<SupportedLanguage, string> = {
   en: "I understand. I’ll transfer your conversation to a member of our team, who will continue assisting you here.",
   es: "Entiendo. Derivaré tu conversación a una persona de nuestro equipo, que continuará atendiéndote por aquí.",
 };
+
+class ConversationPausedError extends Error {}
 
 const PDF_COPY: Record<SupportedLanguage, { caption: string; unavailable: string }> = {
   pt: {
@@ -113,6 +116,23 @@ export class ConversationProcessor {
       .join("\n");
     const language = resolveConversationLanguage(currentText, context.messages);
 
+    if (endsConversation(currentText, context.flowStage) && !evaluateHandoff(currentText).shouldHandoff) {
+      // Persist the stop before cleanup or acknowledgment so failures cannot resume reminders.
+      await repository.closeConversation(conversationId);
+      try {
+        await this.dependencies.conversationQueue.cancelFollowUps(conversationId);
+      } catch (error) {
+        console.error(JSON.stringify({ event: "follow_up_cancel_failed", conversationId, error: String(error) }));
+      }
+      try {
+        await this.sendMessages(context, ["Por nada! Fico à disposição se precisar retomar a conversa."], "conversation-ending");
+        await repository.markMessages(claimedIds, "sent");
+      } catch (error) {
+        await repository.markMessages(claimedIds, "failed", String(error));
+      }
+      return;
+    }
+
     const courseBinding = await repository.getCatalogBinding(context.wahaSession);
     if (!courseBinding) {
       await repository.markMessages(claimedIds, "failed", "Nenhum item de catálogo vinculado");
@@ -149,6 +169,10 @@ export class ConversationProcessor {
         await this.sendPdf(context, pdf.sourceUrl, pdf.title, language);
         await repository.markMessages(claimedIds, "sent");
       } catch (error) {
+        if (error instanceof ConversationPausedError) {
+          await repository.markMessages(claimedIds, "ignored");
+          return;
+        }
         const message = error instanceof Error ? error.message : String(error);
         await repository.markMessages(claimedIds, "failed", message);
         await this.handoff(context, "waha_unavailable", message, false, courseBinding.snapshot, language);
@@ -305,6 +329,10 @@ export class ConversationProcessor {
 
         await repository.markMessages(claimedIds, "sent");
       } catch (error) {
+        if (error instanceof ConversationPausedError) {
+          await repository.markMessages(claimedIds, "ignored");
+          return;
+        }
         const message = error instanceof Error ? error.message : String(error);
         await repository.markMessages(claimedIds, "failed", message);
         await this.handoff(context, "waha_unavailable", message, false, courseBinding.snapshot, language);
@@ -345,6 +373,10 @@ export class ConversationProcessor {
         await this.sendMessages(context, [answer.text]);
         await repository.markMessages(claimedIds, "sent");
       } catch (error) {
+        if (error instanceof ConversationPausedError) {
+          await repository.markMessages(claimedIds, "ignored");
+          return;
+        }
         const message = error instanceof Error ? error.message : String(error);
         await repository.markMessages(claimedIds, "failed", message);
         await this.handoff(context, "waha_unavailable", message, false, courseBinding.snapshot, language);
@@ -369,7 +401,11 @@ export class ConversationProcessor {
       const localDate = (date: Date) => date.toLocaleDateString("en-CA", { timeZone: this.dependencies.timeZone });
       if (localDate(new Date()) !== localDate(new Date(baselineInboundAt))) return;
     }
-    await this.sendMessages(context, [preAttendanceReminder(context, reminder)], "pre-attendance-follow-up");
+    try {
+      await this.sendMessages(context, [preAttendanceReminder(context, reminder)], "pre-attendance-follow-up");
+    } catch (error) {
+      if (!(error instanceof ConversationPausedError)) throw error;
+    }
   }
 
   async sendEnrollmentFollowUp(
@@ -401,11 +437,12 @@ export class ConversationProcessor {
       return;
     }
 
-    await this.sendMessages(
-      context,
-      [ENROLLMENT_FOLLOW_UP_MESSAGE[language]],
-      "enrollment-follow-up",
-    );
+    try {
+      await this.sendMessages(context, [ENROLLMENT_FOLLOW_UP_MESSAGE[language]], "enrollment-follow-up");
+    } catch (error) {
+      if (error instanceof ConversationPausedError) return;
+      throw error;
+    }
     try {
       await this.dependencies.repository.recordEvent(
         "enrollment_follow_up_sent",
@@ -486,6 +523,11 @@ export class ConversationProcessor {
         responseSource,
       );
       try {
+        const mode = responseSource === "conversation-ending" ? "ending" : responseSource === "handoff-ack" ? "handoff" : "bot";
+        if (!await repository.canSendAutomatedMessage(context.conversationId, mode)) {
+          await repository.markOutboundIgnored(outboundId);
+          throw new ConversationPausedError("Atendimento automático pausado");
+        }
         const result = await waha.sendText(context.whatsappId, text);
         await repository.markOutboundSent(outboundId, result.providerMessageId);
         await repository.recordEvent(
@@ -495,6 +537,7 @@ export class ConversationProcessor {
           { message_id: outboundId, model: responseSource },
         );
       } catch (error) {
+        if (error instanceof ConversationPausedError) throw error;
         const message = error instanceof Error ? error.message : String(error);
         await repository.markOutboundFailed(outboundId, message);
         throw error;
@@ -511,14 +554,15 @@ export class ConversationProcessor {
     language: SupportedLanguage = "pt",
   ): Promise<void> {
     const { repository, notifier, waha } = this.dependencies;
-    await repository.requestHandoff(context.conversationId, reason, details);
+    const handoffId = await repository.requestHandoff(context.conversationId, reason, details);
+    if (!handoffId) return;
     if (course) {
       await this.syncCrmHandoffSafely(context, course, reason, details);
     }
 
     if (acknowledgeLead) {
       try {
-        await waha.sendText(context.whatsappId, HANDOFF_ACK[language]);
+        await this.sendMessages(context, [HANDOFF_ACK[language]], "handoff-ack");
       } catch {
         // O handoff e a notificação continuam válidos mesmo se o WAHA estiver
         // temporariamente indisponível para enviar a confirmação ao lead.
@@ -641,6 +685,10 @@ export class ConversationProcessor {
       "pdf:course-material",
     );
     try {
+      if (!await repository.canSendAutomatedMessage(context.conversationId)) {
+        await repository.markOutboundIgnored(outboundId);
+        throw new ConversationPausedError("Atendimento automático pausado");
+      }
       const result = await waha.sendFile(
         context.whatsappId,
         {
@@ -658,6 +706,7 @@ export class ConversationProcessor {
         { message_id: outboundId, model: "pdf:course-material", media_type: "application/pdf" },
       );
     } catch (error) {
+      if (error instanceof ConversationPausedError) throw error;
       const message = error instanceof Error ? error.message : String(error);
       await repository.markOutboundFailed(outboundId, message);
       throw error;

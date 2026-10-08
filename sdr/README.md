@@ -6,7 +6,7 @@ segredos de servidor nunca sejam enviados ao navegador.
 ## O que já está implementado
 
 - webhook `POST /webhooks/waha` com validação HMAC SHA-512;
-- filtro de mensagens próprias, grupos, status e conteúdo vazio;
+- filtro de grupos, status e conteúdo vazio, com identificação de mensagens manuais;
 - persistência idempotente por ID da mensagem do WAHA;
 - contexto isolado por lead e histórico permanente no Supabase;
 - fila BullMQ com delay configurável;
@@ -134,7 +134,7 @@ O arquivo `docker-compose.local.yml` já configura:
 - `WAHA_API_KEY` para proteger todos os endpoints do WAHA;
 - `WHATSAPP_HOOK_HMAC_KEY` = `WAHA_WEBHOOK_HMAC_KEY`;
 - webhook local: `http://host.docker.internal:10000/webhooks/waha`;
-- eventos: `message`.
+- eventos: `message.any` (inclui recebimentos e mensagens enviadas).
 
 O backend espera o cabeçalho `X-Webhook-Hmac` gerado pelo WAHA e envia mensagens
 com `X-Api-Key`.
@@ -225,6 +225,21 @@ Nesta primeira versão:
 
 Ao ocorrer handoff, a conversa muda para `waiting_human` e `bot_enabled=false`.
 Isso evita que o robô continue respondendo junto com o atendente.
+
+Mensagens enviadas manualmente pelo aplicativo do WhatsApp pausam o SDR:
+o webhook autenticado registra a saída e muda a conversa para `human_active`
+com `bot_enabled=false`, cancelando os lembretes pendentes. Envios com
+`source=api` e IDs já registrados pelo SDR não acionam essa pausa. Textos,
+PDFs e lembretes conferem o estado novamente imediatamente antes do envio.
+Saudações e pedidos de reinício do lead preservam a posse humana da conversa.
+Uma mensagem cujo envio ao WAHA já começou não pode ser recolhida por essa checagem.
+
+Para ativar essa proteção, aplique a migration
+`20261008160000_add_sdr_manual_takeover.sql`, publique API e worker e configure
+o webhook da sessão WAHA existente com `message.any`. O Render e o Compose já
+declaram esse evento; sessões com configuração própria de webhook também
+precisam recebê-lo. Valide com uma mensagem manual, uma resposta da cliente
+e um envio automático: somente a mensagem manual deve pausar a conversa.
 
 ## Integração Clint
 

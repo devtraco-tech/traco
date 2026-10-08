@@ -57,6 +57,34 @@ afterEach(async () => {
 });
 
 describe("POST /webhooks/waha", () => {
+  it.each(["app", "api"])("distingue mensagem manual de eco do bot: %s", async (source) => {
+    const takeOverManually = vi.fn().mockResolvedValue("conversation-1");
+    const cancelFollowUps = vi.fn().mockResolvedValue(2);
+    const ingestInbound = vi.fn();
+    const app = buildApp(config, {
+      repository: { takeOverManually, ingestInbound } as unknown as SdrRepository,
+      queue: { cancelFollowUps } as unknown as ConversationQueue,
+      notifier: new EmailNotifier(), adminAuthorizer: authorizedAdmin, waha: wahaStub, catalog: catalogStub,
+    });
+    apps.push(app);
+    const manualBody = JSON.stringify({ event: "message.any", payload: {
+      id: "manual-1", from: "5511888888888@c.us", to: "5511999990000@c.us",
+      fromMe: true, source, body: "Hoje às 15h podemos conversar?", timestamp: 1791284640,
+    } });
+    const response = await app.inject({ method: "POST", url: "/webhooks/waha", payload: manualBody,
+      headers: { "content-type": "application/json", "x-webhook-hmac": createHmac("sha512", "hmac-test").update(manualBody).digest("hex") },
+    });
+    expect(response.statusCode).toBe(202);
+    expect(ingestInbound).not.toHaveBeenCalled();
+    if (source === "app") {
+      expect(takeOverManually).toHaveBeenCalledWith("5511999990000@c.us", config.WAHA_SESSION, expect.objectContaining({ providerMessageId: "manual-1" }));
+      expect(cancelFollowUps).toHaveBeenCalledWith("conversation-1");
+    } else {
+      expect(takeOverManually).not.toHaveBeenCalled();
+      expect(cancelFollowUps).not.toHaveBeenCalled();
+    }
+  });
+
   it("rejeita webhook sem assinatura antes de acessar o banco", async () => {
     const ingestInbound = vi.fn();
     const app = buildApp(config, {

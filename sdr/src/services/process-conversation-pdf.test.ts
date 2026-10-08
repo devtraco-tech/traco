@@ -42,6 +42,8 @@ function setup(
 ) {
   const testConversation = { ...conversation, ...contextOverrides };
   const repository = {
+    canSendAutomatedMessage: vi.fn().mockResolvedValue(true),
+    markOutboundIgnored: vi.fn().mockResolvedValue(undefined),
     claimQueuedMessages: vi.fn().mockResolvedValue(["in-1"]),
     loadConversation: vi.fn().mockResolvedValue(testConversation),
     getCatalogBinding: vi.fn().mockResolvedValue({
@@ -84,6 +86,16 @@ function setup(
 }
 
 describe("envio do PDF do curso", () => {
+  it("interrompe o PDF se a July assumiu após carregar o contexto", async () => {
+    const { processor, repository, waha } = setup("https://files.example.com/curso.pdf");
+    repository.canSendAutomatedMessage.mockResolvedValue(false);
+    await processor.process("conversation-1");
+    expect(waha.sendFile).not.toHaveBeenCalled();
+    expect(waha.sendText).not.toHaveBeenCalled();
+    expect(repository.markOutboundIgnored).toHaveBeenCalledWith("out-1");
+    expect(repository.markMessages).toHaveBeenCalledWith(["in-1"], "ignored");
+  });
+
   it.each([
     "Pode me enviar o PDF?",
     "Vocês têm o folder do curso?",

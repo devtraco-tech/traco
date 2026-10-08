@@ -23,7 +23,7 @@ services:
     environment:
       WAHA_API_KEY: "${WAHA_API_KEY:?Preencha WAHA_API_KEY em .env.local}"
       WHATSAPP_HOOK_URL: "http://host.docker.internal:10000/webhooks/waha"
-      WHATSAPP_HOOK_EVENTS: "message"
+      WHATSAPP_HOOK_EVENTS: "message.any"
       WHATSAPP_HOOK_HMAC_KEY: "${WAHA_WEBHOOK_HMAC_KEY:?Preencha WAHA_WEBHOOK_HMAC_KEY em .env.local}"
       WHATSAPP_HOOK_RETRIES_POLICY: "exponential"
       WHATSAPP_HOOK_RETRIES_DELAY_SECONDS: "2"

@@ -221,6 +221,40 @@ export class SdrRepository {
     };
   }
 
+  async closeConversation(conversationId: string): Promise<void> {
+    const { error } = await this.client
+      .from("sdr_conversations")
+      .update({ status: "closed", bot_enabled: false })
+      .eq("id", conversationId)
+      .eq("status", "bot_active");
+    if (error) throw new Error(`Falha ao encerrar conversa: ${error.message}`);
+  }
+
+  async takeOverManually(whatsappId: string, wahaSession: string, message: { providerMessageId: string; text: string; occurredAt: string }): Promise<string | null> {
+    const { data, error } = await this.client.rpc("sdr_take_over_manually", {
+      p_whatsapp_id: whatsappId, p_waha_session: wahaSession,
+      p_provider_message_id: message.providerMessageId, p_content: message.text,
+      p_occurred_at: message.occurredAt,
+    });
+    if (error) throw new Error(`Falha ao assumir atendimento manual: ${error.message}`);
+    return data ? String(data) : null;
+  }
+
+  async canSendAutomatedMessage(conversationId: string, mode: "bot" | "ending" | "handoff" = "bot"): Promise<boolean> {
+    const { data, error } = await this.client.from("sdr_conversations")
+      .select("status,bot_enabled").eq("id", conversationId).single();
+    if (error) throw new Error(`Falha ao verificar atendimento: ${error.message}`);
+    if (mode === "ending") return data.status === "closed";
+    if (mode === "handoff") return data.status === "waiting_human";
+    return data.status === "bot_active" && data.bot_enabled;
+  }
+
+  async markOutboundIgnored(messageId: string): Promise<void> {
+    const { error } = await this.client.from("sdr_messages")
+      .update({ status: "ignored", error_code: "automation_paused" }).eq("id", messageId);
+    if (error) throw new Error(`Falha ao interromper resposta: ${error.message}`);
+  }
+
   async updateFlowState(
     conversationId: string,
     patch: {
@@ -438,7 +472,7 @@ export class SdrRepository {
     conversationId: string,
     reason: HandoffReason,
     details?: string,
-  ): Promise<string> {
+  ): Promise<string | null> {
     const { data, error } = await this.client.rpc("sdr_request_handoff", {
       p_conversation_id: conversationId,
       p_reason: reason,
@@ -449,7 +483,7 @@ export class SdrRepository {
       throw new Error(`Falha ao solicitar atendimento humano: ${error.message}`);
     }
 
-    return String(data);
+    return data ? String(data) : null;
   }
 
   async getCatalogBinding(wahaSession: string): Promise<CatalogBinding | null> {

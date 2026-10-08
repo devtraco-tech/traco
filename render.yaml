@@ -28,7 +28,7 @@ services:
       - key: WHATSAPP_HOOK_URL
         sync: false
       - key: WHATSAPP_HOOK_EVENTS
-        value: message
+        value: message.any
       - key: WHATSAPP_HOOK_HMAC_KEY
         fromService:
           type: pserv

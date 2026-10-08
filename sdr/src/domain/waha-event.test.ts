@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseWahaInboundMessage } from "./waha-event.js";
+import { parseWahaInboundMessage, parseWahaManualMessage } from "./waha-event.js";
 
 function event(overrides: Record<string, unknown> = {}) {
   return {
@@ -17,6 +17,23 @@ function event(overrides: Record<string, unknown> = {}) {
 }
 
 describe("parseWahaInboundMessage", () => {
+  it("aceita mensagens recebidas em message.any", () => {
+    expect(parseWahaInboundMessage({ ...event(), event: "message.any" })?.text).toContain("cursos");
+  });
+
+  it("identifica envio manual inclusive mídia e destinatário LID", () => {
+    const result = parseWahaManualMessage({ ...event({ fromMe: true, source: "app", to: "120000000@lid", body: "" }), event: "message.any" });
+    expect(result).toMatchObject({ recipientId: "120000000@lid", providerMessageId: "wamid-123", text: "" });
+  });
+
+  it("ignora ecos da API, grupos e eventos sem destinatário", () => {
+    for (const overrides of [
+      { fromMe: true, source: "api", to: "5511999998888@c.us" },
+      { fromMe: true, source: "app", to: "123@g.us" },
+      { fromMe: true, source: "app" },
+      { fromMe: false, source: "app", to: "5511999998888@c.us" },
+    ]) expect(parseWahaManualMessage({ ...event(overrides), event: "message.any" })).toBeNull();
+  });
   it("normaliza uma mensagem direta recebida", () => {
     const result = parseWahaInboundMessage(event());
 

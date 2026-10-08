@@ -10,6 +10,8 @@ const wahaMessageSchema = z.object({
         z.object({ _serialized: z.string() }).passthrough(),
       ]),
       from: z.string(),
+      to: z.string().optional(),
+      source: z.enum(["app", "api"]).optional(),
       fromMe: z.boolean().optional().default(false),
       body: z.string().optional().default(""),
       timestamp: z.number().optional(),
@@ -33,7 +35,7 @@ const wahaMessageSchema = z.object({
 
 export function getWahaInboundSenderId(input: unknown): string | null {
   const parsed = wahaMessageSchema.safeParse(input);
-  if (!parsed.success || parsed.data.event !== "message") {
+  if (!parsed.success || !["message", "message.any"].includes(parsed.data.event)) {
     return null;
   }
 
@@ -47,6 +49,22 @@ export function getWahaInboundSenderId(input: unknown): string | null {
   }
 
   return payload.from;
+}
+
+export function parseWahaManualMessage(input: unknown): { recipientId: string; providerMessageId: string; text: string; occurredAt: string } | null {
+  const parsed = wahaMessageSchema.safeParse(input);
+  if (!parsed.success || parsed.data.event !== "message.any") return null;
+  const payload = parsed.data.payload;
+  if (!payload.fromMe || payload.source === "api") return null;
+  const recipientId = payload.to;
+  if (!recipientId || !/@(?:c\.us|lid)$/u.test(recipientId)) return null;
+  const timestamp = payload.timestamp;
+  return {
+    recipientId,
+    providerMessageId: typeof payload.id === "string" ? payload.id : payload.id._serialized,
+    text: payload.body,
+    occurredAt: timestamp ? new Date(timestamp < 10_000_000_000 ? timestamp * 1_000 : timestamp).toISOString() : new Date().toISOString(),
+  };
 }
 
 export function parseWahaInboundMessage(

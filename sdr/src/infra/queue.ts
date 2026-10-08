@@ -130,6 +130,14 @@ export class ConversationQueue {
     return matching.length;
   }
 
+  async cancelFollowUps(conversationId: string): Promise<number> {
+    const jobs = await this.queue.getJobs(["delayed", "waiting", "prioritized"]);
+    const matching = jobs.filter((job) => job.data.conversationId === conversationId
+      && (job.data.kind === "enrollment_follow_up" || job.data.kind === "pre_attendance_follow_up"));
+    await Promise.all(matching.map((job) => job.remove()));
+    return matching.length;
+  }
+
   async close(): Promise<void> {
     await this.queue.close();
     await this.connection.quit();
